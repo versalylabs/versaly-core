@@ -23,6 +23,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
     if (path === "/clients") return "Clients & Renewals";
     if (path === "/projects") return "Projects & Implementations";
     if (path === "/tasks") return "Tasks & Daily Outreach";
+    if (path === "/notes") return "Executive Notes & Scratchpad";
     if (path === "/documents") return "Documents & Sales Sheets";
     if (path === "/finance") return "Finance & Invoicing";
     if (path === "/knowledge") return "Knowledge Base & SOPs";

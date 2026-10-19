@@ -21,6 +21,7 @@ import {
   Flame,
   X,
   Sparkles,
+  StickyNote,
 } from "lucide-react";
 import { VERSALY_PRODUCTS } from "@/data/products-catalog";
 
@@ -73,6 +74,7 @@ export function CommandPalette({
       { id: "nav-clients", category: "Navigation", title: "Clients & Renewals", subtitle: "Active subscriptions & contracts", href: "/clients", icon: Users },
       { id: "nav-proj", category: "Navigation", title: "Projects & Onboarding", subtitle: "Implementation tasks & blockers", href: "/projects", icon: FolderGit2 },
       { id: "nav-tasks", category: "Navigation", title: "Daily Tasks & Outreach", subtitle: "Calls, WhatsApp, visits", href: "/tasks", icon: CheckSquare },
+      { id: "nav-notes", category: "Navigation", title: "Executive Notes & Scratchpad", subtitle: "Quick thoughts, meeting logs, and project-linked notes", href: "/notes", icon: StickyNote },
       { id: "nav-docs", category: "Navigation", title: "Documents & Sales Sheets", subtitle: "1-pagers, proposals, KRA/eTIMS", href: "/documents", icon: FileText },
       { id: "nav-finance", category: "Navigation", title: "Finance & Invoices", subtitle: "M-Pesa reconciliation & MRR", href: "/finance", icon: CreditCard },
       { id: "nav-sop", category: "Navigation", title: "Knowledge Base & SOPs", subtitle: "Institutional playbooks & FAQs", href: "/knowledge", icon: BookOpen },
@@ -92,6 +94,17 @@ export function CommandPalette({
     }));
 
     const actions: CommandItem[] = [
+      {
+        id: "act-note",
+        category: "Quick Actions",
+        title: "Create Executive Note",
+        subtitle: "Capture standalone idea, scratchpad, or tie to a project",
+        icon: StickyNote,
+        action: () => {
+          router.push("/notes?action=new");
+          onClose();
+        },
+      },
       {
         id: "act-lead",
         category: "Quick Actions",

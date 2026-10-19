@@ -19,6 +19,7 @@ import {
   Layers,
   Sparkles,
   FileCheck2,
+  StickyNote,
   X,
 } from "lucide-react";
 
@@ -78,6 +79,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: CheckSquare,
     badge: "9 due",
     badgeVariant: "warning",
+  },
+  {
+    title: "Notes & Scratchpad",
+    href: "/notes",
+    icon: StickyNote,
+    badge: "Live",
+    badgeVariant: "success",
   },
   {
     title: "Documents & Templates",

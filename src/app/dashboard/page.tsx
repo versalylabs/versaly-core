@@ -51,6 +51,26 @@ interface OutreachItem {
   isOptedOut?: boolean;
 }
 
+interface FridayProductMetrics {
+  adversoft: string;
+  vehisoft: string;
+  versandry: string;
+  lipatim: string;
+}
+
+interface FridayScorecard {
+  contactsMade: FridayProductMetrics;
+  checksDelivered: FridayProductMetrics;
+  demosHeld: FridayProductMetrics;
+  clientsSigned: FridayProductMetrics;
+  clientsLive: FridayProductMetrics;
+  problemsReported: FridayProductMetrics;
+  referralsReceived: FridayProductMetrics;
+  leadsStuckNotes: string;
+  oneChangeTest: string;
+  clientNeedsAttention: string;
+}
+
 const INITIAL_QUEUE: OutreachItem[] = [
   {
     id: "out-1",
@@ -139,6 +159,41 @@ export default function DashboardPage() {
   // WhatsApp Quick Send Modal State
   const [whatsAppItem, setWhatsAppItem] = useState<{ business: string; contact: string; phone: string; context: string } | null>(null);
   const [whatsAppMessage, setWhatsAppMessage] = useState("");
+
+  // Friday Review Scorecard State (Section 7)
+  const [fridayScorecard, setFridayScorecard] = useState<FridayScorecard>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("versaly_friday_weekly_review");
+        if (stored) return JSON.parse(stored) as FridayScorecard;
+      } catch {
+        // ignore
+      }
+    }
+    return {
+      contactsMade: { adversoft: "40", vehisoft: "35", versandry: "38", lipatim: "25" },
+      checksDelivered: { adversoft: "8", vehisoft: "10", versandry: "12", lipatim: "5" },
+      demosHeld: { adversoft: "3", vehisoft: "4", versandry: "5", lipatim: "2" },
+      clientsSigned: { adversoft: "1", vehisoft: "1", versandry: "2", lipatim: "1" },
+      clientsLive: { adversoft: "1", vehisoft: "1", versandry: "2", lipatim: "0" },
+      problemsReported: { adversoft: "0", vehisoft: "1", versandry: "0", lipatim: "0" },
+      referralsReceived: { adversoft: "1", vehisoft: "2", versandry: "1", lipatim: "1" },
+      leadsStuckNotes: "Billboard operators are replying well to the free 48h live map. Car yards take longer to respond on WhatsApp, so we call them directly within 3 hours.",
+      oneChangeTest: "Test sending a 30-second mobile video walkthrough of digital vehicle intake instead of a PDF sales sheet.",
+      clientNeedsAttention: "Safari Auto Clinic: Complete inventory parts database CSV normalization today for smooth live cutover.",
+    };
+  });
+
+  // Save Friday Scorecard
+  const handleSaveFridayScorecard = () => {
+    try {
+      localStorage.setItem("versaly_friday_weekly_review", JSON.stringify(fridayScorecard));
+      setToastMessage("✓ Friday Weekly Review Scorecard saved successfully!");
+      setTimeout(() => setToastMessage(null), 3500);
+    } catch {
+      // ignore
+    }
+  };
 
   // Save queue to localStorage
   useEffect(() => {
@@ -433,38 +488,531 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Friday 20-Min Review Spotlight Banner */}
+        {/* Friday 20-Min Review Spotlight Banner & Scorecard */}
         {isFridayReview && (
-          <div className="liquid-glass p-5 rounded-2xl border-amber-500/30 text-amber-200 text-xs animate-in slide-in-from-top-2 duration-200 flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <Flame className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-bold text-amber-300 text-sm">Friday 20-Minute Operational Review Mode Active</div>
-                <p className="text-amber-200/90 mt-1 leading-relaxed">
-                  Focus on the 3 core decisions: (1) Reconcile all uncontacted leads & transition into active pipeline, (2) Clear client onboarding blockers to hit the 7-day go-live goal, (3) Confirm collected setup fees & recurring subscription receipts against the KES 520,000 launch push target.
-                </p>
-                <div className="mt-3 flex items-center gap-2">
-                  <Link
-                    href="/leads"
-                    className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold hover:bg-amber-500/30 transition"
-                  >
-                    Review Pipeline Deals →
-                  </Link>
-                  <Link
-                    href="/projects"
-                    className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold hover:bg-amber-500/30 transition"
-                  >
-                    Check Go-Live Blockers →
-                  </Link>
+          <div className="liquid-glass p-6 rounded-2xl border border-amber-500/40 text-xs animate-in slide-in-from-top-2 duration-200 space-y-5">
+            <div className="flex items-start justify-between gap-4 pb-3 border-b border-amber-500/20">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                  <Flame className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-amber-300 text-sm flex items-center gap-2">
+                    <span>Friday Weekly Review (17:00, 30 Minutes)</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider">
+                      Executive Scorecard
+                    </span>
+                  </div>
+                  <p className="text-slate-300 mt-1 leading-relaxed">
+                    Fill this in every Friday at 17:00 across all 4 core products to calibrate conversion, eliminate lead bottlenecks, and audit client delivery.
+                  </p>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSaveFridayScorecard}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition shadow-sm"
+                >
+                  Save Scorecard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFridayReview(false)}
+                  className="text-slate-400 hover:text-white p-1"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setIsFridayReview(false)}
-              className="text-amber-400 hover:text-amber-200 text-xs font-semibold underline shrink-0 ml-4"
-            >
-              Dismiss
-            </button>
+
+            {/* 4-Product Scorecard Table */}
+            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-900/60">
+                    <th className="p-3">Weekly Review Question</th>
+                    <th className="p-3 text-center text-indigo-400">Adversoft</th>
+                    <th className="p-3 text-center text-indigo-400">Vehisoft</th>
+                    <th className="p-3 text-center text-indigo-400">Versandry</th>
+                    <th className="p-3 text-center text-indigo-400">LipaTim</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  <tr>
+                    <td className="p-3 font-medium text-slate-200">1. Contacts made this week</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.contactsMade.adversoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            contactsMade: { ...p.contactsMade, adversoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.contactsMade.vehisoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            contactsMade: { ...p.contactsMade, vehisoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.contactsMade.versandry}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            contactsMade: { ...p.contactsMade, versandry: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.contactsMade.lipatim}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            contactsMade: { ...p.contactsMade, lipatim: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="p-3 font-medium text-slate-200">2. Free checks or maps delivered</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.checksDelivered.adversoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            checksDelivered: { ...p.checksDelivered, adversoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.checksDelivered.vehisoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            checksDelivered: { ...p.checksDelivered, vehisoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.checksDelivered.versandry}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            checksDelivered: { ...p.checksDelivered, versandry: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.checksDelivered.lipatim}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            checksDelivered: { ...p.checksDelivered, lipatim: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="p-3 font-medium text-slate-200">3. Demos held</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.demosHeld.adversoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            demosHeld: { ...p.demosHeld, adversoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.demosHeld.vehisoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            demosHeld: { ...p.demosHeld, vehisoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.demosHeld.versandry}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            demosHeld: { ...p.demosHeld, versandry: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.demosHeld.lipatim}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            demosHeld: { ...p.demosHeld, lipatim: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="p-3 font-medium text-slate-200">4. Clients signed</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsSigned.adversoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsSigned: { ...p.clientsSigned, adversoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsSigned.vehisoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsSigned: { ...p.clientsSigned, vehisoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsSigned.versandry}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsSigned: { ...p.clientsSigned, versandry: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsSigned.lipatim}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsSigned: { ...p.clientsSigned, lipatim: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="p-3 font-medium text-slate-200">5. Clients live</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsLive.adversoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsLive: { ...p.clientsLive, adversoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsLive.vehisoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsLive: { ...p.clientsLive, vehisoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsLive.versandry}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsLive: { ...p.clientsLive, versandry: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.clientsLive.lipatim}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            clientsLive: { ...p.clientsLive, lipatim: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="p-3 font-medium text-slate-200">6. Problems reported by clients</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.problemsReported.adversoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            problemsReported: { ...p.problemsReported, adversoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.problemsReported.vehisoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            problemsReported: { ...p.problemsReported, vehisoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.problemsReported.versandry}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            problemsReported: { ...p.problemsReported, versandry: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.problemsReported.lipatim}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            problemsReported: { ...p.problemsReported, lipatim: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="p-3 font-medium text-slate-200">7. Referrals received</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.referralsReceived.adversoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            referralsReceived: { ...p.referralsReceived, adversoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.referralsReceived.vehisoft}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            referralsReceived: { ...p.referralsReceived, vehisoft: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.referralsReceived.versandry}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            referralsReceived: { ...p.referralsReceived, versandry: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="text"
+                        value={fridayScorecard.referralsReceived.lipatim}
+                        onChange={(e) =>
+                          setFridayScorecard((p) => ({
+                            ...p,
+                            referralsReceived: { ...p.referralsReceived, lipatim: e.target.value },
+                          }))
+                        }
+                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* The 3 Core Diagnostic Questions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
+                  Question 1: Where are leads getting stuck?
+                </span>
+                <span className="text-[10px] text-slate-400 italic block">
+                  Few replies → fix message. Few demos → fix free check. Few sales → fix offer/price.
+                </span>
+                <textarea
+                  rows={3}
+                  value={fridayScorecard.leadsStuckNotes}
+                  onChange={(e) =>
+                    setFridayScorecard((p) => ({ ...p, leadsStuckNotes: e.target.value }))
+                  }
+                  className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <span className="text-[10px] uppercase font-bold text-indigo-400 block tracking-wider">
+                  Question 2: What one change will I test next week?
+                </span>
+                <span className="text-[10px] text-slate-400 italic block">
+                  Iterate on a specific outreach script, diagnostic deliverable, or demo angle.
+                </span>
+                <textarea
+                  rows={3}
+                  value={fridayScorecard.oneChangeTest}
+                  onChange={(e) =>
+                    setFridayScorecard((p) => ({ ...p, oneChangeTest: e.target.value }))
+                  }
+                  className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <span className="text-[10px] uppercase font-bold text-rose-400 block tracking-wider">
+                  Question 3: Which client needs attention?
+                </span>
+                <span className="text-[10px] text-slate-400 italic block">
+                  Identify implementation blockers, training needs, or overdue invoice accounts.
+                </span>
+                <textarea
+                  rows={3}
+                  value={fridayScorecard.clientNeedsAttention}
+                  onChange={(e) =>
+                    setFridayScorecard((p) => ({ ...p, clientNeedsAttention: e.target.value }))
+                  }
+                  className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-rose-500"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/leads"
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-semibold transition"
+                >
+                  Review Pipeline Deals →
+                </Link>
+                <Link
+                  href="/projects"
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-semibold transition"
+                >
+                  Check Go-Live Blockers →
+                </Link>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveFridayScorecard}
+                className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition shadow-md shadow-amber-500/20"
+              >
+                Save Friday Scorecard
+              </button>
+            </div>
           </div>
         )}
 

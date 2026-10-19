@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
   CheckSquare,
@@ -12,79 +12,22 @@ import {
   Edit2,
   Trash2,
   AlertCircle,
+  RefreshCw,
+  Calendar,
+  Layers,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
-
-interface DailyTask {
-  id: string;
-  category: "Outreach" | "Demos" | "Follow-up" | "Onboarding" | "Finance";
-  title: string;
-  product: string;
-  due: string;
-  priority: "HIGH" | "MEDIUM" | "LOW";
-  completed: boolean;
-  contactPerson?: string;
-  phone?: string;
-}
+import {
+  DailyTask,
+  WEEKLY_RHYTHM_TEMPLATES,
+  FOUR_WEEK_LAUNCH_ROADMAP,
+  get5AMCycleKey,
+  getRhythmTasksForDate,
+} from "@/data/tasks-data";
 
 const STORAGE_KEY = "versaly_daily_tasks";
-
-const INITIAL_TASKS: DailyTask[] = [
-  {
-    id: "t-1",
-    category: "Outreach",
-    title: "Walk-in garage visit: Apex Auto Clinic (Industrial Area)",
-    product: "Vehisoft",
-    due: "Today 10:30 AM",
-    priority: "HIGH",
-    completed: false,
-    contactPerson: "Samuel Kamau",
-    phone: "+254 721 345 678",
-  },
-  {
-    id: "t-2",
-    category: "Demos",
-    title: "Live Melio RMS POS table-ordering walkthrough: Chef Dennis",
-    product: "Melio RMS",
-    due: "Today 2:00 PM",
-    priority: "HIGH",
-    completed: false,
-    contactPerson: "Dennis Odhiambo",
-    phone: "+254 711 902 345",
-  },
-  {
-    id: "t-3",
-    category: "Follow-up",
-    title: "Send WhatsApp pickup alert demo video to Prime Clean Laundromat",
-    product: "Versandry",
-    due: "Today 4:00 PM",
-    priority: "MEDIUM",
-    completed: false,
-    contactPerson: "Mama Jane",
-    phone: "+254 733 890 123",
-  },
-  {
-    id: "t-4",
-    category: "Onboarding",
-    title: "Follow up with Safari Auto Clinic for spare parts inventory spreadsheet",
-    product: "Vehisoft",
-    due: "Today 5:00 PM",
-    priority: "HIGH",
-    completed: false,
-    contactPerson: "Dan Omondi",
-    phone: "+254 722 100 200",
-  },
-  {
-    id: "t-5",
-    category: "Finance",
-    title: "Reconcile M-Pesa setup fee payment for Skyline Outdoor Media",
-    product: "Adversoft",
-    due: "Today 5:30 PM",
-    priority: "MEDIUM",
-    completed: true,
-    contactPerson: "Kevin Ndungu",
-    phone: "+254 722 999 111",
-  },
-];
+const CYCLE_KEY = "versaly_last_5am_cycle";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<DailyTask[]>(() => {
@@ -101,9 +44,16 @@ export default function TasksPage() {
         // ignore
       }
     }
-    return INITIAL_TASKS;
+    return WEEKLY_RHYTHM_TEMPLATES[1].tasks.map((t, idx) => ({
+      ...t,
+      id: `rhythm-1-${idx}`,
+      completed: false,
+    }));
   });
 
+  const [activeTab, setActiveTab] = useState<"DAILY" | "WEEKLY_RHYTHM" | "FOUR_WEEKS">("DAILY");
+  const [selectedWeekNumber, setSelectedWeekNumber] = useState<number>(1);
+  const [lastCycle, setLastCycle] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -111,6 +61,8 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<DailyTask | null>(null);
   const [deleteConfirmTask, setDeleteConfirmTask] = useState<DailyTask | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [todayLabel, setTodayLabel] = useState<string>("Oct 19, 2026");
+  const [todayDayIdx, setTodayDayIdx] = useState<number>(1);
 
   // Form State
   const [formTitle, setFormTitle] = useState("");
@@ -120,7 +72,7 @@ export default function TasksPage() {
   const [formDue, setFormDue] = useState("Today 3:00 PM");
   const [formContact, setFormContact] = useState("");
 
-  // Save to localStorage when changed
+  // Save tasks to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -128,6 +80,64 @@ export default function TasksPage() {
       // ignore
     }
   }, [tasks]);
+
+  // Execute 5:00 AM Reset & Reload
+  const execute5AMReset = useCallback((forceManual: boolean = false) => {
+    const currentCycle = get5AMCycleKey(new Date());
+    const storedCycle = typeof window !== "undefined" ? localStorage.getItem(CYCLE_KEY) : null;
+
+    if (forceManual || storedCycle !== currentCycle) {
+      const todayRhythmTasks = getRhythmTasksForDate(new Date());
+
+      // If user had custom non-rhythm tasks, keep them but uncheck them; merge with today's rhythm
+      setTasks((prev) => {
+        const customTasks = prev
+          .filter((t) => !t.id.startsWith("rhythm-"))
+          .map((t) => ({ ...t, completed: false }));
+        return [...todayRhythmTasks, ...customTasks];
+      });
+
+      try {
+        localStorage.setItem(CYCLE_KEY, currentCycle);
+      } catch {
+        // ignore
+      }
+      setLastCycle(currentCycle);
+
+      const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+      setToastMessage(
+        forceManual
+          ? `✓ 5:00 AM Reset Triggered: Loaded & unchecked ${dayName}'s operating rhythm tasks!`
+          : `✓ 5:00 AM Daily Cycle Activated: Today's ${dayName} tasks reloaded & unchecked!`
+      );
+      setTimeout(() => setToastMessage(null), 4000);
+    } else if (storedCycle) {
+      setLastCycle(storedCycle);
+    }
+  }, []);
+
+  // Run cycle check on mount and every 30 seconds (reactive 5 AM check)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const now = new Date();
+      setTodayLabel(now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }));
+      setTodayDayIdx(now.getDay());
+      execute5AMReset(false);
+    }, 0);
+
+    const interval = setInterval(() => {
+      const currentCycle = get5AMCycleKey(new Date());
+      const storedCycle = localStorage.getItem(CYCLE_KEY);
+      if (storedCycle !== currentCycle) {
+        execute5AMReset(false);
+      }
+    }, 30000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [execute5AMReset]);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const pendingCount = tasks.filter((t) => !t.completed).length;
@@ -215,6 +225,32 @@ export default function TasksPage() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
+  // Load a day's deliverables from 4-week roadmap into active queue
+  const loadRoadmapDayIntoQueue = (dayTitle: string, deliverables: string[]) => {
+    const newTasks: DailyTask[] = deliverables.map((deliv, idx) => ({
+      id: `roadmap-${Date.now()}-${idx}`,
+      title: deliv,
+      category: "Outreach",
+      product: deliv.includes("Adversoft")
+        ? "Adversoft"
+        : deliv.includes("Vehisoft")
+        ? "Vehisoft"
+        : deliv.includes("Versandry")
+        ? "Versandry"
+        : deliv.includes("LipaTim")
+        ? "LipaTim"
+        : "Multi-product",
+      due: "Today",
+      priority: "HIGH",
+      completed: false,
+    }));
+
+    setTasks((prev) => [...newTasks, ...prev]);
+    setActiveTab("DAILY");
+    setToastMessage(`✓ Loaded ${deliverables.length} tasks from "${dayTitle}" into active queue!`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   const filteredTasks = tasks.filter((t) => {
     const matchesSearch =
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -241,17 +277,25 @@ export default function TasksPage() {
                 Operating Rhythm
               </span>
               <span className="text-xs text-slate-500">•</span>
-              <span className="text-xs text-amber-400">Daily Execution Queue</span>
+              <span className="text-xs text-emerald-400">5:00 AM Automated Daily Reset Active</span>
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              Tasks & Daily Outreach Queue
+              Tasks &amp; Daily Outreach Queue
             </h1>
             <p className="text-xs text-slate-400 max-w-2xl mt-1">
-              High-urgency commercial actions across walk-ins, live software demos, follow-ups, and onboarding check-ins.
+              High-urgency commercial actions across cold calling sprints, remote diagnostic audits, live software demos, follow-ups, and onboarding check-ins.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => execute5AMReset(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 shadow-sm transition"
+              title="Uncheck completed items and reload today's weekly rhythm tasks"
+            >
+              <RefreshCw className="h-3.5 w-3.5 text-indigo-400" />
+              <span>5:00 AM Reset Now</span>
+            </button>
             <button
               onClick={openAddModal}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25 transition"
@@ -259,6 +303,32 @@ export default function TasksPage() {
               <Plus className="h-3.5 w-3.5" />
               <span>New Action</span>
             </button>
+          </div>
+        </div>
+
+        {/* 5:00 AM Reset Automation Info Card */}
+        <div className="liquid-glass p-3.5 rounded-2xl border border-indigo-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+              <Clock className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="font-semibold text-slate-200 flex items-center gap-2">
+                <span>Automated 5:00 AM Daily Reset Engine</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                  Active (Cycle: {lastCycle || "Current"})
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Every morning at 5:00 AM, the queue unchecks all completed actions and automatically reloads the day&apos;s scheduled rhythm.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] text-slate-400 font-mono">
+              Today: {todayLabel}
+            </span>
           </div>
         </div>
 
@@ -270,254 +340,536 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Action Counters */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-            <div className="text-xs text-slate-400 font-medium">Pending Today</div>
-            <div className="text-2xl font-extrabold text-amber-400 mt-1 font-mono">
-              {pendingCount}
-            </div>
-            <div className="text-[11px] text-slate-500 mt-1">Due before 6:00 PM</div>
-          </div>
+        {/* Action View Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+          <button
+            onClick={() => setActiveTab("DAILY")}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold transition whitespace-nowrap border flex items-center gap-1.5 ${
+              activeTab === "DAILY"
+                ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20"
+                : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200"
+            }`}
+          >
+            <CheckSquare className="h-3.5 w-3.5" />
+            <span>Daily Active Queue ({tasks.length})</span>
+          </button>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-            <div className="text-xs text-slate-400 font-medium">Completed Today</div>
-            <div className="text-2xl font-extrabold text-emerald-400 mt-1 font-mono">
-              {completedCount}
-            </div>
-            <div className="text-[11px] text-emerald-400/80 mt-1">Logged into activity audit</div>
-          </div>
+          <button
+            onClick={() => setActiveTab("WEEKLY_RHYTHM")}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold transition whitespace-nowrap border flex items-center gap-1.5 ${
+              activeTab === "WEEKLY_RHYTHM"
+                ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20"
+                : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200"
+            }`}
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            <span>Weekly Operating Rhythm (Mon–Sun)</span>
+          </button>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-            <div className="text-xs text-slate-400 font-medium">Outreach Actions</div>
-            <div className="text-2xl font-extrabold text-indigo-300 mt-1 font-mono">
-              {tasks.filter((t) => t.category === "Outreach").length}
-            </div>
-            <div className="text-[11px] text-slate-500 mt-1">Walk-ins & phone calls</div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-            <div className="text-xs text-slate-400 font-medium">Daily Completion Rate</div>
-            <div className="text-2xl font-extrabold text-white mt-1 font-mono">
-              {tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0}%
-            </div>
-            <div className="text-[11px] text-slate-500 mt-1">Operating rhythm target: 85%</div>
-          </div>
+          <button
+            onClick={() => setActiveTab("FOUR_WEEKS")}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold transition whitespace-nowrap border flex items-center gap-1.5 ${
+              activeTab === "FOUR_WEEKS"
+                ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20"
+                : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200"
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            <span>4-Week Launch Roadmap (Oct 19 – Nov 14)</span>
+          </button>
         </div>
 
-        {/* Filters & Search */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {["ALL", "PENDING", "COMPLETED"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
-                  statusFilter === status
-                    ? "bg-indigo-600 text-white"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-                }`}
-              >
-                {status === "ALL" ? "All Tasks" : status === "PENDING" ? "To Do" : "Completed"}
-              </button>
-            ))}
-          </div>
+        {/* Tab 1: Daily Active Queue */}
+        {activeTab === "DAILY" && (
+          <div className="space-y-6 animate-in fade-in duration-150">
+            {/* Action Counters */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                <div className="text-xs text-slate-400 font-medium">Pending Today</div>
+                <div className="text-2xl font-extrabold text-amber-400 mt-1 font-mono">
+                  {pendingCount}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">Due before 6:00 PM</div>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-56">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search action or client..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-              />
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                <div className="text-xs text-slate-400 font-medium">Completed Today</div>
+                <div className="text-2xl font-extrabold text-emerald-400 mt-1 font-mono">
+                  {completedCount}
+                </div>
+                <div className="text-[11px] text-emerald-400/80 mt-1">Logged into activity audit</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                <div className="text-xs text-slate-400 font-medium">Outreach Actions</div>
+                <div className="text-2xl font-extrabold text-indigo-300 mt-1 font-mono">
+                  {tasks.filter((t) => t.category === "Outreach").length}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">Phone calls &amp; WhatsApp</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
+                <div className="text-xs text-slate-400 font-medium">Daily Completion Rate</div>
+                <div className="text-2xl font-extrabold text-white mt-1 font-mono">
+                  {tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0}%
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">Operating rhythm target: 85%</div>
+              </div>
             </div>
 
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="ALL">All Categories</option>
-              <option value="Outreach">Outreach</option>
-              <option value="Demos">Demos</option>
-              <option value="Follow-up">Follow-up</option>
-              <option value="Onboarding">Onboarding</option>
-              <option value="Finance">Finance</option>
-            </select>
-          </div>
-        </div>
+            {/* Filters & Search */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
+              <div className="flex items-center gap-1 overflow-x-auto">
+                {["ALL", "PENDING", "COMPLETED"].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                      statusFilter === status
+                        ? "bg-indigo-600 text-white"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                    }`}
+                  >
+                    {status === "ALL" ? "All Tasks" : status === "PENDING" ? "To Do" : "Completed"}
+                  </button>
+                ))}
+              </div>
 
-        {/* Task List */}
-        <div className="space-y-2.5">
-          {filteredTasks.map((task) => {
-            const priorityBadge =
-              task.priority === "HIGH"
-                ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                : task.priority === "MEDIUM"
-                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                : "bg-slate-500/10 text-slate-400 border-slate-500/20";
-
-            return (
-              <div
-                key={task.id}
-                onClick={() => toggleTask(task.id)}
-                className={`p-4 rounded-xl border transition flex items-center justify-between gap-4 cursor-pointer group ${
-                  task.completed
-                    ? "bg-slate-950/40 border-slate-800/60 opacity-60"
-                    : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700"
-                }`}
-              >
-                <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="relative w-full sm:w-56">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
                   <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => {}}
-                    className="mt-1 sm:mt-0 h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer shrink-0"
+                    type="text"
+                    placeholder="Search action or client..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                   />
-                  <div className="space-y-1 min-w-0 pr-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`text-xs font-semibold ${
-                          task.completed ? "line-through text-slate-500" : "text-slate-100"
-                        }`}
-                      >
-                        {task.title}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.2 rounded font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                        {task.product}
-                      </span>
+                </div>
+
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="ALL">All Categories</option>
+                  <option value="Outreach">Outreach</option>
+                  <option value="Demos">Demos</option>
+                  <option value="Follow-up">Follow-up</option>
+                  <option value="Onboarding">Onboarding</option>
+                  <option value="Content">Content</option>
+                  <option value="Review">Review</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Task List */}
+            <div className="space-y-2.5">
+              {filteredTasks.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-500 liquid-glass rounded-2xl p-8 border border-slate-800">
+                  No tasks matching the selected filter. Click &quot;5:00 AM Reset Now&quot; to reload today&apos;s rhythm.
+                </div>
+              ) : (
+                filteredTasks.map((task) => {
+                  const priorityBadge =
+                    task.priority === "HIGH"
+                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                      : task.priority === "MEDIUM"
+                      ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                      : "bg-slate-500/10 text-slate-400 border-slate-500/20";
+
+                  return (
+                    <div
+                      key={task.id}
+                      onClick={() => toggleTask(task.id)}
+                      className={`p-4 rounded-xl border transition flex items-center justify-between gap-4 cursor-pointer group ${
+                        task.completed
+                          ? "bg-slate-950/40 border-slate-800/60 opacity-60"
+                          : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => {}}
+                          className="mt-1 sm:mt-0 h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer shrink-0"
+                        />
+                        <div className="space-y-1 min-w-0 pr-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`text-xs font-semibold ${
+                                task.completed
+                                  ? "line-through text-slate-500"
+                                  : "text-slate-100 group-hover:text-indigo-300"
+                              }`}
+                            >
+                              {task.title}
+                            </span>
+                            <span
+                              className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border ${priorityBadge}`}
+                            >
+                              {task.priority}
+                            </span>
+                            {task.timeSlot && (
+                              <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.2 rounded border border-slate-800 font-mono">
+                                {task.timeSlot}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
+                            <span className="font-medium text-indigo-400">{task.product}</span>
+                            <span>•</span>
+                            <span className="text-slate-500">{task.category}</span>
+                            {task.due && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1 text-slate-400">
+                                  <Clock className="h-3 w-3 text-slate-500" />
+                                  <span>{task.due}</span>
+                                </span>
+                              </>
+                            )}
+                            {task.contactPerson && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-300 font-medium">
+                                  Contact: {task.contactPerson}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => openEditModal(task, e)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                          title="Edit action"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmTask(task);
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 transition"
+                          title="Delete action"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Weekly Operating Rhythm (Mon-Sun) */}
+        {activeTab === "WEEKLY_RHYTHM" && (
+          <div className="space-y-4 animate-in fade-in duration-150">
+            <div className="liquid-glass p-5 rounded-2xl border border-slate-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-indigo-400" />
+                <h3 className="text-sm font-bold text-white">
+                  Versaly Weekly Operating Rhythm (from Week 2)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Structured commercial routine balancing morning high-volume cold outreach (calls, WhatsApp, email), late-morning follow-ups, and afternoon product demos, technical setups, and support. Physical actions are adapted to remote calls &amp; WhatsApp walkthroughs.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6, 0].map((dayIdx) => {
+                const rhythm = WEEKLY_RHYTHM_TEMPLATES[dayIdx];
+                const isToday = todayDayIdx === dayIdx;
+
+                return (
+                  <div
+                    key={dayIdx}
+                    className={`liquid-glass p-5 rounded-2xl border flex flex-col justify-between transition ${
+                      isToday
+                        ? "border-amber-500/50 ring-1 ring-amber-500/30"
+                        : "border-slate-800"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-sm text-white">{rhythm.dayName}</h4>
+                          {isToday && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                              Today
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-mono text-slate-400">
+                          {rhythm.tasks.length} standard tasks
+                        </span>
+                      </div>
+
+                      <div className="space-y-3 mt-3 text-xs">
+                        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                          <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block mb-0.5">
+                            Morning (8:00–10:00)
+                          </span>
+                          <span className="text-slate-300">{rhythm.morningSlot}</span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block mb-0.5">
+                            Late Morning (10:00–13:00)
+                          </span>
+                          <span className="text-slate-300">{rhythm.lateMorningSlot}</span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-0.5">
+                            Afternoon (14:00–18:00)
+                          </span>
+                          <span className="text-slate-300">{rhythm.afternoonSlot}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-3">
-                      <span className="font-medium text-slate-300">{task.category}</span>
-                      <span>•</span>
-                      <span className="text-amber-400 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {task.due}
-                      </span>
-                      {task.contactPerson && (
-                        <>
-                          <span>•</span>
-                          <span className="text-slate-400">{task.contactPerson}</span>
-                        </>
-                      )}
+                    <div className="pt-4 border-t border-slate-800/80 mt-4 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500">Auto-loads at 5:00 AM</span>
+                      <button
+                        onClick={() => {
+                          const newTasks: DailyTask[] = rhythm.tasks.map((t, idx) => ({
+                            id: `rhythm-manual-${dayIdx}-${idx}-${Date.now()}`,
+                            title: t.title,
+                            category: t.category,
+                            product: t.product,
+                            due: `Today ${t.due}`,
+                            priority: t.priority,
+                            completed: false,
+                            timeSlot: t.timeSlot,
+                          }));
+                          setTasks(newTasks);
+                          setActiveTab("DAILY");
+                          setToastMessage(`✓ Loaded ${rhythm.dayName}'s rhythm tasks into active queue!`);
+                          setTimeout(() => setToastMessage(null), 3500);
+                        }}
+                        className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                      >
+                        <span>Load Day&apos;s Rhythm</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${priorityBadge}`}
-                  >
-                    {task.priority}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={(e) => openEditModal(task, e)}
-                    className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition opacity-90 sm:opacity-0 group-hover:opacity-100"
-                    title="Edit Task"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteConfirmTask(task);
-                    }}
-                    className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition opacity-90 sm:opacity-0 group-hover:opacity-100"
-                    title="Delete Task"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {filteredTasks.length === 0 && (
-            <div className="p-12 text-center rounded-2xl bg-slate-900/40 border border-slate-800 text-xs text-slate-500 space-y-2">
-              <CheckCircle2 className="h-8 w-8 text-slate-600 mx-auto" />
-              <div className="font-bold text-slate-400">All clear! No tasks match this view.</div>
-              <p>Enjoy the clean queue or click &ldquo;New Action&rdquo; to schedule outreach.</p>
+                );
+              })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Modal: Create or Edit Task */}
+        {/* Tab 3: 4-Week Launch Roadmap (Oct 19 – Nov 14) */}
+        {activeTab === "FOUR_WEEKS" && (
+          <div className="space-y-6 animate-in fade-in duration-150">
+            {/* Week Selector Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {FOUR_WEEK_LAUNCH_ROADMAP.map((w) => (
+                <button
+                  key={w.weekNumber}
+                  onClick={() => setSelectedWeekNumber(w.weekNumber)}
+                  className={`p-4 rounded-xl text-left border transition ${
+                    selectedWeekNumber === w.weekNumber
+                      ? "liquid-glass border-indigo-500/50 ring-1 ring-indigo-500/40 shadow-lg"
+                      : "bg-slate-900/60 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                    Week {w.weekNumber}
+                  </div>
+                  <div className="font-bold text-xs text-white mt-0.5 truncate">{w.theme}</div>
+                  <div className="text-[11px] text-slate-400 mt-1">{w.dateRange}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Selected Week Detail Card */}
+            {(() => {
+              const currentWeek =
+                FOUR_WEEK_LAUNCH_ROADMAP.find((w) => w.weekNumber === selectedWeekNumber) ||
+                FOUR_WEEK_LAUNCH_ROADMAP[0];
+
+              return (
+                <div className="liquid-glass p-6 rounded-2xl border border-slate-800 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+                          Launch Roadmap • Week {currentWeek.weekNumber}
+                        </span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-xs text-slate-400 font-mono">{currentWeek.dateRange}</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-white mt-1">{currentWeek.theme}</h3>
+                    </div>
+
+                    <div className="px-3.5 py-2 rounded-xl bg-slate-950/70 border border-slate-800 text-xs">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                        Week {currentWeek.weekNumber} Targets
+                      </span>
+                      <span className="text-emerald-400 font-semibold">{currentWeek.targetsSummary}</span>
+                    </div>
+                  </div>
+
+                  {/* Days in Selected Week */}
+                  <div className="space-y-4">
+                    {currentWeek.days.map((day) => (
+                      <div
+                        key={day.date}
+                        className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/90 space-y-3 hover:border-slate-700 transition"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                            <span>{day.dayTitle}</span>
+                          </h4>
+                          <button
+                            onClick={() => loadRoadmapDayIntoQueue(day.dayTitle, day.keyDeliverables)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 transition shrink-0"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>Load Into Daily Queue</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">
+                              Morning Focus
+                            </span>
+                            <p className="text-slate-300 leading-relaxed">{day.morningFocus}</p>
+                          </div>
+
+                          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block mb-1">
+                              Afternoon Focus
+                            </span>
+                            <p className="text-slate-300 leading-relaxed">{day.afternoonFocus}</p>
+                          </div>
+                        </div>
+
+                        {/* Deliverables checklist */}
+                        <div className="pt-2">
+                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                            Key Deliverables &amp; Execution Targets
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {day.keyDeliverables.map((item) => (
+                              <div
+                                key={item}
+                                className="flex items-center gap-2 text-slate-300 p-2 rounded-lg bg-slate-900/40 border border-slate-800/60"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                                <span>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Modal: New / Edit Action */}
         {showModal && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="liquid-glass max-w-md w-full rounded-2xl p-6 space-y-4 shadow-2xl">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <CheckSquare className="h-4 w-4 text-indigo-400" />
-                  <span>{editingTask ? "Edit Action" : "Schedule Daily Action"}</span>
-                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <CheckSquare className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-white">
+                      {editingTask ? "Edit Outreach Action" : "Schedule New Action"}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Add to active queue with priority and due time.
+                    </p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
                   className="text-slate-400 hover:text-white"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSaveTask} className="space-y-4 text-xs">
+              <form onSubmit={handleSaveTask} className="space-y-3.5 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Action Title *</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Action Description *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Call Chef Dennis for POS feedback"
+                    placeholder="e.g. 30 Adversoft calls to billboard operators"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Category</label>
+                    <label className="block text-slate-300 font-semibold mb-1">Category</label>
                     <select
                       value={formCategory}
                       onChange={(e) => setFormCategory(e.target.value as DailyTask["category"])}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="Outreach">Outreach (Cold/Walk-in)</option>
-                      <option value="Demos">Demos (Live POS / POS)</option>
+                      <option value="Outreach">Outreach</option>
+                      <option value="Demos">Demos</option>
                       <option value="Follow-up">Follow-up</option>
                       <option value="Onboarding">Onboarding</option>
-                      <option value="Finance">Finance (Invoicing)</option>
+                      <option value="Content">Content</option>
+                      <option value="Review">Review</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Admin">Admin</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Product</label>
+                    <label className="block text-slate-300 font-semibold mb-1">Product</label>
                     <select
                       value={formProduct}
                       onChange={(e) => setFormProduct(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
                       <option value="Adversoft">Adversoft</option>
                       <option value="Vehisoft">Vehisoft</option>
                       <option value="Versandry">Versandry</option>
                       <option value="LipaTim">LipaTim</option>
                       <option value="Melio RMS">Melio RMS</option>
+                      <option value="Multi-product">Multi-product</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Priority</label>
+                    <label className="block text-slate-300 font-semibold mb-1">Priority</label>
                     <select
                       value={formPriority}
                       onChange={(e) => setFormPriority(e.target.value as DailyTask["priority"])}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
                       <option value="HIGH">High (Urgent)</option>
                       <option value="MEDIUM">Medium</option>
@@ -526,35 +878,42 @@ export default function TasksPage() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Due Timing</label>
+                    <label className="block text-slate-300 font-semibold mb-1">Due Timing</label>
                     <input
                       type="text"
-                      required
-                      placeholder="e.g. Today 2:30 PM"
+                      placeholder="e.g. Today 11:30 AM"
                       value={formDue}
                       onChange={(e) => setFormDue(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Contact Person (Optional)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Contact Person (Optional)</label>
                   <input
                     type="text"
-                    placeholder="e.g. Chef Dennis (+254 711 902 345)"
+                    placeholder="e.g. James Mwangi (Apex Auto)"
                     value={formContact}
                     onChange={(e) => setFormContact(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
-                    className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shadow-md shadow-indigo-600/25"
+                    className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shadow-md shadow-indigo-600/25 flex items-center gap-1.5"
                   >
-                    {editingTask ? "Save Changes" : "Add to Daily Queue"}
+                    <CheckSquare className="h-3.5 w-3.5" />
+                    <span>{editingTask ? "Save Changes" : "Schedule Action"}</span>
                   </button>
                 </div>
               </form>
@@ -562,36 +921,37 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
+        {/* Modal: Delete Confirmation */}
         {deleteConfirmTask && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-            <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-rose-500/30 p-6 space-y-4 shadow-2xl">
+            <div className="liquid-glass max-w-sm w-full rounded-2xl p-6 space-y-4 shadow-2xl border border-rose-500/30">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-400 shrink-0">
+                <div className="h-9 w-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
                   <AlertCircle className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-white">Delete Daily Action?</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    This will remove <strong className="text-white">{deleteConfirmTask.title}</strong> from your daily operational queue.
+                  <h3 className="font-bold text-sm text-white">Delete Action?</h3>
+                  <p className="text-xs text-slate-400">
+                    Remove &quot;{deleteConfirmTask.title}&quot; from the daily queue?
                   </p>
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmTask(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDeleteTask(deleteConfirmTask.id)}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-md shadow-rose-600/25"
+                  className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition shadow-md shadow-rose-600/25 text-xs flex items-center gap-1.5"
                 >
-                  Confirm Delete
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
                 </button>
               </div>
             </div>

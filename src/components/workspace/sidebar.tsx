@@ -19,7 +19,13 @@ import {
   Layers,
   Sparkles,
   FileCheck2,
+  X,
 } from "lucide-react";
+
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
 
 interface NavItem {
   title: string;
@@ -122,31 +128,59 @@ const SECONDARY_ITEMS: NavItem[] = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r border-slate-800/80 bg-slate-950/80 backdrop-blur-md flex flex-col justify-between shrink-0 h-screen sticky top-0 selection:bg-indigo-500 selection:text-white">
-      {/* Brand Header */}
-      <div>
-        <div className="h-16 px-5 border-b border-slate-800/80 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <Layers className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm tracking-tight text-white group-hover:text-indigo-300 transition-colors">
-                  Versaly Core
-                </span>
-                <span className="text-[10px] font-semibold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.2 rounded">
-                  OS
-                </span>
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
+        />
+      )}
+
+      <aside
+        className={`fixed lg:sticky top-0 z-50 lg:z-auto h-screen w-64 border-r border-slate-800/80 bg-slate-950/95 lg:bg-slate-950/80 backdrop-blur-md flex flex-col justify-between shrink-0 transition-transform duration-300 ease-in-out selection:bg-indigo-500 selection:text-white ${
+          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        {/* Brand Header */}
+        <div>
+          <div className="h-16 px-5 border-b border-slate-800/80 flex items-center justify-between">
+            <Link
+              href="/dashboard"
+              onClick={onClose}
+              className="flex items-center gap-3 group"
+            >
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                <Layers className="h-4 w-4 text-white" />
               </div>
-              <p className="text-[11px] text-slate-500">Single Source of Truth</p>
-            </div>
-          </Link>
-        </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm tracking-tight text-white group-hover:text-indigo-300 transition-colors">
+                    Versaly Core
+                  </span>
+                  <span className="text-[10px] font-semibold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.2 rounded">
+                    OS
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">Single Source of Truth</p>
+              </div>
+            </Link>
+
+            {/* Mobile close button */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition"
+                title="Close Navigation"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
 
         {/* Primary Navigation */}
         <div className="px-3 py-4 space-y-1">
@@ -236,5 +270,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+  </>
   );
 }

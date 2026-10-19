@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Search, Plus, Bell, Sparkles } from "lucide-react";
+import { Search, Plus, Bell, Sparkles, Menu } from "lucide-react";
 import { NotificationCenter } from "./notification-center";
 
 interface HeaderProps {
   onOpenCommandPalette: () => void;
+  onOpenMobileNav?: () => void;
 }
 
-export function Header({ onOpenCommandPalette }: HeaderProps) {
+export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
   const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -32,12 +33,23 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
   }
 
   return (
-    <header className="h-16 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur sticky top-0 z-40 px-6 flex items-center justify-between">
-      {/* Breadcrumb & Path */}
+    <header className="h-16 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between">
+      {/* Left Area: Mobile Menu Toggle + Breadcrumb & Path */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-slate-500 font-medium">Versaly Core</span>
-        <span className="text-slate-700">/</span>
-        <h1 className="text-sm font-bold text-slate-100">{getBreadcrumbTitle(pathname)}</h1>
+        {onOpenMobileNav && (
+          <button
+            onClick={onOpenMobileNav}
+            className="lg:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
+            title="Open Menu"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
+        <span className="hidden sm:inline text-xs text-slate-500 font-medium">Versaly Core</span>
+        <span className="hidden sm:inline text-slate-700">/</span>
+        <h1 className="text-sm font-bold text-slate-100 truncate max-w-[150px] sm:max-w-xs">
+          {getBreadcrumbTitle(pathname)}
+        </h1>
       </div>
 
       {/* Center Command Bar Trigger */}

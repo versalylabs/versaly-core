@@ -263,19 +263,21 @@ export const WEEKLY_RHYTHM_TEMPLATES: Record<number, DayRhythm> = {
   },
 };
 
-// 4-Week Comprehensive Launch Plan (with physical tasks adapted to phone/email/WhatsApp outreach)
+export interface RoadmapDay {
+  id?: string;
+  date: string;
+  dayTitle: string;
+  morningFocus: string;
+  afternoonFocus: string;
+  keyDeliverables: string[];
+}
+
 export interface RoadmapWeek {
   weekNumber: number;
   dateRange: string;
   theme: string;
   targetsSummary: string;
-  days: {
-    date: string;
-    dayTitle: string;
-    morningFocus: string;
-    afternoonFocus: string;
-    keyDeliverables: string[];
-  }[];
+  days: RoadmapDay[];
 }
 
 export const FOUR_WEEK_LAUNCH_ROADMAP: RoadmapWeek[] = [
@@ -539,9 +541,12 @@ export function get5AMCycleKey(date: Date = new Date()): string {
 }
 
 // Helper: Get standard tasks for a specific date based on weekly rhythm
-export function getRhythmTasksForDate(date: Date = new Date()): DailyTask[] {
+export function getRhythmTasksForDate(
+  date: Date = new Date(),
+  templates: Record<number, DayRhythm> = WEEKLY_RHYTHM_TEMPLATES
+): DailyTask[] {
   const dayIndex = date.getDay(); // 0-6
-  const rhythm = WEEKLY_RHYTHM_TEMPLATES[dayIndex] || WEEKLY_RHYTHM_TEMPLATES[1];
+  const rhythm = templates[dayIndex] || templates[1] || WEEKLY_RHYTHM_TEMPLATES[1];
   
   return rhythm.tasks.map((t, idx) => ({
     id: `rhythm-${dayIndex}-${idx}-${Date.now()}`,

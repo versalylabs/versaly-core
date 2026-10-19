@@ -22,6 +22,7 @@ import {
   DIRECTORY_ORGANIZATIONS,
   DirectoryOrganization,
   DirectoryPerson,
+  DirectoryActivity,
 } from "@/data/directory-seed";
 
 const STORAGE_KEY = "versaly_directory_orgs";
@@ -133,6 +134,11 @@ export default function DirectoryPage() {
     });
   }, [allPeople, searchQuery]);
 
+  // Note Editing State
+  const [editingNote, setEditingNote] = useState<DirectoryActivity | null>(null);
+  const [editingNoteTitle, setEditingNoteTitle] = useState("");
+  const [editingNoteDesc, setEditingNoteDesc] = useState("");
+
   function handleAddNote(e: React.FormEvent) {
     e.preventDefault();
     if (!newNoteText.trim() || !selectedOrg) return;
@@ -154,6 +160,49 @@ export default function DirectoryPage() {
       )
     );
     setNewNoteText("");
+  }
+
+  function handleStartEditNote(act: DirectoryActivity) {
+    setEditingNote(act);
+    setEditingNoteTitle(act.title);
+    setEditingNoteDesc(act.description);
+  }
+
+  function handleSaveEditNote(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingNote || !selectedOrg || !editingNoteDesc.trim()) return;
+
+    setOrganizations((prev) =>
+      prev.map((o) =>
+        o.id === selectedOrg.id
+          ? {
+              ...o,
+              activities: o.activities.map((a) =>
+                a.id === editingNote.id
+                  ? {
+                      ...a,
+                      title: editingNoteTitle.trim() || a.title,
+                      description: editingNoteDesc.trim(),
+                    }
+                  : a
+              ),
+            }
+          : o
+      )
+    );
+
+    setEditingNote(null);
+  }
+
+  function handleDeleteNote(actId: string) {
+    if (!selectedOrg) return;
+    setOrganizations((prev) =>
+      prev.map((o) =>
+        o.id === selectedOrg.id
+          ? { ...o, activities: o.activities.filter((a) => a.id !== actId) }
+          : o
+      )
+    );
   }
 
   const openAddModal = () => {
@@ -620,20 +669,44 @@ export default function DirectoryPage() {
                 <div>
                   <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Activity className="h-3.5 w-3.5 text-indigo-400" />
-                    <span>Activity History ({selectedOrg.activities.length})</span>
+                    <span>Activity History & Notes ({selectedOrg.activities.length})</span>
                   </h4>
 
                   <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-                    {selectedOrg.activities.map((act) => (
-                      <div key={act.id} className="p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/80 text-xs">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-indigo-300">{act.title}</span>
-                          <span className="text-slate-500">{act.timestamp}</span>
+                    {selectedOrg.activities.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic p-2">No notes logged yet. Use the form below to post a note.</p>
+                    ) : (
+                      selectedOrg.activities.map((act) => (
+                        <div key={act.id} className="p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/80 text-xs group relative">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-bold text-indigo-300">{act.title}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500">{act.timestamp}</span>
+                              <div className="flex items-center gap-1 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEditNote(act)}
+                                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                                  title="Edit Note"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteNote(act.id)}
+                                  className="p-1 rounded text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 transition"
+                                  title="Delete Note"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-1 whitespace-pre-wrap">{act.description}</p>
+                          <div className="text-[10px] text-slate-500 mt-1">Logged by: {act.actor}</div>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-1">{act.description}</p>
-                        <div className="text-[10px] text-slate-500 mt-1">Logged by: {act.actor}</div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -883,6 +956,72 @@ export default function DirectoryPage() {
                   Confirm Delete
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Note Modal */}
+        {editingNote && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="liquid-glass max-w-md w-full rounded-2xl p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <Edit2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-white">Edit Activity Note</h3>
+                    <p className="text-[11px] text-slate-400">{selectedOrg?.name}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingNote(null)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditNote} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingNoteTitle}
+                    onChange={(e) => setEditingNoteTitle(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Note Content</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={editingNoteDesc}
+                    onChange={(e) => setEditingNoteDesc(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setEditingNote(null)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shadow-md shadow-indigo-600/25"
+                  >
+                    Save Note
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

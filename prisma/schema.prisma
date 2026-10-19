@@ -59,6 +59,15 @@ enum DealStage {
   LOST
 }
 
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  BLOCKED
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -129,23 +138,25 @@ model Product {
 }
 
 model Organization {
-  id          String           @id @default(cuid())
-  name        String
-  type        OrganizationType @default(PROSPECT)
-  industry    String?
-  website     String?
-  address     String?
-  city        String?          @default("Nairobi")
-  phone       String?
-  email       String?
-  taxPin      String?
-  status      String           @default("ACTIVE")
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id            String               @id @default(cuid())
+  name          String
+  type          OrganizationType     @default(PROSPECT)
+  industry      String?
+  website       String?
+  address       String?
+  city          String?              @default("Nairobi")
+  phone         String?
+  email         String?
+  taxPin        String?
+  status        String               @default("ACTIVE")
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
-  contacts    Person[]
-  activities  ActivityLog[]
-  deals       Deal[]
+  contacts      Person[]
+  activities    ActivityLog[]
+  deals         Deal[]
+  subscriptions ClientSubscription[]
+  projects      Project[]
 
   @@index([name])
   @@index([type])
@@ -217,6 +228,69 @@ model Deal {
   @@index([productSlug])
   @@index([stage])
   @@index([organizationId])
+}
+
+model ClientSubscription {
+  id                    String        @id @default(cuid())
+  organizationId        String
+  productSlug           String
+  mrrKES                Float         @default(0)
+  status                String        @default("ONBOARDING") // ONBOARDING, ACTIVE, PAST_DUE, CANCELLED
+  renewalDate           DateTime?
+  onboardingProgressPct Int           @default(0)
+  currentOnboardingStep Int           @default(1)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  organization          Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects              Project[]
+
+  @@index([organizationId])
+  @@index([productSlug])
+  @@index([status])
+}
+
+model Project {
+  id                   String              @id @default(cuid())
+  clientSubscriptionId String?
+  organizationId       String
+  name                 String
+  productSlug          String
+  status               ProjectStatus       @default(ACTIVE)
+  leadArchitect        String              @default("Ted (Ops)")
+  targetGoLiveDate     DateTime?
+  progressPct          Int                 @default(0)
+  hasBlocker           Boolean             @default(false)
+  blockerDescription   String?
+  blockerDays          Int?                @default(0)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  organization         Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientSubscription   ClientSubscription? @relation(fields: [clientSubscriptionId], references: [id], onDelete: SetNull)
+  tasks                ProjectTask[]
+
+  @@index([organizationId])
+  @@index([productSlug])
+  @@index([status])
+}
+
+model ProjectTask {
+  id          String    @id @default(cuid())
+  projectId   String
+  stepNumber  Int?
+  title       String
+  description String?
+  assignedTo  String?
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([completed])
 }
 
 model ActivityLog {

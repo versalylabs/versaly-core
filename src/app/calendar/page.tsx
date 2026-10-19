@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { INITIAL_CALENDAR_EVENTS, CalendarEvent } from "@/data/calendar-seed";
 
-const STORAGE_KEY = "versaly_business_calendar";
+const STORAGE_KEY = "versaly_business_calendar_v2";
 
 interface CalendarDay {
   dayNumber: number;

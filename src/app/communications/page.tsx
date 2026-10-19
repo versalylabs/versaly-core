@@ -21,7 +21,7 @@ import {
   CommunicationTemplate,
 } from "@/data/communications-seed";
 
-const STORAGE_KEY = "versaly_communications_inbox";
+const STORAGE_KEY = "versaly_communications_inbox_v2";
 
 export default function CommunicationsPage() {
   const [messages, setMessages] = useState<CommunicationMessage[]>(() => {

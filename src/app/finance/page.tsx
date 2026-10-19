@@ -30,7 +30,7 @@ export default function FinancePage() {
   const [invoices, setInvoices] = useState<InvoiceSeed[]>(INVOICES_SEED);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceSeed | null>(invoices[0]);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceSeed | null>(invoices[0] || null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -383,64 +383,70 @@ export default function FinancePage() {
               </div>
 
               <div className="space-y-2.5">
-                {filteredInvoices.map((inv) => {
-                  const isSelected = selectedInvoice?.id === inv.id;
-                  const statusBadge =
-                    inv.status === "PAID"
-                      ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                      : inv.status === "OVERDUE"
-                      ? "text-rose-400 bg-rose-500/10 border-rose-500/20"
-                      : "text-amber-400 bg-amber-500/10 border-amber-500/20";
+                {filteredInvoices.length === 0 ? (
+                  <div className="p-8 text-center rounded-xl bg-slate-900/40 border border-slate-800 text-xs text-slate-500">
+                    No invoices recorded yet. Click &quot;Generate New Invoice&quot; to create your first client bill.
+                  </div>
+                ) : (
+                  filteredInvoices.map((inv) => {
+                    const isSelected = selectedInvoice?.id === inv.id;
+                    const statusBadge =
+                      inv.status === "PAID"
+                        ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                        : inv.status === "OVERDUE"
+                        ? "text-rose-400 bg-rose-500/10 border-rose-500/20"
+                        : "text-amber-400 bg-amber-500/10 border-amber-500/20";
 
-                  return (
-                    <div
-                      key={inv.id}
-                      onClick={() => setSelectedInvoice(inv)}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-indigo-950/30 border-indigo-500/50 shadow-md ring-1 ring-indigo-500/30"
-                          : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-800/40"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-bold text-slate-200">
-                            {inv.invoiceNumber}
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                            {inv.productName}
+                    return (
+                      <div
+                        key={inv.id}
+                        onClick={() => setSelectedInvoice(inv)}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-indigo-950/30 border-indigo-500/50 shadow-md ring-1 ring-indigo-500/30"
+                            : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-800/40"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-slate-200">
+                              {inv.invoiceNumber}
+                            </span>
+                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                              {inv.productName}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded border ${statusBadge}`}
+                          >
+                            {inv.status}
                           </span>
                         </div>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border ${statusBadge}`}
-                        >
-                          {inv.status}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center justify-between text-xs mt-1">
-                        <span className="font-bold text-white">{inv.clientName}</span>
-                        <span className="font-mono font-extrabold text-slate-100">
-                          KES {inv.totalKES.toLocaleString()}
-                        </span>
-                      </div>
+                        <div className="flex items-center justify-between text-xs mt-1">
+                          <span className="font-bold text-white">{inv.clientName}</span>
+                          <span className="font-mono font-extrabold text-slate-100">
+                            KES {inv.totalKES.toLocaleString()}
+                          </span>
+                        </div>
 
-                      <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
-                        <span>Due: {inv.dueDate}</span>
-                        {inv.balanceKES > 0 ? (
-                          <span className="text-rose-400 font-medium">
-                            Balance: KES {inv.balanceKES.toLocaleString()}
-                          </span>
-                        ) : (
-                          <span className="text-emerald-400 font-medium flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Settled in Full
-                          </span>
-                        )}
+                        <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+                          <span>Due: {inv.dueDate}</span>
+                          {inv.balanceKES > 0 ? (
+                            <span className="text-rose-400 font-medium">
+                              Balance: KES {inv.balanceKES.toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="text-emerald-400 font-medium flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Settled in Full
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -631,50 +637,56 @@ export default function FinancePage() {
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4">
             <h2 className="text-sm font-bold text-white">Consolidated M-Pesa & Bank Transactions</h2>
             <div className="space-y-2.5">
-              {invoices
-                .flatMap((inv) =>
-                  inv.payments.map((p) => ({
-                    ...p,
-                    invoiceNumber: inv.invoiceNumber,
-                    clientName: inv.clientName,
-                    productName: inv.productName,
-                  }))
-                )
-                .map((tx, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-extrabold text-emerald-400">
-                          {tx.referenceNumber}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.2 rounded font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                          {tx.productName}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          for {tx.invoiceNumber}
-                        </span>
+              {invoices.flatMap((inv) => inv.payments).length === 0 ? (
+                <div className="p-8 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
+                  No payments received yet. Reconciled M-Pesa and bank transactions will appear here.
+                </div>
+              ) : (
+                invoices
+                  .flatMap((inv) =>
+                    inv.payments.map((p) => ({
+                      ...p,
+                      invoiceNumber: inv.invoiceNumber,
+                      clientName: inv.clientName,
+                      productName: inv.productName,
+                    }))
+                  )
+                  .map((tx, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-extrabold text-emerald-400">
+                            {tx.referenceNumber}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.2 rounded font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                            {tx.productName}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            for {tx.invoiceNumber}
+                          </span>
+                        </div>
+                        <div className="text-xs font-medium text-slate-200">
+                          {tx.clientName} ({tx.payerName})
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          Channel: {tx.channel.replace("_", " ")} • {tx.receivedAt}
+                        </div>
                       </div>
-                      <div className="text-xs font-medium text-slate-200">
-                        {tx.clientName} ({tx.payerName})
-                      </div>
-                      <div className="text-[10px] text-slate-500">
-                        Channel: {tx.channel.replace("_", " ")} • {tx.receivedAt}
-                      </div>
-                    </div>
 
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-white font-mono">
-                        KES {tx.amountKES.toLocaleString()}
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-white font-mono">
+                          KES {tx.amountKES.toLocaleString()}
+                        </div>
+                        <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          RECONCILED
+                        </span>
                       </div>
-                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        RECONCILED
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  ))
+              )}
             </div>
           </div>
         )}
@@ -695,33 +707,39 @@ export default function FinancePage() {
             </div>
 
             <div className="space-y-2.5">
-              {BUSINESS_EXPENSES_SEED.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60">
-                        {exp.category.replace("_", " ")}
-                      </span>
-                      {exp.productName && (
-                        <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                          {exp.productName}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs font-medium text-slate-200">{exp.description}</div>
-                    <div className="text-[11px] text-slate-500">
-                      Vendor: <span className="text-slate-400">{exp.vendor}</span> • {exp.expenseDate}
-                    </div>
-                  </div>
-
-                  <div className="text-right font-mono font-bold text-white text-sm">
-                    KES {exp.amountKES.toLocaleString()}
-                  </div>
+              {BUSINESS_EXPENSES_SEED.length === 0 ? (
+                <div className="p-8 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
+                  No business expenses logged yet. Operational expenses will appear here.
                 </div>
-              ))}
+              ) : (
+                BUSINESS_EXPENSES_SEED.map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60">
+                          {exp.category.replace("_", " ")}
+                        </span>
+                        {exp.productName && (
+                          <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                            {exp.productName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs font-medium text-slate-200">{exp.description}</div>
+                      <div className="text-[11px] text-slate-500">
+                        Vendor: <span className="text-slate-400">{exp.vendor}</span> • {exp.expenseDate}
+                      </div>
+                    </div>
+
+                    <div className="text-right font-mono font-bold text-white text-sm">
+                      KES {exp.amountKES.toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

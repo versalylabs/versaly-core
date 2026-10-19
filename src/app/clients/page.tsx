@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { INITIAL_CLIENTS, ClientItem } from "@/data/clients-projects-seed";
 
-const STORAGE_KEY = "versaly_clients_list";
+const STORAGE_KEY = "versaly_clients_list_v2";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<ClientItem[]>(() => {
@@ -56,7 +56,7 @@ export default function ClientsPage() {
         // ignore
       }
     }
-    return INITIAL_CLIENTS[0].id;
+    return INITIAL_CLIENTS[0]?.id || "";
   });
 
   // Modal States

@@ -19,7 +19,7 @@ import {
   ProjectTaskItem,
 } from "@/data/clients-projects-seed";
 
-const STORAGE_KEY = "versaly_projects_list";
+const STORAGE_KEY = "versaly_projects_list_v2";
 
 const DEFAULT_8_STEPS = [
   { stepNumber: 1, title: "Agreement & Payment Instructions", description: "Send MSA contract and setup fee Paybill invoice", assignedTo: "Ted" },
@@ -66,7 +66,7 @@ export default function ProjectsPage() {
         // ignore
       }
     }
-    return INITIAL_PROJECTS[0].id;
+    return INITIAL_PROJECTS[0]?.id || "";
   });
 
   // Modal States

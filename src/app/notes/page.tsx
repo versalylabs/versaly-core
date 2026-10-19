@@ -19,7 +19,7 @@ import {
 import { INITIAL_RANDOM_NOTES, RandomNote } from "@/data/notes-seed";
 import { INITIAL_PROJECTS, ImplementationProjectItem } from "@/data/clients-projects-seed";
 
-const STORAGE_KEY = "versaly_random_notes_list";
+const STORAGE_KEY = "versaly_random_notes_list_v2";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<RandomNote[]>(() => {
@@ -42,7 +42,7 @@ export default function NotesPage() {
   const [projects] = useState<ImplementationProjectItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("versaly_projects_list");
+        const stored = localStorage.getItem("versaly_projects_list_v2");
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -73,7 +73,7 @@ export default function NotesPage() {
         // ignore
       }
     }
-    return INITIAL_RANDOM_NOTES[0].id;
+    return INITIAL_RANDOM_NOTES[0]?.id || "";
   });
 
   // Modal State

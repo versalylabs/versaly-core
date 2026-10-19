@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { INITIAL_SUPPORT_TICKETS, SupportTicket } from "@/data/support-seed";
 
-const STORAGE_KEY = "versaly_support_tickets_list";
+const STORAGE_KEY = "versaly_support_tickets_list_v2";
 
 export default function SupportPage() {
   const [tickets, setTickets] = useState<SupportTicket[]>(() => {

@@ -31,7 +31,7 @@ import {
   INITIAL_PRODUCT_PERFORMANCE,
 } from "@/data/dashboard-metrics";
 
-const DASHBOARD_QUEUE_KEY = "versaly_dashboard_outreach_queue";
+const DASHBOARD_QUEUE_KEY = "versaly_dashboard_outreach_queue_v2";
 
 interface OutreachItem {
   id: string;
@@ -71,48 +71,8 @@ interface FridayScorecard {
   clientNeedsAttention: string;
 }
 
-const INITIAL_QUEUE: OutreachItem[] = [
-  {
-    id: "out-1",
-    business: "Apex Auto Garage (Industrial Area)",
-    contact: "James Mwangi (Owner)",
-    phone: "+254 721 345 678",
-    channel: "Walk-in Visit",
-    product: "Vehisoft",
-    status: "Scheduled 10:30 AM",
-    script: "Pitch mechanic parts leak & digital job card demo",
-  },
-  {
-    id: "out-2",
-    business: "Prime Clean Laundromat (Kilimani)",
-    contact: "Grace Wanjiku",
-    phone: "+254 722 990 123",
-    channel: "WhatsApp Message",
-    product: "Versandry",
-    status: "Due Now",
-    script: "Follow up on customer pickup WhatsApp alert demo",
-  },
-  {
-    id: "out-3",
-    business: "Urban Plate Bistro (Westlands)",
-    contact: "Chef Dennis",
-    phone: "+254 711 902 345",
-    channel: "Phone Call",
-    product: "Melio RMS",
-    status: "Scheduled 2:00 PM",
-    script: "Address Android tablet hardware objection & propose trial",
-  },
-  {
-    id: "out-4",
-    business: "Horizon Signcraft (CBD)",
-    contact: "Peter Ochieng",
-    phone: "+254 701 555 777",
-    channel: "Phone Call",
-    product: "Adversoft",
-    status: "Follow-up",
-    script: "Send 1-page executive sheet & proposal review",
-  },
-];
+const INITIAL_QUEUE: OutreachItem[] = [];
+
 
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState<"ALL" | "MONEY" | "SALES" | "PIPELINE" | "DELIVERY" | "PRODUCTS">("ALL");
@@ -164,30 +124,30 @@ export default function DashboardPage() {
   const [fridayScorecard, setFridayScorecard] = useState<FridayScorecard>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("versaly_friday_weekly_review");
+        const stored = localStorage.getItem("versaly_friday_weekly_review_v2");
         if (stored) return JSON.parse(stored) as FridayScorecard;
       } catch {
         // ignore
       }
     }
     return {
-      contactsMade: { adversoft: "40", vehisoft: "35", versandry: "38", lipatim: "25" },
-      checksDelivered: { adversoft: "8", vehisoft: "10", versandry: "12", lipatim: "5" },
-      demosHeld: { adversoft: "3", vehisoft: "4", versandry: "5", lipatim: "2" },
-      clientsSigned: { adversoft: "1", vehisoft: "1", versandry: "2", lipatim: "1" },
-      clientsLive: { adversoft: "1", vehisoft: "1", versandry: "2", lipatim: "0" },
-      problemsReported: { adversoft: "0", vehisoft: "1", versandry: "0", lipatim: "0" },
-      referralsReceived: { adversoft: "1", vehisoft: "2", versandry: "1", lipatim: "1" },
-      leadsStuckNotes: "Billboard operators are replying well to the free 48h live map. Car yards take longer to respond on WhatsApp, so we call them directly within 3 hours.",
-      oneChangeTest: "Test sending a 30-second mobile video walkthrough of digital vehicle intake instead of a PDF sales sheet.",
-      clientNeedsAttention: "Safari Auto Clinic: Complete inventory parts database CSV normalization today for smooth live cutover.",
+      contactsMade: { adversoft: "0", vehisoft: "0", versandry: "0", lipatim: "0" },
+      checksDelivered: { adversoft: "0", vehisoft: "0", versandry: "0", lipatim: "0" },
+      demosHeld: { adversoft: "0", vehisoft: "0", versandry: "0", lipatim: "0" },
+      clientsSigned: { adversoft: "0", vehisoft: "0", versandry: "0", lipatim: "0" },
+      clientsLive: { adversoft: "0", vehisoft: "0", versandry: "0", lipatim: "0" },
+      problemsReported: { adversoft: "0", vehisoft: "0", versandry: "0", lipatim: "0" },
+      referralsReceived: { adversoft: "0", vehisoft: "0", versandry: "0", lipatim: "0" },
+      leadsStuckNotes: "",
+      oneChangeTest: "",
+      clientNeedsAttention: "",
     };
   });
 
   // Save Friday Scorecard
   const handleSaveFridayScorecard = () => {
     try {
-      localStorage.setItem("versaly_friday_weekly_review", JSON.stringify(fridayScorecard));
+      localStorage.setItem("versaly_friday_weekly_review_v2", JSON.stringify(fridayScorecard));
       setToastMessage("✓ Friday Weekly Review Scorecard saved successfully!");
       setTimeout(() => setToastMessage(null), 3500);
     } catch {
@@ -225,82 +185,34 @@ export default function DashboardPage() {
     return products.filter((p) => p.slug === selectedProductFilter);
   }, [products, selectedProductFilter]);
 
-  const followUpsDue = [
-    {
-      id: "fu-1",
-      business: "Grandview Apartments",
-      contact: "Faith Kimani",
-      phone: "+254 701 333 222",
-      product: "LipaTim",
-      daysWaiting: 3,
-      context: "Sent LipaTim M-Pesa automated tenant billing proposal",
-    },
-    {
-      id: "fu-2",
-      business: "Turbo Precision Garage",
-      contact: "Alex Mutua",
-      phone: "+254 722 888 444",
-      product: "Vehisoft",
-      daysWaiting: 2,
-      context: "Demo completed; awaiting owner decision on setup fee",
-    },
-    {
-      id: "fu-3",
-      business: "Kilimani Clean Hub",
-      contact: "Mary Nduta",
-      phone: "+254 722 456 789",
-      product: "Versandry",
-      daysWaiting: 1,
-      context: "Requested demo on customer WhatsApp pickup notifications",
-    },
-    {
-      id: "fu-4",
-      business: "Skyline Billboards",
-      contact: "Peter Ochieng",
-      phone: "+254 701 555 777",
-      product: "Adversoft",
-      daysWaiting: 2,
-      context: "Reviewing draft KRA/eTIMS compliant proposal",
-    },
-  ];
+  const followUpsDue: {
+    id: string;
+    business: string;
+    contact: string;
+    phone: string;
+    product: string;
+    daysWaiting: number;
+    context: string;
+  }[] = [];
 
-  const onboardingBlockers = [
-    {
-      id: "blk-1",
-      client: "Safari Auto Clinic",
-      product: "Vehisoft",
-      blocker: "Waiting on client's Excel list of 240 inventory spare parts",
-      assignedTo: "Ted (Ops)",
-      daysBlocked: 2,
-    },
-    {
-      id: "blk-2",
-      client: "Express Wash Laundry",
-      product: "Versandry",
-      blocker: "Thermal barcode printer arriving tomorrow for driver dispatch",
-      assignedTo: "David (Field)",
-      daysBlocked: 1,
-    },
-  ];
+  const onboardingBlockers: {
+    id: string;
+    client: string;
+    product: string;
+    blocker: string;
+    assignedTo: string;
+    daysBlocked: number;
+  }[] = [];
 
-  const cashAlerts = [
-    {
-      id: "c-1",
-      client: "Mama Rocks Cafe (Melio RMS)",
-      amountKES: 18000,
-      type: "Monthly Subscription",
-      status: "Overdue by 3 days",
-      urgency: "high",
-    },
-    {
-      id: "c-2",
-      client: "Skyline Outdoor Media (Adversoft)",
-      amountKES: 45000,
-      type: "Setup Fee Invoice #1042",
-      status: "Due Friday via M-Pesa Paybill",
-      urgency: "medium",
-    },
-  ];
+  const cashAlerts: {
+    id: string;
+    client: string;
+    amountKES: number;
+    type: string;
+    status: string;
+    urgency: string;
+  }[] = [];
+
 
   // Open Log Modal
   const openLogModal = (item: OutreachItem) => {
@@ -1293,22 +1205,28 @@ export default function DashboardPage() {
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {cashAlerts.map((c) => (
-                    <div key={c.id} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold text-slate-200">{c.client}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{c.type}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-emerald-400 font-mono">KES {c.amountKES.toLocaleString()}</div>
-                        <div className={c.urgency === "high" ? "text-[10px] text-rose-400 font-bold" : "text-[10px] text-amber-400 font-medium"}>
-                          {c.status}
+                {cashAlerts.length === 0 ? (
+                  <div className="p-4 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
+                    No overdue receivables or pending cash alerts. All client invoices are in good standing.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {cashAlerts.map((c) => (
+                      <div key={c.id} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-slate-200">{c.client}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{c.type}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-emerald-400 font-mono">KES {c.amountKES.toLocaleString()}</div>
+                          <div className={c.urgency === "high" ? "text-[10px] text-rose-400 font-bold" : "text-[10px] text-amber-400 font-medium"}>
+                            {c.status}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1441,54 +1359,60 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="space-y-3">
-                    {queue.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-xs text-slate-200 group-hover:text-indigo-300 transition-colors">
-                              {item.business}
-                            </span>
-                            <span className="text-[10px] px-2 py-0.2 rounded font-medium bg-slate-800 text-indigo-300 border border-slate-700">
-                              {item.product}
-                            </span>
-                            {item.loggedAt && (
-                              <span className="text-[10px] px-2 py-0.2 rounded font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                Logged ({item.loggedAt})
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-3">
-                            <span>{item.contact}</span>
-                            <span>•</span>
-                            <span className="text-slate-300 font-medium">{item.channel}</span>
-                            {item.phone && (
-                              <>
-                                <span>•</span>
-                                <span className="font-mono text-slate-400">{item.phone}</span>
-                              </>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-1 italic line-clamp-1">
-                            &ldquo;{item.script}&rdquo;
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded">
-                            {item.status}
-                          </span>
-                          <button
-                            onClick={() => openLogModal(item)}
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-sm"
-                          >
-                            Log Action
-                          </button>
-                        </div>
+                    {queue.length === 0 ? (
+                      <div className="p-8 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
+                        No outreach actions queued today. Click &quot;+&quot; to queue a call, visit, or WhatsApp pitch.
                       </div>
-                    ))}
+                    ) : (
+                      queue.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-xs text-slate-200 group-hover:text-indigo-300 transition-colors">
+                                {item.business}
+                              </span>
+                              <span className="text-[10px] px-2 py-0.2 rounded font-medium bg-slate-800 text-indigo-300 border border-slate-700">
+                                {item.product}
+                              </span>
+                              {item.loggedAt && (
+                                <span className="text-[10px] px-2 py-0.2 rounded font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  Logged ({item.loggedAt})
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-3">
+                              <span>{item.contact}</span>
+                              <span>•</span>
+                              <span className="text-slate-300 font-medium">{item.channel}</span>
+                              {item.phone && (
+                                <>
+                                  <span>•</span>
+                                  <span className="font-mono text-slate-400">{item.phone}</span>
+                                </>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 italic line-clamp-1">
+                              &ldquo;{item.script}&rdquo;
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded">
+                              {item.status}
+                            </span>
+                            <button
+                              onClick={() => openLogModal(item)}
+                              className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-sm"
+                            >
+                              Log Action
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -1703,31 +1627,37 @@ export default function DashboardPage() {
                 </p>
 
                 <div className="space-y-2.5">
-                  {followUpsDue.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-200">{item.business}</span>
-                          <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.2 rounded border border-indigo-500/20">
-                            {item.product}
-                          </span>
-                          <span className="text-[10px] text-amber-400 font-mono">{item.daysWaiting}d waiting</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{item.context}</p>
-                      </div>
-
-                      <button
-                        onClick={() => openWhatsAppModal(item)}
-                        className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg transition shrink-0"
-                      >
-                        <MessageCircle className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">WhatsApp</span>
-                      </button>
+                  {followUpsDue.length === 0 ? (
+                    <div className="p-6 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
+                      All follow-ups completed. Great job staying on top of outreach!
                     </div>
-                  ))}
+                  ) : (
+                    followUpsDue.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-200">{item.business}</span>
+                            <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-1.5 py-0.2 rounded border border-indigo-500/20">
+                              {item.product}
+                            </span>
+                            <span className="text-[10px] text-amber-400 font-mono">{item.daysWaiting}d waiting</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{item.context}</p>
+                        </div>
+
+                        <button
+                          onClick={() => openWhatsAppModal(item)}
+                          className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg transition shrink-0"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">WhatsApp</span>
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -1890,19 +1820,25 @@ export default function DashboardPage() {
                 <p className="text-[11px] text-slate-400 mb-3">Clients waiting on technical setup, training, or data</p>
 
                 <div className="space-y-2.5">
-                  {onboardingBlockers.map((blk) => (
-                    <div key={blk.id} className="p-3 rounded-lg bg-rose-950/20 border border-rose-500/20 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-rose-200">{blk.client}</span>
-                        <span className="text-[10px] text-rose-400 font-mono">{blk.daysBlocked}d blocked</span>
-                      </div>
-                      <p className="text-[11px] text-slate-300 mt-1">{blk.blocker}</p>
-                      <div className="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
-                        <span>Product: {blk.product}</span>
-                        <span className="text-indigo-300 font-medium">Owner: {blk.assignedTo}</span>
-                      </div>
+                  {onboardingBlockers.length === 0 ? (
+                    <div className="p-6 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
+                      Zero onboarding blockers. All client deployments are moving forward smoothly.
                     </div>
-                  ))}
+                  ) : (
+                    onboardingBlockers.map((blk) => (
+                      <div key={blk.id} className="p-3 rounded-lg bg-rose-950/20 border border-rose-500/20 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-rose-200">{blk.client}</span>
+                          <span className="text-[10px] text-rose-400 font-mono">{blk.daysBlocked}d blocked</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 mt-1">{blk.blocker}</p>
+                        <div className="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
+                          <span>Product: {blk.product}</span>
+                          <span className="text-indigo-300 font-medium">Owner: {blk.assignedTo}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

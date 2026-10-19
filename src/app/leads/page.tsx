@@ -23,7 +23,7 @@ import {
 } from "@/data/leads-seed";
 import { renderTemplate } from "@/lib/templates";
 
-const DEALS_STORAGE_KEY = "versaly_active_deals";
+const DEALS_STORAGE_KEY = "versaly_active_deals_v2";
 
 const STAGE_CONFIG: { id: DealStageType; label: string; color: string; badge: string }[] = [
   { id: "CONTACTED", label: "First Contact", color: "border-indigo-500/30 bg-indigo-950/20", badge: "text-indigo-300" },

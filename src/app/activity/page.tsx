@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { INITIAL_ACTIVITY_TIMELINE, UniversalActivityItem } from "@/data/timeline-seed";
 
-const STORAGE_KEY = "versaly_universal_activity_timeline";
+const STORAGE_KEY = "versaly_universal_activity_timeline_v2";
 
 export default function ActivityPage() {
   const [activities, setActivities] = useState<UniversalActivityItem[]>(() => {

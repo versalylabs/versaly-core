@@ -22,7 +22,7 @@ export default function SupervisedActionPage() {
   const [mutations, setMutations] = useState<SupervisedMutation[]>(INITIAL_SUPERVISED_MUTATIONS);
   const [statusFilter, setStatusFilter] = useState<ActionFilter>("ALL");
   const [selectedMutation, setSelectedMutation] = useState<SupervisedMutation | null>(
-    INITIAL_SUPERVISED_MUTATIONS[0]
+    INITIAL_SUPERVISED_MUTATIONS[0] || null
   );
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedDraft, setCopiedDraft] = useState(false);
@@ -217,46 +217,52 @@ export default function SupervisedActionPage() {
             </div>
 
             <div className="space-y-2.5">
-              {filteredMutations.map((m) => {
-                const isSelected = selectedMutation?.id === m.id;
-                const statusColor =
-                  m.status === "APPROVED"
-                    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                    : m.status === "REJECTED"
-                    ? "text-slate-500 bg-slate-800/60 border-slate-700/60"
-                    : "text-amber-400 bg-amber-500/10 border-amber-500/20";
+              {filteredMutations.length === 0 ? (
+                <div className="p-8 text-center rounded-xl bg-slate-900/40 border border-slate-800 text-xs text-slate-500">
+                  No pending AI supervised actions. Click &quot;Prompt AI Action&quot; above to draft proposals, followup messages, or tasks.
+                </div>
+              ) : (
+                filteredMutations.map((m) => {
+                  const isSelected = selectedMutation?.id === m.id;
+                  const statusColor =
+                    m.status === "APPROVED"
+                      ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                      : m.status === "REJECTED"
+                      ? "text-slate-500 bg-slate-800/60 border-slate-700/60"
+                      : "text-amber-400 bg-amber-500/10 border-amber-500/20";
 
-                return (
-                  <div
-                    key={m.id}
-                    onClick={() => setSelectedMutation(m)}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-indigo-950/30 border-indigo-500/50 shadow-md ring-1 ring-indigo-500/30"
-                        : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-800/40"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        {m.type}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${statusColor}`}>
-                        {m.status.replace("_", " ")}
-                      </span>
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => setSelectedMutation(m)}
+                      className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-indigo-950/30 border-indigo-500/50 shadow-md ring-1 ring-indigo-500/30"
+                          : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-800/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          {m.type}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${statusColor}`}>
+                          {m.status.replace("_", " ")}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xs font-bold text-slate-100 line-clamp-1">{m.title}</h3>
+                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {m.rationale}
+                      </p>
+
+                      <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500">
+                        <span className="truncate max-w-[180px]">{m.targetEntity}</span>
+                        <span>{m.createdAt}</span>
+                      </div>
                     </div>
-
-                    <h3 className="text-xs font-bold text-slate-100 line-clamp-1">{m.title}</h3>
-                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                      {m.rationale}
-                    </p>
-
-                    <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500">
-                      <span className="truncate max-w-[180px]">{m.targetEntity}</span>
-                      <span>{m.createdAt}</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 

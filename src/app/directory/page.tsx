@@ -25,7 +25,7 @@ import {
   DirectoryActivity,
 } from "@/data/directory-seed";
 
-const STORAGE_KEY = "versaly_directory_orgs";
+const STORAGE_KEY = "versaly_directory_orgs_v2";
 
 export default function DirectoryPage() {
   const [organizations, setOrganizations] = useState<DirectoryOrganization[]>(() => {
@@ -62,7 +62,7 @@ export default function DirectoryPage() {
         // ignore
       }
     }
-    return DIRECTORY_ORGANIZATIONS[0].id;
+    return DIRECTORY_ORGANIZATIONS[0]?.id || "";
   });
   const [newNoteText, setNewNoteText] = useState("");
 

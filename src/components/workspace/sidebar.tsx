@@ -31,6 +31,12 @@ import {
   User,
   ShieldAlert,
   Cpu,
+  Megaphone,
+  Flame,
+  DollarSign,
+  Share2,
+  Palette,
+  TrendingUp,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -70,6 +76,17 @@ const CATEGORIES: NavCategory[] = [
       { title: "People & Network", href: "/people", icon: UserCheck, badge: "Graph" },
       { title: "Directory (Orgs)", href: "/directory", icon: Building2, badge: "12" },
       { title: "Omnichannel Inbox", href: "/communications", icon: Inbox, badge: "Comms" },
+    ],
+  },
+  {
+    name: "MARKETING",
+    items: [
+      { title: "Marketing Dashboard", href: "/marketing", icon: Megaphone, badge: "Growth" },
+      { title: "Campaigns", href: "/marketing/campaigns", icon: Flame, badge: "Active" },
+      { title: "Ad Spend", href: "/marketing/spend", icon: DollarSign, badge: "KES" },
+      { title: "Content & Social", href: "/marketing/content", icon: Share2, badge: "Daily", badgeVariant: "success" },
+      { title: "Creative & Assets", href: "/marketing/creatives", icon: Palette, badge: "Assets" },
+      { title: "Marketing Reports", href: "/marketing/reports", icon: TrendingUp, badge: "ROAS" },
     ],
   },
   {

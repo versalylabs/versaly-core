@@ -77,6 +77,7 @@ export function CommandPalette({
       { id: "nav-finance", category: "Navigation", title: "Finance & Invoices", subtitle: "M-Pesa reconciliation & MRR", href: "/finance", icon: CreditCard },
       { id: "nav-sop", category: "Navigation", title: "Knowledge Base & SOPs", subtitle: "Institutional playbooks & FAQs", href: "/knowledge", icon: BookOpen },
       { id: "nav-assistant", category: "Navigation", title: "AI Grounded Assistant", subtitle: "Query internal knowledge, blockers, and overdue balances", href: "/assistant", icon: Sparkles, badge: "RAG" },
+      { id: "nav-copilot", category: "Navigation", title: "AI Supervised Co-Pilot", subtitle: "Inspect proposed mutations, drafts, and human approvals", href: "/assistant/copilot", icon: Sparkles, badge: "Actions" },
       { id: "nav-settings", category: "Navigation", title: "Workspace Settings", subtitle: "Team, roles, company profile", href: "/settings", icon: Settings },
     ];
 

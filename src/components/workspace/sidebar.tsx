@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Layers,
   Sparkles,
+  FileCheck2,
 } from "lucide-react";
 
 interface NavItem {
@@ -93,6 +94,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: Sparkles,
     badge: "RAG",
     badgeVariant: "success",
+  },
+  {
+    title: "AI Supervised Co-Pilot",
+    href: "/assistant/copilot",
+    icon: FileCheck2,
+    badge: "Action",
+    badgeVariant: "warning",
   },
 ];
 

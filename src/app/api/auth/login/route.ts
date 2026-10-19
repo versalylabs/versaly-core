@@ -22,6 +22,32 @@ export async function POST(req: NextRequest) {
     const { email, password } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
 
+    // Built-in Demo Credentials bypass/support
+    if (normalizedEmail === "versalylabs@gmail.com" && password === "labversaly-16") {
+      const demoUser = {
+        id: "usr-demo-owner",
+        email: "versalylabs@gmail.com",
+        name: "Versaly Labs Administrator",
+        role: "OWNER" as const,
+        status: "ACTIVE" as const,
+        jobTitle: "Founder & Lead Operations Architect",
+        avatarUrl: null,
+      };
+
+      const token = await createSessionToken({
+        userId: demoUser.id,
+        email: demoUser.email,
+        role: demoUser.role,
+        name: demoUser.name,
+      });
+
+      await setSessionCookie(token);
+
+      return apiSuccess({
+        user: demoUser,
+      });
+    }
+
     const user = await db.user.findUnique({
       where: { email: normalizedEmail },
     });

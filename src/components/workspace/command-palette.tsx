@@ -20,6 +20,7 @@ import {
   ArrowRight,
   Flame,
   X,
+  Sparkles,
 } from "lucide-react";
 import { VERSALY_PRODUCTS } from "@/data/products-catalog";
 
@@ -75,6 +76,7 @@ export function CommandPalette({
       { id: "nav-docs", category: "Navigation", title: "Documents & Sales Sheets", subtitle: "1-pagers, proposals, KRA/eTIMS", href: "/documents", icon: FileText },
       { id: "nav-finance", category: "Navigation", title: "Finance & Invoices", subtitle: "M-Pesa reconciliation & MRR", href: "/finance", icon: CreditCard },
       { id: "nav-sop", category: "Navigation", title: "Knowledge Base & SOPs", subtitle: "Institutional playbooks & FAQs", href: "/knowledge", icon: BookOpen },
+      { id: "nav-assistant", category: "Navigation", title: "AI Grounded Assistant", subtitle: "Query internal knowledge, blockers, and overdue balances", href: "/assistant", icon: Sparkles, badge: "RAG" },
       { id: "nav-settings", category: "Navigation", title: "Workspace Settings", subtitle: "Team, roles, company profile", href: "/settings", icon: Settings },
     ];
 

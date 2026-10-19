@@ -23,6 +23,7 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
     if (path === "/documents") return "Documents & Sales Sheets";
     if (path === "/finance") return "Finance & Invoicing";
     if (path === "/knowledge") return "Knowledge Base & SOPs";
+    if (path === "/assistant") return "AI Grounded Assistant";
     if (path === "/settings") return "Workspace Settings";
     if (path === "/settings/automations") return "Operational Automations";
     if (path === "/settings/audit") return "Audit Log & System Events";

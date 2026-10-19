@@ -87,6 +87,13 @@ const NAV_ITEMS: NavItem[] = [
     href: "/knowledge",
     icon: BookOpen,
   },
+  {
+    title: "AI Grounded Assistant",
+    href: "/assistant",
+    icon: Sparkles,
+    badge: "RAG",
+    badgeVariant: "success",
+  },
 ];
 
 const SECONDARY_ITEMS: NavItem[] = [

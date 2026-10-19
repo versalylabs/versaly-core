@@ -372,3 +372,67 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
 }
+
+enum KnowledgeCategory {
+  SOP_PLAYBOOK
+  TECHNICAL_RUNBOOK
+  OBJECTION_PLAYBOOK
+  PRODUCT_FAQ
+  DECISION_RECORD
+  COMPETITOR_INTEL
+}
+
+model KnowledgeArticle {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  title           String
+  category        KnowledgeCategory @default(SOP_PLAYBOOK)
+  productSlug     String?           // Linked to Adversoft, Vehisoft, etc. or general
+  summary         String
+  contentMarkdown String
+  authorName      String            @default("Versaly Core Ops")
+  version         Int               @default(1)
+  tags            String[]
+  isVerified      Boolean           @default(true)
+  nextReviewDate  DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  checklists      SOPChecklist[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([productSlug])
+}
+
+model SOPChecklist {
+  id          String            @id @default(cuid())
+  articleId   String
+  stepOrder   Int
+  title       String
+  description String?
+  roleScope   String            @default("Technical Lead / Ops")
+  createdAt   DateTime          @default(now())
+
+  article     KnowledgeArticle  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([stepOrder])
+}
+
+model DecisionRecord {
+  id          String    @id @default(cuid())
+  adrNumber   Int       @unique
+  title       String
+  status      String    @default("ACCEPTED") // PROPOSED, ACCEPTED, SUPERSEDED, REJECTED
+  context     String
+  decision    String
+  consequences String
+  productSlug String?
+  decidedBy   String    @default("Ted (Founder)")
+  decidedAt   DateTime  @default(now())
+
+  @@index([adrNumber])
+  @@index([status])
+  @@index([productSlug])
+}

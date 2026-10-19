@@ -15,6 +15,20 @@ export interface CalendarEvent {
 
 export const INITIAL_CALENDAR_EVENTS: CalendarEvent[] = [
   {
+    id: "cal-0",
+    title: "Discovery demo call",
+    type: "Demo",
+    date: "2026-10-17",
+    time: "1:00 AM",
+    duration: "30 min",
+    entityName: "Khalwale Enterprises",
+    contactName: "Ted Khalwale",
+    location: "Google Meet",
+    status: "COMPLETED",
+    priority: "HIGH",
+    briefing: "Discovery demonstration for enterprise software deployment.",
+  },
+  {
     id: "cal-1",
     title: "Walk-in Garage Demo: Digital Job Cards & Parts Control",
     type: "Demo",

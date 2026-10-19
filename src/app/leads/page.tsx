@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
   Target,
@@ -12,6 +12,7 @@ import {
   X,
   ArrowRight,
   Check,
+  GripVertical,
 } from "lucide-react";
 import {
   INITIAL_RAW_LEADS,
@@ -21,6 +22,8 @@ import {
   DealStageType,
 } from "@/data/leads-seed";
 import { renderTemplate } from "@/lib/templates";
+
+const DEALS_STORAGE_KEY = "versaly_active_deals";
 
 const STAGE_CONFIG: { id: DealStageType; label: string; color: string; badge: string }[] = [
   { id: "CONTACTED", label: "First Contact", color: "border-indigo-500/30 bg-indigo-950/20", badge: "text-indigo-300" },
@@ -37,7 +40,32 @@ export default function LeadsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [rawLeads, setRawLeads] = useState<RawLeadItem[]>(INITIAL_RAW_LEADS);
-  const [deals, setDeals] = useState<ActiveDealItem[]>(INITIAL_ACTIVE_DEALS);
+  const [deals, setDeals] = useState<ActiveDealItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(DEALS_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_ACTIVE_DEALS;
+  });
+
+  const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<DealStageType | null>(null);
+
+  // Save to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEALS_STORAGE_KEY, JSON.stringify(deals));
+    } catch {
+      // ignore
+    }
+  }, [deals]);
 
   const [selectedDeal, setSelectedDeal] = useState<ActiveDealItem | null>(null);
   const [proposalModalDeal, setProposalModalDeal] = useState<ActiveDealItem | null>(null);
@@ -366,11 +394,37 @@ If the system is not live and operational within 14 days, the setup fee is 100% 
             {STAGE_CONFIG.map((stage) => {
               const stageDeals = filteredDeals.filter((d) => d.stage === stage.id);
               const stageTotal = stageDeals.reduce((sum, d) => sum + d.setupFeeKES, 0);
+              const isOverThisStage = dragOverStage === stage.id;
 
               return (
                 <div
                   key={stage.id}
-                  className={`p-3 rounded-2xl border ${stage.color} flex flex-col justify-between min-h-[450px]`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverStage !== stage.id) {
+                      setDragOverStage(stage.id);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget === e.target) {
+                      setDragOverStage(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const dealId = e.dataTransfer.getData("text/plain") || draggedDealId;
+                    if (dealId) {
+                      handleUpdateStage(dealId, stage.id);
+                    }
+                    setDragOverStage(null);
+                    setDraggedDealId(null);
+                  }}
+                  className={`p-3 rounded-2xl border transition-all duration-200 flex flex-col justify-between min-h-[460px] ${
+                    isOverThisStage
+                      ? "border-indigo-400 bg-indigo-950/40 ring-2 ring-indigo-500/50 shadow-xl scale-[1.01]"
+                      : stage.color
+                  }`}
                 >
                   <div>
                     {/* Stage Header */}
@@ -388,70 +442,97 @@ If the system is not live and operational within 14 days, the setup fee is 100% 
 
                     {/* Stage Cards */}
                     <div className="space-y-2.5">
-                      {stageDeals.map((deal) => (
-                        <div
-                          key={deal.id}
-                          onClick={() => setSelectedDeal(deal)}
-                          className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 cursor-pointer transition shadow-sm space-y-2 group"
-                        >
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-slate-100 group-hover:text-indigo-200 transition-colors">
-                                {deal.businessName}
-                              </span>
-                              <span className="text-[9px] font-semibold text-emerald-400 font-mono">
-                                {deal.winProbability}%
-                              </span>
+                      {stageDeals.length === 0 && (
+                        <div className="border border-dashed border-slate-800/80 rounded-xl p-4 text-center text-[10px] text-slate-500 select-none">
+                          Drag &amp; drop prospects here
+                        </div>
+                      )}
+
+                      {stageDeals.map((deal) => {
+                        const isBeingDragged = draggedDealId === deal.id;
+
+                        return (
+                          <div
+                            key={deal.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("text/plain", deal.id);
+                              e.dataTransfer.effectAllowed = "move";
+                              setDraggedDealId(deal.id);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedDealId(null);
+                              setDragOverStage(null);
+                            }}
+                            onClick={() => setSelectedDeal(deal)}
+                            className={`p-3 rounded-xl bg-slate-900/90 border cursor-grab active:cursor-grabbing transition shadow-sm space-y-2 group select-none ${
+                              isBeingDragged
+                                ? "opacity-40 border-indigo-500 ring-2 ring-indigo-500/40 scale-95"
+                                : "border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <GripVertical className="h-3 w-3 text-slate-600 group-hover:text-slate-400 shrink-0" />
+                                  <span className="text-xs font-bold text-slate-100 group-hover:text-indigo-200 transition-colors truncate">
+                                    {deal.businessName}
+                                  </span>
+                                </div>
+                                <span className="text-[9px] font-semibold text-emerald-400 font-mono shrink-0 ml-1">
+                                  {deal.winProbability}%
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-400 mt-0.5 pl-4.5">{deal.contactName}</div>
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">{deal.contactName}</div>
-                          </div>
 
-                          <div className="p-2 rounded-lg bg-slate-950/70 text-[10px] space-y-1">
-                            <div className="flex items-center justify-between text-slate-300">
-                              <span>Setup:</span>
-                              <span className="font-bold text-emerald-400 font-mono">
-                                KES {deal.setupFeeKES.toLocaleString()}
-                              </span>
+                            <div className="p-2 rounded-lg bg-slate-950/70 text-[10px] space-y-1">
+                              <div className="flex items-center justify-between text-slate-300">
+                                <span>Setup:</span>
+                                <span className="font-bold text-emerald-400 font-mono">
+                                  KES {deal.setupFeeKES.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-slate-400">
+                                <span>Monthly:</span>
+                                <span className="font-medium text-indigo-300 font-mono">
+                                  KES {deal.monthlyFeeKES.toLocaleString()}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center justify-between text-slate-400">
-                              <span>Monthly:</span>
-                              <span className="font-medium text-indigo-300 font-mono">
-                                KES {deal.monthlyFeeKES.toLocaleString()}
-                              </span>
+
+                            <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
+                              <span className="text-indigo-400 font-medium">{deal.productName}</span>
+                              <span className="text-slate-500">{deal.outreachChannel}</span>
                             </div>
-                          </div>
 
-                          <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
-                            <span className="text-indigo-400 font-medium">{deal.productName}</span>
-                            <span className="text-slate-500">{deal.outreachChannel}</span>
-                          </div>
-
-                          <div className="pt-1 flex items-center justify-between text-[10px]">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setProposalModalDeal(deal);
-                              }}
-                              className="text-indigo-400 hover:underline flex items-center gap-1 font-semibold"
-                            >
-                              <FileText className="h-3 w-3" />
-                              <span>Proposal</span>
-                            </button>
-
-                            {deal.stage !== "WON" && (
+                            <div className="pt-1 flex items-center justify-between text-[10px]">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleUpdateStage(deal.id, "WON");
+                                  setProposalModalDeal(deal);
                                 }}
-                                className="text-emerald-400 hover:underline font-semibold"
+                                className="text-indigo-400 hover:underline flex items-center gap-1 font-semibold"
                               >
-                                Mark Won
+                                <FileText className="h-3 w-3" />
+                                <span>Proposal</span>
                               </button>
-                            )}
+
+                              {deal.stage !== "WON" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateStage(deal.id, "WON");
+                                  }}
+                                  className="text-emerald-400 hover:underline font-semibold"
+                                >
+                                  Mark Won
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

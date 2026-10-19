@@ -87,7 +87,7 @@ export default function ProjectsPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-                Phase 5 Project Operations
+                Implementation Engine
               </span>
               <span className="text-xs text-slate-500">•</span>
               <span className="text-xs text-amber-400">Automated 8-Step Go-Live System</span>

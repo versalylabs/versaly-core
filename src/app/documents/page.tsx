@@ -88,7 +88,7 @@ export default function DocumentsPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-                Phase 3 Document & Storage Engine
+                Document Hub & Storage
               </span>
               <span className="text-xs text-slate-500">•</span>
               <span className="text-xs text-emerald-400">Reusable Template Engine</span>

@@ -223,7 +223,7 @@ If the system is not live and operational within 14 days, the setup fee is 100% 
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-                Phase 4 Commercial CRM
+                Commercial CRM
               </span>
               <span className="text-xs text-slate-500">•</span>
               <span className="text-xs text-emerald-400">Two-Tier Sales Lifecycle</span>
@@ -523,7 +523,7 @@ If the system is not live and operational within 14 days, the setup fee is 100% 
           </div>
         )}
 
-        {/* 1-Click Proposal Generator Modal (Connected to Phase 3 Template Engine) */}
+        {/* 1-Click Proposal Generator Modal (Connected to Document Template Engine) */}
         {proposalModalDeal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
             <div className="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-800 p-6 space-y-4 shadow-2xl">

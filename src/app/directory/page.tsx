@@ -88,7 +88,7 @@ export default function DirectoryPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-                Phase 2 Core Directory
+                Core Directory
               </span>
               <span className="text-xs text-slate-500">•</span>
               <span className="text-xs text-emerald-400">Relational Graph Active</span>

@@ -46,7 +46,7 @@ export default function ClientsPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-                Phase 5 Client Operations
+                Client Operations Hub
               </span>
               <span className="text-xs text-slate-500">•</span>
               <span className="text-xs text-emerald-400">360° Relationship Hub</span>

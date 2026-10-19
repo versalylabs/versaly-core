@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Search, Plus, Bell, Sparkles, Menu } from "lucide-react";
+import { Search, Plus, Bell, Sparkles, Menu, Sun, Moon } from "lucide-react";
 import { NotificationCenter } from "./notification-center";
+import { useTheme } from "@/context/theme-context";
 
 interface HeaderProps {
   onOpenCommandPalette: () => void;
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
 
   function getBreadcrumbTitle(path: string) {
@@ -88,6 +90,20 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
         </button>
 
         <div className="h-4 w-px bg-slate-800" />
+
+        {/* Light/Dark Theme Switcher */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-100 transition"
+          title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          aria-label="Toggle theme"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4 text-amber-400" />
+          ) : (
+            <Moon className="h-4 w-4 text-indigo-400" />
+          )}
+        </button>
 
         <div className="relative">
           <button

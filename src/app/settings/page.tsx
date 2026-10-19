@@ -1,9 +1,11 @@
 "use client";
 
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
-import { Shield, Building } from "lucide-react";
+import { Shield, Building, Sun, Moon, Palette } from "lucide-react";
+import { useTheme } from "@/context/theme-context";
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
 
   const teamMembers = [
     {
@@ -93,6 +95,69 @@ export default function SettingsPage() {
             <button className="w-full py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-sm">
               Save Profile Changes
             </button>
+          </div>
+
+          {/* Workspace Appearance / Theme Selector Card */}
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <Palette className="h-5 w-5 text-indigo-400" />
+              <h2 className="text-sm font-bold text-white">Appearance & Theme</h2>
+            </div>
+            <p className="text-xs text-slate-400">
+              Customize your Versaly Core interface mode. Changes persist across browser sessions.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between gap-3 ${
+                  theme === "dark"
+                    ? "bg-indigo-950/40 border-indigo-500 shadow-md ring-1 ring-indigo-500/50"
+                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                    <Moon className="h-4 w-4 text-indigo-400" />
+                  </div>
+                  {theme === "dark" && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white">Dark Mode</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">High-contrast slate dark theme</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between gap-3 ${
+                  theme === "light"
+                    ? "bg-indigo-950/40 border-indigo-500 shadow-md ring-1 ring-indigo-500/50"
+                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                    <Sun className="h-4 w-4 text-amber-400" />
+                  </div>
+                  {theme === "light" && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white">Light Mode</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Clean crisp daytime theme</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* Team Members & Role Assignment */}

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: versaly-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: versaly
+      POSTGRES_PASSWORD: versaly_dev_password
+      POSTGRES_DB: versaly_core
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U versaly -d versaly_core"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

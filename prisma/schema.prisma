@@ -1,0 +1,91 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  STAFF
+  READ_ONLY
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  INACTIVE
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String?
+  name         String
+  role         UserRole   @default(STAFF)
+  status       UserStatus @default(ACTIVE)
+  avatarUrl    String?
+  jobTitle     String?
+  phone        String?
+
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  sessions     Session[]
+  auditLogs    AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String   @default("Versaly")
+  legalName   String?
+  email       String?
+  phone       String?
+  website     String?
+  address     String?
+  timezone    String   @default("UTC")
+  currency    String   @default("USD")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

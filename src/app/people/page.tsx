@@ -97,16 +97,6 @@ export default function PeoplePage() {
     }
   }, [people]);
 
-  // Set default selected person when people list changes
-  useEffect(() => {
-    if (people.length > 0) {
-      if (!selectedPersonId || !people.some((p) => p.id === selectedPersonId)) {
-        setSelectedPersonId(people[0].id);
-      }
-    } else {
-      setSelectedPersonId("");
-    }
-  }, [people, selectedPersonId]);
 
   const selectedPerson = useMemo(() => {
     return people.find((p) => p.id === selectedPersonId) || people[0] || null;

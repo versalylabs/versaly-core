@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   LayoutDashboard,
+  Building2,
   Package,
   Target,
   Users,
@@ -65,6 +66,7 @@ export function CommandPalette({
   const baseCommands: CommandItem[] = useMemo(() => {
     const nav: CommandItem[] = [
       { id: "nav-dash", category: "Navigation", title: "Company Dashboard", subtitle: "Daily operating rhythm & scorecard", href: "/dashboard", icon: LayoutDashboard },
+      { id: "nav-dir", category: "Navigation", title: "Directory (Organizations & People)", subtitle: "Clients, prospects, partners, and contacts", href: "/directory", icon: Building2 },
       { id: "nav-prod", category: "Navigation", title: "Products & Pricing", subtitle: "All 5 core offerings", href: "/products", icon: Package },
       { id: "nav-leads", category: "Navigation", title: "Leads & Sales Pipeline", subtitle: "Raw pool and contacted deals", href: "/leads", icon: Target },
       { id: "nav-clients", category: "Navigation", title: "Clients & Renewals", subtitle: "Active subscriptions & contracts", href: "/clients", icon: Users },

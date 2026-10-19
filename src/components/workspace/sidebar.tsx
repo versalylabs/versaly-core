@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Building2,
   Package,
   Target,
   Users,
@@ -31,6 +32,12 @@ const NAV_ITEMS: NavItem[] = [
     title: "Company Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Directory (Orgs & People)",
+    href: "/directory",
+    icon: Building2,
+    badge: "12",
   },
   {
     title: "Products & Offers",

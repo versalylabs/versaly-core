@@ -22,6 +22,23 @@ enum UserStatus {
   INACTIVE
 }
 
+enum OrganizationType {
+  CLIENT
+  PROSPECT
+  PARTNER
+  VENDOR
+  OTHER
+}
+
+enum ContactType {
+  PRIMARY
+  DECISION_MAKER
+  BILLING
+  TECHNICAL
+  OPERATIONAL
+  OTHER
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -89,6 +106,72 @@ model Product {
 
   @@index([slug])
   @@index([status])
+}
+
+model Organization {
+  id          String           @id @default(cuid())
+  name        String
+  type        OrganizationType @default(PROSPECT)
+  industry    String?
+  website     String?
+  address     String?
+  city        String?          @default("Nairobi")
+  phone       String?
+  email       String?
+  taxPin      String?
+  status      String           @default("ACTIVE")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  contacts    Person[]
+  activities  ActivityLog[]
+
+  @@index([name])
+  @@index([type])
+  @@index([status])
+}
+
+model Person {
+  id             String        @id @default(cuid())
+  organizationId String?
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  whatsapp       String?
+  jobTitle       String?
+  contactType    ContactType   @default(PRIMARY)
+  isPrimary      Boolean       @default(false)
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  activities     ActivityLog[]
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([phone])
+}
+
+model ActivityLog {
+  id             String        @id @default(cuid())
+  organizationId String?
+  personId       String?
+  userId         String?
+  type           String        // CALL, VISIT, WHATSAPP, EMAIL, MEETING, NOTE, STATUS_CHANGE
+  title          String
+  description    String?
+  outcome        String?
+  nextActionDate DateTime?
+  createdAt      DateTime      @default(now())
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  person         Person?       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([personId])
+  @@index([createdAt])
 }
 
 model AuditLog {

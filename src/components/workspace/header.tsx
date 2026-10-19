@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Search, Plus, Bell, Sparkles } from "lucide-react";
+import { NotificationCenter } from "./notification-center";
 
 interface HeaderProps {
   onOpenCommandPalette: () => void;
@@ -9,6 +11,7 @@ interface HeaderProps {
 
 export function Header({ onOpenCommandPalette }: HeaderProps) {
   const pathname = usePathname();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   function getBreadcrumbTitle(path: string) {
     if (path === "/dashboard") return "Company Dashboard";
@@ -21,6 +24,7 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
     if (path === "/finance") return "Finance & Invoicing";
     if (path === "/knowledge") return "Knowledge Base & SOPs";
     if (path === "/settings") return "Workspace Settings";
+    if (path === "/settings/automations") return "Operational Automations";
     if (path === "/settings/audit") return "Audit Log & System Events";
     return "Workspace";
   }
@@ -52,7 +56,7 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
       </div>
 
       {/* Right Action Icons */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 relative">
         <button
           onClick={onOpenCommandPalette}
           className="inline-flex sm:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200"
@@ -71,13 +75,21 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
 
         <div className="h-4 w-px bg-slate-800" />
 
-        <button
-          className="relative p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition"
-          title="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-indigo-500" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition"
+            title="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+          </button>
+
+          <NotificationCenter
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+          />
+        </div>
 
         <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
           <Sparkles className="h-3 w-3" />
@@ -87,3 +99,4 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
     </header>
   );
 }
+

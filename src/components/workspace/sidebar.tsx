@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   ChevronRight,
   Layers,
+  Sparkles,
 } from "lucide-react";
 
 interface NavItem {
@@ -89,6 +90,11 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const SECONDARY_ITEMS: NavItem[] = [
+  {
+    title: "Automations & Rules",
+    href: "/settings/automations",
+    icon: Sparkles,
+  },
   {
     title: "Workspace Settings",
     href: "/settings",

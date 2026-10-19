@@ -85,6 +85,7 @@ model User {
 
   sessions     Session[]
   auditLogs    AuditLog[]
+  notifications Notification[]
 
   @@index([email])
   @@index([role])
@@ -543,4 +544,56 @@ model BusinessExpense {
   @@index([category])
   @@index([expenseDate])
   @@index([productSlug])
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AutomationTriggerType {
+  DEAL_WON
+  INVOICE_OVERDUE
+  PROJECT_BLOCKED
+  CLIENT_RENEWAL_30D
+  OUTREACH_TASK_DUE
+}
+
+model Notification {
+  id          String               @id @default(cuid())
+  userId      String?
+  title       String
+  message     String
+  priority    NotificationPriority @default(MEDIUM)
+  linkUrl     String?
+  entityType  String?              // DEAL, INVOICE, PROJECT, CLIENT
+  entityId    String?
+  isRead      Boolean              @default(false)
+  readAt      DateTime?
+  createdAt   DateTime             @default(now())
+
+  user        User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model AutomationRule {
+  id              String                @id @default(cuid())
+  name            String
+  triggerType     AutomationTriggerType
+  description     String
+  actionSummary   String
+  isActive        Boolean               @default(true)
+  lastTriggeredAt DateTime?
+  executionCount  Int                   @default(0)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([triggerType])
+  @@index([isActive])
 }

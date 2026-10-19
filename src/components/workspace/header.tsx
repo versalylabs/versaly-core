@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Plus, Bell, Sparkles, Menu, Sun, Moon } from "lucide-react";
 import { NotificationCenter } from "./notification-center";
@@ -18,10 +19,19 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
 
   function getBreadcrumbTitle(path: string) {
     if (path === "/dashboard") return "Company Dashboard";
-    if (path === "/products") return "Products & Pricing";
+    if (path === "/workspace") return "My Executive Workspace";
+    if (path === "/calendar") return "Business Calendar";
+    if (path === "/activity") return "Universal Activity Timeline";
+    if (path === "/communications") return "Omnichannel Communications";
+    if (path === "/people") return "People & Stakeholder Network";
+    if (path === "/support") return "Customer Support & SLA Tracking";
+    if (path === "/reports") return "Executive Insights & Reports";
+    if (path === "/attention") return "Attention Center & AI Approvals";
+    if (path === "/directory") return "Directory & Organizations";
+    if (path === "/products") return "Products & Offers";
     if (path === "/leads") return "Leads & Sales Pipeline";
     if (path === "/clients") return "Clients & Renewals";
-    if (path === "/projects") return "Projects & Implementations";
+    if (path === "/projects") return "Projects & Onboarding";
     if (path === "/tasks") return "Tasks & Daily Outreach";
     if (path === "/notes") return "Executive Notes & Scratchpad";
     if (path === "/documents") return "Documents & Sales Sheets";
@@ -31,6 +41,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
     if (path === "/assistant/copilot") return "AI Supervised Co-Pilot";
     if (path === "/settings") return "Workspace Settings";
     if (path === "/settings/automations") return "Operational Automations";
+    if (path === "/settings/integrations") return "Integrations & System Health";
     if (path === "/settings/audit") return "Audit Log & System Events";
     return "Workspace";
   }
@@ -63,7 +74,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
         >
           <div className="flex items-center gap-2">
             <Search className="h-3.5 w-3.5 text-slate-500" />
-            <span>Search products, leads, deals or SOPs...</span>
+            <span>Search people, clients, activities, deals or SOPs...</span>
           </div>
           <div className="flex items-center gap-1 font-mono text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400">
             <span>Ctrl</span>
@@ -81,6 +92,13 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
         >
           <Search className="h-4 w-4" />
         </button>
+
+        <Link
+          href="/workspace"
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
+        >
+          <span>My Cockpit</span>
+        </Link>
 
         <button
           onClick={onOpenCommandPalette}
@@ -110,7 +128,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition"
-            title="Notifications"
+            title="Notifications & Attention"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
@@ -122,12 +140,14 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
           />
         </div>
 
-        <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
+        <Link
+          href="/attention"
+          className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-medium transition"
+        >
           <Sparkles className="h-3 w-3" />
           <span>Core Hub Online</span>
-        </div>
+        </Link>
       </div>
     </header>
   );
 }
-

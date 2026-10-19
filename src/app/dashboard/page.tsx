@@ -44,6 +44,11 @@ interface OutreachItem {
   script: string;
   loggedAt?: string;
   logNotes?: string;
+  logOutcome?: string;
+  nextAction?: string;
+  nextActionDate?: string;
+  dealStage?: string;
+  isOptedOut?: boolean;
 }
 
 const INITIAL_QUEUE: OutreachItem[] = [
@@ -115,6 +120,10 @@ export default function DashboardPage() {
   const [loggingItem, setLoggingItem] = useState<OutreachItem | null>(null);
   const [logOutcome, setLogOutcome] = useState("Connected - Demo Booked");
   const [logNotes, setLogNotes] = useState("");
+  const [logNextAction, setLogNextAction] = useState("");
+  const [logNextActionDate, setLogNextActionDate] = useState("");
+  const [logDealStage, setLogDealStage] = useState("Demo Booked");
+  const [logOptOut, setLogOptOut] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // New Outreach Modal State
@@ -243,6 +252,10 @@ export default function DashboardPage() {
     setLoggingItem(item);
     setLogOutcome("Connected - Demo Booked");
     setLogNotes(`Pitch delivered to ${item.contact}. Follow-up scheduled.`);
+    setLogNextAction("Conduct 15-min software demo & workflow audit");
+    setLogNextActionDate("Tomorrow 10:30 AM");
+    setLogDealStage("Demo Booked");
+    setLogOptOut(false);
   };
 
   // Submit Log Modal
@@ -255,15 +268,20 @@ export default function DashboardPage() {
         item.id === loggingItem.id
           ? {
               ...item,
-              status: `Logged: ${logOutcome}`,
+              status: logOptOut ? "Opted Out (DNC)" : `Logged: ${logOutcome}`,
               loggedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               logNotes,
+              logOutcome,
+              nextAction: logNextAction,
+              nextActionDate: logNextActionDate,
+              dealStage: logDealStage,
+              isOptedOut: logOptOut,
             }
           : item
       )
     );
 
-    setToastMessage(`✓ Logged action for ${loggingItem.business}: "${logOutcome}"`);
+    setToastMessage(`✓ Logged outcome for ${loggingItem.business}: "${logOutcome}" (Stage: ${logDealStage})`);
     setLoggingItem(null);
     setTimeout(() => setToastMessage(null), 3500);
   };
@@ -356,6 +374,54 @@ export default function DashboardPage() {
               <Flame className="h-4 w-4" />
               <span>{isFridayReview ? "Exit Review Mode" : "Friday 20-Min Review"}</span>
             </button>
+          </div>
+        </div>
+
+        {/* Business Health Bar: 82/100 */}
+        <div className="liquid-glass p-4 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 border border-indigo-500/20">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center font-extrabold text-emerald-400 text-base shadow-sm">
+              82
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs text-white">Business Health Score</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  82 / 100 • Strong
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Composite index tracking 5 core operational vectors across the 4-week launch push.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap text-[11px]">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-slate-300 font-medium">Sales:</span>
+              <span className="text-emerald-400 font-semibold">🟢 88/100</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-slate-300 font-medium">Clients:</span>
+              <span className="text-emerald-400 font-semibold">🟢 90/100</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              <span className="text-slate-300 font-medium">Projects:</span>
+              <span className="text-amber-400 font-semibold">🟡 72/100</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              <span className="text-slate-300 font-medium">Cash:</span>
+              <span className="text-amber-400 font-semibold">🟡 75/100</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-slate-300 font-medium">Operations:</span>
+              <span className="text-emerald-400 font-semibold">🟢 85/100</span>
+            </div>
           </div>
         </div>
 
@@ -1412,15 +1478,15 @@ export default function DashboardPage() {
         {/* Modal: Log Action */}
         {loggingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-            <div className="liquid-glass max-w-md w-full rounded-2xl p-6 space-y-4 shadow-2xl">
+            <div className="liquid-glass max-w-lg w-full rounded-2xl p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
                     <PhoneCall className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-white">Log Outreach Outcome</h3>
-                    <p className="text-[11px] text-slate-400">{loggingItem.business}</p>
+                    <h3 className="font-bold text-sm text-white">Log Outreach Outcome & Next Step</h3>
+                    <p className="text-[11px] text-slate-400">{loggingItem.business} • {loggingItem.contact}</p>
                   </div>
                 </div>
                 <button
@@ -1432,33 +1498,95 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleConfirmLog} className="space-y-4 text-xs">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Outreach Outcome *</label>
-                  <select
-                    value={logOutcome}
-                    onChange={(e) => setLogOutcome(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="Connected - Demo Booked">Connected - Demo Booked</option>
-                    <option value="Proposal Requested">Proposal Requested</option>
-                    <option value="Follow-up Call Scheduled">Follow-up Call Scheduled</option>
-                    <option value="Left WhatsApp Audio/Video">Left WhatsApp Audio/Video</option>
-                    <option value="Gatekeeper Block / Call Back Later">Gatekeeper Block / Call Back Later</option>
-                    <option value="Not Interested (Disqualified)">Not Interested (Disqualified)</option>
-                  </select>
+              <form onSubmit={handleConfirmLog} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Outreach Outcome *</label>
+                    <select
+                      value={logOutcome}
+                      onChange={(e) => setLogOutcome(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="Connected - Demo Booked">Connected - Demo Booked</option>
+                      <option value="Connected - Follow-up Needed">Connected - Follow-up Needed</option>
+                      <option value="Left Message / Audio Note">Left Message / Audio Note</option>
+                      <option value="No Answer / Voicemail">No Answer / Voicemail</option>
+                      <option value="Gatekeeper Block / Call Back Later">Gatekeeper Block / Call Back Later</option>
+                      <option value="Not Interested (Disqualified)">Not Interested (Disqualified)</option>
+                      <option value="Wrong Contact / Disconnected">Wrong Contact / Disconnected</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Update Deal Stage</label>
+                    <select
+                      value={logDealStage}
+                      onChange={(e) => setLogDealStage(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="Contacted / Pitching">Contacted / Pitching</option>
+                      <option value="Demo Booked">Demo Booked</option>
+                      <option value="Proposal Sent">Proposal Sent</option>
+                      <option value="Negotiation">Negotiation</option>
+                      <option value="Won / Closed">Won / Closed</option>
+                      <option value="Disqualified">Disqualified</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Next Action</label>
+                    <input
+                      type="text"
+                      value={logNextAction}
+                      onChange={(e) => setLogNextAction(e.target.value)}
+                      placeholder="e.g. Conduct live demo, send contract..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">Next Action Date & Time</label>
+                    <input
+                      type="text"
+                      value={logNextActionDate}
+                      onChange={(e) => setLogNextActionDate(e.target.value)}
+                      placeholder="e.g. Tomorrow 10:30 AM"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Notes & Next Step Details</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Notes & Objections Discussed</label>
                   <textarea
-                    rows={3}
+                    rows={2}
                     required
                     value={logNotes}
                     onChange={(e) => setLogNotes(e.target.value)}
                     placeholder="Describe feedback, customer objection, or agreed meeting time..."
                     className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                   />
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="optOutToggle"
+                      checked={logOptOut}
+                      onChange={(e) => setLogOptOut(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-rose-600 focus:ring-rose-500"
+                    />
+                    <label htmlFor="optOutToggle" className="text-slate-300 font-medium cursor-pointer">
+                      Prospect requested not to be contacted (Do Not Contact / DNC)
+                    </label>
+                  </div>
+                  {logOptOut && (
+                    <span className="text-[10px] text-rose-400 font-semibold uppercase tracking-wider">
+                      Opted Out
+                    </span>
+                  )}
                 </div>
 
                 <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">

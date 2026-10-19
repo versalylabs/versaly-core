@@ -39,6 +39,17 @@ enum ContactType {
   OTHER
 }
 
+enum DocumentCategory {
+  CONTRACT
+  PROPOSAL
+  SALES_SHEET
+  ONBOARDING_KIT
+  TECHNICAL_SPEC
+  FINANCIAL
+  INTERNAL_SOP
+  OTHER
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -172,6 +183,47 @@ model ActivityLog {
   @@index([organizationId])
   @@index([personId])
   @@index([createdAt])
+}
+
+model Document {
+  id           String           @id @default(cuid())
+  title        String
+  fileName     String
+  fileSize     Int              @default(0)
+  mimeType     String           @default("application/pdf")
+  fileUrl      String
+  category     DocumentCategory @default(OTHER)
+  version      Int              @default(1)
+  tags         String[]
+  entityType   String?
+  entityId     String?
+  productSlug  String?
+  uploadedById String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([category])
+  @@index([entityType, entityId])
+  @@index([productSlug])
+}
+
+model DocumentTemplate {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  title       String
+  description String?
+  category    DocumentCategory @default(CONTRACT)
+  productSlug String?
+  version     Int              @default(1)
+  variables   String[]
+  content     String
+  isDefault   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([productSlug])
 }
 
 model AuditLog {

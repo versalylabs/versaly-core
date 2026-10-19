@@ -147,24 +147,45 @@ Versaly Core consists of five major layers.
 
 # 5. Core Modules
 
-## 5.1 Dashboard
+The system is built on **eight connected core databases**: Products, Leads, Sales Pipeline / Deals, Clients, Projects, Tasks, Documents & Templates, and Invoices / Finance.
 
-The default operational view.
+> **The Core Architectural Law**: One canonical record per business/client, with every lead, contact, project, document, task, and payment linked back to the product and person it belongs to.
 
-It should provide:
+---
 
-- Important metrics
-- Open tasks
-- Upcoming deadlines
-- Overdue work
-- Active projects
-- Pipeline summary
-- Recent activity
-- Items requiring attention
-- Relevant alerts
-- Quick actions
+## 5.0 Products Catalog & Offerings
 
-The dashboard should be configurable by role where appropriate.
+Products are first-class entities in Versaly Core. Every lead, deal, project, and document connects back to its specific product fit.
+
+Core Versaly Products:
+1. **Adversoft**: Specialized business advertising & signage operational management.
+2. **Vehisoft**: Automotive garage, workshop, and spare parts management solution.
+3. **Versandry**: Laundry and dry-cleaning enterprise workflow system.
+4. **LipaTim**: Micro-payments, M-Pesa collection, and customer billing engine.
+5. **Melio RMS**: Comprehensive restaurant, cafe, and hospitality management system.
+
+Each Product record stores:
+- Product identity, tiering, and active feature roadmap.
+- Standard pricing models, setup fees, and Monthly Recurring Revenue (MRR) tiers.
+- Active offers, founding-client guarantees, and incentive packages.
+- Linked sales assets (1-page product sales sheets, demo scripts, objection responses).
+- Connected leads, active client subscriptions, and implementation projects.
+
+---
+
+## 5.1 Dashboard & Daily Operating Rhythm
+
+The command dashboard gives leadership and sales a clear view of Versaly's health in a single screen, structured around a **Daily Operating Rhythm**:
+
+- **Today's Outreach**: Daily queue of calls, walk-in visits, emails, and WhatsApp messages.
+- **Follow-ups Due**: Prospects and deals requiring action that have not replied.
+- **Demos & Meetings**: Scheduled presentations for today and the current week.
+- **Onboarding Blockers**: Client projects stalled waiting on technical setup or client data.
+- **Cash & Receivables**: Unpaid invoices, M-Pesa collections, and upcoming monthly renewals.
+- **Weekly Scorecard**: Total outreach volume, demos booked, proposals sent, deals won, and revenue collected.
+- **Friday 20-Minute Review**: Dedicated mode to review conversion metrics, clear operational bottlenecks, and lock in next week's priorities.
+
+The dashboard is configurable by role where appropriate.
 
 ---
 
@@ -206,61 +227,59 @@ Avoid duplicating people when the same individual appears in multiple contexts.
 
 # 5.4 Organizations
 
-Organizations may represent:
+Organizations represent:
 
 - Prospective clients
-- Clients
+- Signed clients
 - Partners
 - Vendors
 - Other business relationships
 
-An organization can contain multiple contacts and multiple related records.
+An organization contains multiple contacts and serves as the anchor for all projects, deals, and invoices.
 
 ---
 
-# 5.5 Leads & CRM
+# 5.5 Leads & Sales Pipeline (Two-Tier Flow)
 
-The CRM should track the journey from prospect to client.
+To keep conversion metrics accurate and daily action lists clean, Versaly Core separates raw prospect lists from the active pipeline:
 
-Suggested lifecycle:
+### Tier 1: Raw Leads Pool (Uncontacted)
+- Uncontacted prospects imported from walk-in routes, referrals, scraped lists, or social inquiries.
+- Attributes: Business name, owner/contact, product fit (Adversoft, Vehisoft, Versandry, LipaTim, Melio RMS), location, source channel, phone, WhatsApp, email.
+- Kept outside the active deal pipeline until first contact occurs.
+
+### Tier 2: Active Sales Pipeline (Contacted to Won)
+Moved into the pipeline only after the first call, visit, or email:
 
 ```text
-New
-  ↓
-Qualified
-  ↓
-Contacted
-  ↓
-Opportunity
-  ↓
-Proposal
-  ↓
-Negotiation
-  ↓
-Won / Lost
+Contacted → Demo Booked → Proposal Sent → Negotiation → Won / Lost
 ```
 
-Each lead/opportunity should support:
-
-- Organization
-- Contact
-- Source
-- Owner
-- Status
-- Value
-- Probability
-- Expected close date
-- Notes
-- Activities
-- Follow-up date
-- Related documents
-- Related projects
+Each Deal tracks:
+- Assigned Product & Offering tier
+- Organization & Primary Contact
+- Deal value & Setup fee vs. MRR
+- Outreach channel (Walk-in, WhatsApp, Cold call, Referral, Email)
+- Win probability and target close date
+- Conversation log & next scheduled follow-up
+- Linked proposal and contract documents
 
 ---
 
-# 5.6 Clients
+# 5.6 Clients & Automated Onboarding
 
-A client record should provide a complete relationship view.
+A client record provides a 360-degree relationship view for every signed business.
+
+### Automated 8-Step Onboarding Engine
+When a deal transitions to `Won`, Versaly Core automatically generates an Onboarding Project linked to the client with standard operational tasks:
+1. **Agreement & Invoicing**: Send contract, setup fee invoice, and payment instructions.
+2. **Payment Confirmation**: Confirm M-Pesa / bank receipt before provisioning.
+3. **Data Collection**: Collect client business data, user lists, and access credentials.
+4. **Product Configuration**: Deploy and configure the selected product (e.g. Vehisoft or LipaTim).
+5. **Staff Training**: Conduct owner and operator training sessions.
+6. **First Live Transaction**: Supervise the client's first live transaction or report run.
+7. **First Measurable Win**: Confirm the client has unlocked tangible business value.
+8. **Review & Referral**: Schedule 30-day health check and request business referral.
 
 Example:
 

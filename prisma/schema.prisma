@@ -65,10 +65,30 @@ model Company {
   phone       String?
   website     String?
   address     String?
-  timezone    String   @default("UTC")
-  currency    String   @default("USD")
+  timezone    String   @default("Africa/Nairobi")
+  currency    String   @default("KES")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  tagline        String?
+  description    String?
+  category       String?
+  setupFee       Float    @default(0)
+  monthlyFee     Float    @default(0)
+  pricingModel   String?
+  guaranteeOffer String?
+  features       String[]
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([slug])
+  @@index([status])
 }
 
 model AuditLog {

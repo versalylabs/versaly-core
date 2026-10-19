@@ -157,6 +157,7 @@ model Organization {
   deals         Deal[]
   subscriptions ClientSubscription[]
   projects      Project[]
+  invoices      Invoice[]
 
   @@index([name])
   @@index([type])
@@ -434,5 +435,112 @@ model DecisionRecord {
 
   @@index([adrNumber])
   @@index([status])
+  @@index([productSlug])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  OVERDUE
+  PAID
+  VOID
+}
+
+enum PaymentChannel {
+  MPESA_PAYBILL
+  MPESA_TILL
+  MPESA_STK
+  BANK_TRANSFER
+  CASH
+  CHEQUE
+}
+
+enum ExpenseCategory {
+  INFRASTRUCTURE_CLOUD
+  HARDWARE_DEVICES
+  FIELD_CREW_TRANSPORT
+  OFFICE_UTILITIES
+  MARKETING_ADS
+  LEGAL_COMPLIANCE
+  SALARIES_COMMISSIONS
+}
+
+model Invoice {
+  id              String             @id @default(cuid())
+  invoiceNumber   String             @unique // e.g. INV-2026-0042
+  organizationId  String
+  clientName      String
+  productSlug     String
+  status          InvoiceStatus      @default(SENT)
+  subtotalKES     Float
+  taxKES          Float              @default(0) // eTIMS VAT 16% if applicable
+  totalKES        Float
+  amountPaidKES   Float              @default(0)
+  balanceKES      Float
+  dueDate         DateTime
+  issueDate       DateTime           @default(now())
+  paidAt          DateTime?
+  notes           String?
+  kraEtimsQrCode  String?            // Cryptographic fiscal string
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lineItems       InvoiceLineItem[]
+  payments        PaymentTransaction[]
+
+  @@index([organizationId])
+  @@index([productSlug])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model InvoiceLineItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  amountKES   Float
+  createdAt   DateTime @default(now())
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model PaymentTransaction {
+  id              String         @id @default(cuid())
+  invoiceId       String
+  referenceNumber String         // M-Pesa receipt code e.g. 'RJK84920KL' or Bank wire ref
+  channel         PaymentChannel @default(MPESA_PAYBILL)
+  amountKES       Float
+  payerName       String?
+  payerPhone      String?
+  receivedAt      DateTime       @default(now())
+  reconciled      Boolean        @default(true)
+  notes           String?
+  createdAt       DateTime       @default(now())
+
+  invoice         Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([referenceNumber])
+  @@index([channel])
+}
+
+model BusinessExpense {
+  id          String          @id @default(cuid())
+  category    ExpenseCategory @default(INFRASTRUCTURE_CLOUD)
+  description String
+  amountKES   Float
+  vendor      String
+  receiptUrl  String?
+  expenseDate DateTime        @default(now())
+  productSlug String?         // If directly attributable to a product (e.g. GPS trackers for Vehisoft)
+  createdAt   DateTime        @default(now())
+
+  @@index([category])
+  @@index([expenseDate])
   @@index([productSlug])
 }

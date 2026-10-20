@@ -30,6 +30,14 @@ import {
   INITIAL_CLIENT_DELIVERY_METRICS,
   INITIAL_PRODUCT_PERFORMANCE,
 } from "@/data/dashboard-metrics";
+import {
+  loadInvoicesFromStorage,
+  loadExpensesFromStorage,
+  loadSubscriptionsFromStorage,
+  computeFinanceSummary,
+  SETUP_FEE_LAUNCH_TARGET,
+  MRR_LAUNCH_TARGET,
+} from "@/lib/finance-store";
 
 const DASHBOARD_QUEUE_KEY = "versaly_dashboard_outreach_queue_v2";
 
@@ -168,7 +176,84 @@ export default function DashboardPage() {
     return queue.filter((q) => q.loggedAt).length;
   }, [queue]);
 
-  const money = INITIAL_MONEY_METRICS;
+  const [finInvoices, setFinInvoices] = useState(() =>
+    typeof window !== "undefined" ? loadInvoicesFromStorage() : []
+  );
+  const [finExpenses, setFinExpenses] = useState(() =>
+    typeof window !== "undefined" ? loadExpensesFromStorage() : []
+  );
+  const [finSubscriptions, setFinSubscriptions] = useState(() =>
+    typeof window !== "undefined" ? loadSubscriptionsFromStorage() : []
+  );
+
+  useEffect(() => {
+    setFinInvoices(loadInvoicesFromStorage());
+    setFinExpenses(loadExpensesFromStorage());
+    setFinSubscriptions(loadSubscriptionsFromStorage());
+
+    const handleSync = () => {
+      setFinInvoices(loadInvoicesFromStorage());
+      setFinExpenses(loadExpensesFromStorage());
+      setFinSubscriptions(loadSubscriptionsFromStorage());
+    };
+    window.addEventListener("focus", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("focus", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
+
+  const financeSummary = useMemo(() => {
+    return computeFinanceSummary(finInvoices, finExpenses, finSubscriptions);
+  }, [finInvoices, finExpenses, finSubscriptions]);
+
+  const money = useMemo(() => {
+    const totalCollected = financeSummary.totalCollected;
+    const colors: Record<string, string> = {
+      Vehisoft: "#6366f1",
+      Versandry: "#06b6d4",
+      Adversoft: "#8b5cf6",
+      LipaTim: "#10b981",
+      "Melio RMS": "#f59e0b",
+    };
+
+    const productRevenueBreakdown = [
+      "Vehisoft",
+      "Versandry",
+      "Adversoft",
+      "LipaTim",
+      "Melio RMS",
+    ].map((name) => {
+      const collected = financeSummary.productRevenue[name] || 0;
+      const mrr = financeSummary.productMRR[name] || 0;
+      const pct = totalCollected > 0 ? Math.round((collected / totalCollected) * 100) : 20;
+      return {
+        name,
+        collected,
+        mrr,
+        pct,
+        color: colors[name] || "#6366f1",
+      };
+    });
+
+    const activeCount = financeSummary.activeSubscriptionsCount || 1;
+    const avgRevenue = activeCount > 0 ? Math.round(totalCollected / activeCount) : 0;
+
+    return {
+      revenueCollectedThisMonth: financeSummary.totalCollected,
+      setupFeesCollected: financeSummary.setupFeesCollected,
+      setupFeeTarget: SETUP_FEE_LAUNCH_TARGET,
+      mrr: financeSummary.effectiveMRR,
+      mrrTarget: MRR_LAUNCH_TARGET,
+      arr: financeSummary.effectiveARR,
+      outstandingInvoicesKES: financeSummary.totalOutstanding,
+      overduePaymentsKES: financeSummary.totalOverdue,
+      overdueClientsCount: financeSummary.overdueCount,
+      averageRevenuePerClient: avgRevenue,
+      productRevenueBreakdown,
+    };
+  }, [financeSummary]);
   const sales = useMemo(() => {
     return {
       ...INITIAL_SALES_ACTIVITY_METRICS,

@@ -54,7 +54,12 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
     if (path === "/tasks") return "Tasks & Daily Outreach";
     if (path === "/notes") return "Executive Notes & Scratchpad";
     if (path === "/documents") return "Documents & Sales Sheets";
-    if (path === "/finance") return "Finance & Invoicing";
+    if (path === "/finance") return "Finance Dashboard";
+    if (path === "/finance/invoices") return "Invoices & Billing";
+    if (path === "/finance/payments") return "Payments & Receivables";
+    if (path === "/finance/expenses") return "Expenses & Payables";
+    if (path === "/finance/revenue") return "Revenue & Subscriptions";
+    if (path === "/finance/reports") return "Financial Reports & P&L";
     if (path === "/knowledge") return "Knowledge Base & SOPs";
     if (path === "/assistant") return "AI Grounded Assistant";
     if (path === "/assistant/copilot") return "AI Supervised Co-Pilot";

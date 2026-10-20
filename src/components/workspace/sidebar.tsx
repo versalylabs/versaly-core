@@ -38,6 +38,10 @@ import {
   Palette,
   TrendingUp,
   LogOut,
+  Wallet,
+  Receipt,
+  ArrowDownLeft,
+  TrendingDown,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -107,7 +111,12 @@ const CATEGORIES: NavCategory[] = [
   {
     name: "MONEY",
     items: [
-      { title: "Finance & Invoicing", href: "/finance", icon: CreditCard },
+      { title: "Finance Dashboard", href: "/finance", icon: Wallet },
+      { title: "Invoices", href: "/finance/invoices", icon: Receipt },
+      { title: "Payments & Receivables", href: "/finance/payments", icon: ArrowDownLeft },
+      { title: "Expenses", href: "/finance/expenses", icon: TrendingDown },
+      { title: "Revenue & Subscriptions", href: "/finance/revenue", icon: TrendingUp },
+      { title: "Financial Reports", href: "/finance/reports", icon: BarChart3 },
     ],
   },
   {

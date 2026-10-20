@@ -40,6 +40,8 @@ import {
   MRR_LAUNCH_TARGET,
 } from "@/lib/finance-store";
 import { useProductsCatalog, getProductColor } from "@/lib/products-store";
+import { INITIAL_CALENDAR_EVENTS } from "@/data/calendar-seed";
+import { WEEKLY_RHYTHM_TEMPLATES } from "@/data/tasks-data";
 
 const DASHBOARD_QUEUE_KEY = "versaly_dashboard_outreach_queue_v2";
 
@@ -108,6 +110,8 @@ function computeIntelligenceBriefing() {
     if (raw) {
       const tasks = JSON.parse(raw) as Array<{ completed?: boolean }>;
       activeTasks = tasks.filter((t) => !t.completed).length;
+    } else {
+      activeTasks = WEEKLY_RHYTHM_TEMPLATES[1]?.tasks?.length || 0;
     }
   } catch { /* ignore */ }
 
@@ -115,18 +119,16 @@ function computeIntelligenceBriefing() {
   let upcomingEvents = 0;
   try {
     const raw = localStorage.getItem("versaly_business_calendar_v2");
-    if (raw) {
-      const events = JSON.parse(raw) as Array<{ date?: string }>;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const next7 = new Date(today);
-      next7.setDate(next7.getDate() + 7);
-      upcomingEvents = events.filter((e) => {
-        if (!e.date) return false;
-        const d = new Date(e.date);
-        return d >= today && d <= next7;
-      }).length;
-    }
+    const sourceEvents = raw ? (JSON.parse(raw) as Array<{ date?: string }>) : INITIAL_CALENDAR_EVENTS;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const next7 = new Date(today);
+    next7.setDate(next7.getDate() + 7);
+    upcomingEvents = sourceEvents.filter((e) => {
+      if (!e.date) return false;
+      const d = new Date(e.date);
+      return d >= today && d <= next7;
+    }).length;
   } catch { /* ignore */ }
 
   // Active projects
@@ -627,28 +629,52 @@ export default function DashboardPage() {
                 )}
                 {intelligenceBriefing.uncontactedLeads === 0 && " Versaly has organized your priorities across all subsystems.\u201d"}
               </p>
-              <div className="flex items-center gap-2 mt-2.5 flex-wrap text-[10px]">
-                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
-                  📋 {intelligenceBriefing.activeTasks} Tasks
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
-                  📅 {intelligenceBriefing.upcomingEvents} Events
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
-                  🚀 {intelligenceBriefing.activeProjects} Projects
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
-                  💼 {intelligenceBriefing.openDeals} Pipeline
-                </span>
+              <div className="flex items-center gap-2 mt-3 flex-wrap text-[11px]">
+                <Link
+                  href="/tasks"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500/40 transition-colors"
+                >
+                  <span>📋</span>
+                  <span>{intelligenceBriefing.activeTasks} Tasks</span>
+                </Link>
+                <Link
+                  href="/calendar"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500/40 transition-colors"
+                >
+                  <span>📅</span>
+                  <span>{intelligenceBriefing.upcomingEvents} Events</span>
+                </Link>
+                <Link
+                  href="/projects"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500/40 transition-colors"
+                >
+                  <span>🚀</span>
+                  <span>{intelligenceBriefing.activeProjects} Projects</span>
+                </Link>
+                <Link
+                  href="/leads"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500/40 transition-colors"
+                >
+                  <span>💼</span>
+                  <span>{intelligenceBriefing.openDeals} Pipeline</span>
+                </Link>
                 {intelligenceBriefing.uncontactedLeads > 0 && (
-                  <span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                    ⚡ {intelligenceBriefing.uncontactedLeads} Cold Leads
-                  </span>
+                  <Link
+                    href="/leads"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:border-amber-500/40 transition-colors"
+                  >
+                    <span>⚡</span>
+                    <span>{intelligenceBriefing.uncontactedLeads} Cold Leads</span>
+                  </Link>
                 )}
                 {intelligenceBriefing.overdueInvoices > 0 && (
-                  <span className="px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                    ⚠️ {intelligenceBriefing.overdueInvoices} Overdue
-                  </span>
+                  <Link
+                    href="/finance/invoices"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:border-rose-500/40 transition-colors"
+                  >
+                    <span>⚠️</span>
+                    <span>{intelligenceBriefing.overdueInvoices} Overdue</span>
+                  </Link>
                 )}
               </div>
             </div>

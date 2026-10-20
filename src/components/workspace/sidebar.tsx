@@ -48,8 +48,6 @@ interface NavItem {
   title: string;
   href: string;
   icon: typeof LayoutDashboard;
-  badge?: string;
-  badgeVariant?: "default" | "success" | "warning";
 }
 
 interface NavCategory {
@@ -62,39 +60,39 @@ const CATEGORIES: NavCategory[] = [
     name: "OPERATIONS",
     items: [
       { title: "Company Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { title: "My Workspace", href: "/workspace", icon: User, badge: "Cockpit" },
-      { title: "Daily Tasks & Outreach", href: "/tasks", icon: CheckSquare, badge: "9 due", badgeVariant: "warning" },
-      { title: "Business Calendar", href: "/calendar", icon: Clock, badge: "Agenda" },
-      { title: "Activity Timeline", href: "/activity", icon: Clock, badge: "Live", badgeVariant: "success" },
+      { title: "My Workspace", href: "/workspace", icon: User },
+      { title: "Daily Tasks & Outreach", href: "/tasks", icon: CheckSquare },
+      { title: "Business Calendar", href: "/calendar", icon: Clock },
+      { title: "Activity Timeline", href: "/activity", icon: Clock },
     ],
   },
   {
     name: "RELATIONSHIPS",
     items: [
-      { title: "Leads & Pipeline", href: "/leads", icon: Target, badge: "51" },
-      { title: "Clients & Renewals", href: "/clients", icon: Users, badge: "34" },
-      { title: "People & Network", href: "/people", icon: UserCheck, badge: "Graph" },
-      { title: "Directory (Orgs)", href: "/directory", icon: Building2, badge: "12" },
-      { title: "Omnichannel Inbox", href: "/communications", icon: Inbox, badge: "Comms" },
+      { title: "Leads & Pipeline", href: "/leads", icon: Target },
+      { title: "Clients & Renewals", href: "/clients", icon: Users },
+      { title: "People & Network", href: "/people", icon: UserCheck },
+      { title: "Directory (Orgs)", href: "/directory", icon: Building2 },
+      { title: "Omnichannel Inbox", href: "/communications", icon: Inbox },
     ],
   },
   {
     name: "MARKETING",
     items: [
-      { title: "Marketing Dashboard", href: "/marketing", icon: Megaphone, badge: "Growth" },
-      { title: "Campaigns", href: "/marketing/campaigns", icon: Flame, badge: "Active" },
-      { title: "Ad Spend", href: "/marketing/spend", icon: DollarSign, badge: "KES" },
-      { title: "Content & Social", href: "/marketing/content", icon: Share2, badge: "Daily", badgeVariant: "success" },
-      { title: "Creative & Assets", href: "/marketing/creatives", icon: Palette, badge: "Assets" },
-      { title: "Marketing Reports", href: "/marketing/reports", icon: TrendingUp, badge: "ROAS" },
+      { title: "Marketing Dashboard", href: "/marketing", icon: Megaphone },
+      { title: "Campaigns", href: "/marketing/campaigns", icon: Flame },
+      { title: "Ad Spend", href: "/marketing/spend", icon: DollarSign },
+      { title: "Content & Social", href: "/marketing/content", icon: Share2 },
+      { title: "Creative & Assets", href: "/marketing/creatives", icon: Palette },
+      { title: "Marketing Reports", href: "/marketing/reports", icon: TrendingUp },
     ],
   },
   {
     name: "DELIVERY",
     items: [
-      { title: "Projects & Onboarding", href: "/projects", icon: FolderGit2, badge: "6 active", badgeVariant: "warning" },
-      { title: "Products & Offers", href: "/products", icon: Package, badge: "5" },
-      { title: "Support & Issues", href: "/support", icon: LifeBuoy, badge: "SLA" },
+      { title: "Projects & Onboarding", href: "/projects", icon: FolderGit2 },
+      { title: "Products & Offers", href: "/products", icon: Package },
+      { title: "Support & Issues", href: "/support", icon: LifeBuoy },
     ],
   },
   {
@@ -102,7 +100,7 @@ const CATEGORIES: NavCategory[] = [
     items: [
       { title: "Documents & Templates", href: "/documents", icon: FileText },
       { title: "Knowledge Base & SOPs", href: "/knowledge", icon: BookOpen },
-      { title: "Notes & Scratchpad", href: "/notes", icon: StickyNote, badge: "Live", badgeVariant: "success" },
+      { title: "Notes & Scratchpad", href: "/notes", icon: StickyNote },
     ],
   },
   {
@@ -114,10 +112,10 @@ const CATEGORIES: NavCategory[] = [
   {
     name: "INTELLIGENCE",
     items: [
-      { title: "AI Grounded Assistant", href: "/assistant", icon: Sparkles, badge: "RAG", badgeVariant: "success" },
-      { title: "AI Supervised Co-Pilot", href: "/assistant/copilot", icon: FileCheck2, badge: "Action", badgeVariant: "warning" },
-      { title: "Insights & Reports", href: "/reports", icon: BarChart3, badge: "Analytics" },
-      { title: "Attention & Approvals", href: "/attention", icon: ShieldAlert, badge: "Review", badgeVariant: "warning" },
+      { title: "AI Grounded Assistant", href: "/assistant", icon: Sparkles },
+      { title: "AI Supervised Co-Pilot", href: "/assistant/copilot", icon: FileCheck2 },
+      { title: "Insights & Reports", href: "/reports", icon: BarChart3 },
+      { title: "Attention & Approvals", href: "/attention", icon: ShieldAlert },
     ],
   },
   {
@@ -125,7 +123,7 @@ const CATEGORIES: NavCategory[] = [
     items: [
       { title: "Workspace Settings", href: "/settings", icon: Settings },
       { title: "Automations & Rules", href: "/settings/automations", icon: Sparkles },
-      { title: "Integrations & Health", href: "/settings/integrations", icon: Cpu, badge: "Live", badgeVariant: "success" },
+      { title: "Integrations & Health", href: "/settings/integrations", icon: Cpu },
       { title: "Audit Log & Events", href: "/settings/audit", icon: ShieldCheck },
     ],
   },
@@ -246,20 +244,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                             />
                             <span className="truncate">{item.title}</span>
                           </div>
-
-                          {item.badge && (
-                            <span
-                              className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ml-1.5 ${
-                                item.badgeVariant === "warning"
-                                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                  : item.badgeVariant === "success"
-                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                  : "bg-slate-800 text-slate-400"
-                              }`}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
                         </Link>
                       );
                     })}

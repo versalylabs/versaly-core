@@ -17,6 +17,9 @@ import {
   X,
   ArrowRight,
   Copy,
+  CheckCircle2,
+  Circle,
+  Check,
 } from "lucide-react";
 import {
   INITIAL_SOCIAL_POSTS,
@@ -56,6 +59,49 @@ const PRODUCTS: MarketingProduct[] = [
   "Versaly Core / Brand",
 ];
 
+const STREAK_STORAGE_KEY = "versaly_marketing_streak_days_v2";
+
+interface WeekDayItem {
+  dayShort: string;
+  dayName: string;
+  dateStr: string;
+  dayNum: number;
+  isToday: boolean;
+  isPast: boolean;
+  isFuture: boolean;
+  isSunday: boolean;
+}
+
+function getCurrentWeekDays(): WeekDayItem[] {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 is Sun, 1 is Mon...
+  const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + distanceToMonday);
+
+  const daysShort = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const daysFull = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  return daysShort.map((dayShort, idx) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + idx);
+    const dateStr = d.toISOString().split("T")[0];
+    const isToday = d.toDateString() === now.toDateString();
+    const isPast = d < now && !isToday;
+    const isFuture = d > now && !isToday;
+    return {
+      dayShort,
+      dayName: daysFull[idx],
+      dateStr,
+      dayNum: d.getDate(),
+      isToday,
+      isPast,
+      isFuture,
+      isSunday: idx === 6,
+    };
+  });
+}
+
 export default function MarketingContentPage() {
   const [posts, setPosts] = useState<SocialPost[]>(() => {
     if (typeof window !== "undefined") {
@@ -71,6 +117,59 @@ export default function MarketingContentPage() {
     }
     return INITIAL_SOCIAL_POSTS;
   });
+
+  // Week days & dynamic interactive streak tracker
+  const [weekDays, setWeekDays] = useState<WeekDayItem[]>([]);
+  const [tickedDates, setTickedDates] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(STREAK_STORAGE_KEY);
+        if (stored !== null) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === "object") return parsed;
+        }
+      } catch {}
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    setWeekDays(getCurrentWeekDays());
+  }, []);
+
+  const toggleDayTicked = (dateStr: string) => {
+    setTickedDates((prev) => {
+      const isCurrentlyPosted = prev[dateStr] !== undefined
+        ? prev[dateStr]
+        : posts.some((p) => p.date === dateStr && p.status === "Published");
+      const next = { ...prev, [dateStr]: !isCurrentlyPosted };
+      try {
+        localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const isDayPosted = (d: WeekDayItem) => {
+    if (tickedDates[d.dateStr] !== undefined) {
+      return tickedDates[d.dateStr];
+    }
+    return posts.some((p) => p.date === d.dateStr && p.status === "Published");
+  };
+
+  const completedDaysCount = useMemo(() => {
+    if (!weekDays.length) return 0;
+    return weekDays.filter((d) => isDayPosted(d)).length;
+  }, [weekDays, tickedDates, posts]);
+
+  const todayItem = useMemo(() => {
+    return weekDays.find((d) => d.isToday) || null;
+  }, [weekDays]);
+
+  const isTodayPosted = useMemo(() => {
+    if (!todayItem) return false;
+    return isDayPosted(todayItem);
+  }, [todayItem, tickedDates, posts]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<string>("ALL");
@@ -310,42 +409,89 @@ export default function MarketingContentPage() {
                   <Flame className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Daily Publishing Streak: 6 Days</h3>
-                  <p className="text-[11px] text-slate-400">Target: 1 high-value piece posted every morning</p>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <span>Daily Publishing Streak:</span>
+                    <span className="text-sky-400 font-mono">
+                      {completedDaysCount} {completedDaysCount === 1 ? "Day" : "Days"}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {todayItem ? (
+                      <>
+                        Today is <span className="font-semibold text-slate-200">{todayItem.dayName}</span> • Click any day to tick if posted
+                      </>
+                    ) : (
+                      "Target: 1 high-value piece posted every morning"
+                    )}
+                  </p>
                 </div>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                On Track
-              </span>
+
+              <div>
+                {isTodayPosted ? (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>Posted Today</span>
+                  </span>
+                ) : todayItem?.isSunday ? (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                    Sunday Rest
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 animate-pulse">
+                    <Circle className="h-2.5 w-2.5" />
+                    <span>Due Today</span>
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-7 gap-1 pt-2 border-t border-slate-800/80 text-center">
-              {[
-                { day: "Mon", status: "Done" },
-                { day: "Tue", status: "Done" },
-                { day: "Wed", status: "Done" },
-                { day: "Thu", status: "Today" },
-                { day: "Fri", status: "Scheduled" },
-                { day: "Sat", status: "Scheduled" },
-                { day: "Sun", status: "Rest" },
-              ].map((d) => (
-                <div key={d.day} className="p-1.5 rounded-lg bg-slate-900/60 border border-slate-800/80">
-                  <div className="text-[9px] text-slate-400 font-semibold">{d.day}</div>
-                  <div
-                    className={`text-[10px] font-bold mt-0.5 ${
-                      d.status === "Done"
-                        ? "text-emerald-400"
-                        : d.status === "Today"
-                        ? "text-sky-400"
-                        : d.status === "Scheduled"
-                        ? "text-amber-400"
-                        : "text-slate-500"
+              {weekDays.map((d) => {
+                const posted = isDayPosted(d);
+                return (
+                  <button
+                    key={d.dateStr}
+                    type="button"
+                    onClick={() => toggleDayTicked(d.dateStr)}
+                    title={`Click to toggle posted status for ${d.dayName} (${d.dateStr})`}
+                    className={`p-1.5 rounded-lg border transition text-center cursor-pointer select-none group ${
+                      d.isToday
+                        ? "bg-sky-950/50 border-sky-500 ring-1 ring-sky-500/40 shadow-sm shadow-sky-500/10"
+                        : "bg-slate-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900"
                     }`}
                   >
-                    {d.status}
-                  </div>
-                </div>
-              ))}
+                    <div className="flex items-center justify-center gap-1">
+                      <span className={`text-[10px] font-bold ${d.isToday ? "text-sky-300 font-extrabold" : "text-slate-400"}`}>
+                        {d.dayShort}
+                      </span>
+                      <span className={`text-[9px] font-mono ${d.isToday ? "text-sky-400" : "text-slate-500"}`}>
+                        {d.dayNum}
+                      </span>
+                    </div>
+
+                    <div className="mt-1 flex items-center justify-center">
+                      {posted ? (
+                        <div className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-400">
+                          <CheckCircle2 className="h-3 w-3 shrink-0" />
+                          <span>Done</span>
+                        </div>
+                      ) : d.isToday ? (
+                        <div className="flex items-center gap-0.5 text-[10px] font-bold text-sky-400 group-hover:text-sky-300">
+                          <Circle className="h-2.5 w-2.5 shrink-0" />
+                          <span>Today</span>
+                        </div>
+                      ) : d.isSunday ? (
+                        <span className="text-[10px] font-semibold text-slate-500">Rest</span>
+                      ) : d.isPast ? (
+                        <span className="text-[10px] font-semibold text-rose-400/80">Missed</span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-amber-400/80">Sched</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

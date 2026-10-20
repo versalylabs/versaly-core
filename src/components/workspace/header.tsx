@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Plus, Bell, Sparkles, Menu, Sun, Moon } from "lucide-react";
+import { Search, Plus, Bell, Menu, Sun, Moon, Clock } from "lucide-react";
 import { NotificationCenter } from "./notification-center";
 import { useTheme } from "@/context/theme-context";
 
@@ -16,6 +16,25 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(
+        now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        })
+      );
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   function getBreadcrumbTitle(path: string) {
     if (path === "/dashboard") return "Company Dashboard";
@@ -141,11 +160,12 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
         </div>
 
         <Link
-          href="/attention"
-          className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-medium transition"
+          href="/calendar"
+          title="Current local time • Click to view Business Calendar"
+          className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white text-xs font-mono transition shadow-inner"
         >
-          <Sparkles className="h-3 w-3" />
-          <span>Core Hub Online</span>
+          <Clock className="h-3.5 w-3.5 text-indigo-400" />
+          <span>{currentTime || "--:--:--"}</span>
         </Link>
       </div>
     </header>

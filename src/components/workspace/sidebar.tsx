@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Building2,
@@ -37,6 +37,7 @@ import {
   Share2,
   Palette,
   TrendingUp,
+  LogOut,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -131,6 +132,8 @@ const CATEGORIES: NavCategory[] = [
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Collapsible category state, all open by default
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
@@ -140,6 +143,20 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       ...prev,
       [catName]: !prev[catName],
     }));
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("versaly_auth_active");
+      localStorage.removeItem("versaly_current_user");
+    }
+    router.push("/login");
   };
 
   return (
@@ -254,19 +271,30 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           })}
         </div>
 
-        {/* Footer Profile Badge */}
+        {/* Footer Profile Badge & Logout */}
         <div className="p-3 border-t border-slate-800/80 shrink-0">
-          <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-400 flex items-center justify-center text-[11px] font-bold text-white shadow-sm">
+          <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/80 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-[11px] font-bold text-white shadow-sm shrink-0">
                 V
               </div>
-              <div>
-                <div className="text-xs font-semibold text-slate-200">Versaly Admin</div>
-                <div className="text-[10px] text-emerald-400 font-medium">Role: OWNER</div>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-slate-200 truncate">versalylabs@gmail.com</div>
+                <div className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  <span>Role: OWNER</span>
+                </div>
               </div>
             </div>
-            <span className="h-2 w-2 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20" />
+
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition cursor-pointer shrink-0"
+              title="Sign out of Versaly Core"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>

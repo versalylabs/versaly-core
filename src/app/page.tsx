@@ -7,8 +7,17 @@ export default function RootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if session exists or redirect
-    router.replace("/dashboard");
+    // If user has an active session flag, go directly to dashboard; otherwise prompt login
+    if (typeof window !== "undefined") {
+      const isAuthActive = localStorage.getItem("versaly_auth_active");
+      if (isAuthActive === "true") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/login");
+      }
+    } else {
+      router.replace("/login");
+    }
   }, [router]);
 
   return (

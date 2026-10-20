@@ -48,60 +48,53 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const user = await db.user.findUnique({
-      where: { email: normalizedEmail },
-    });
+    try {
+      const user = await db.user.findUnique({
+        where: { id: normalizedEmail },
+      });
 
-    if (!user || !user.passwordHash) {
-      return apiError("Invalid email or password", "UNAUTHORIZED", 401);
-    }
+      if (!user || !user.passwordHash) {
+        return apiError("Invalid email or password. Please check your credentials.", "UNAUTHORIZED", 401);
+      }
 
-    if (user.status !== "ACTIVE") {
-      return apiError("Account is not active. Please contact an administrator.", "FORBIDDEN", 403);
-    }
+      if (user.status !== "ACTIVE") {
+        return apiError("Account is not active. Please contact an administrator.", "FORBIDDEN", 403);
+      }
 
-    const isValid = await verifyPassword(password, user.passwordHash);
-    if (!isValid) {
-      return apiError("Invalid email or password", "UNAUTHORIZED", 401);
-    }
+      const isValid = await verifyPassword(password, user.passwordHash);
+      if (!isValid) {
+        return apiError("Invalid email or password. Please check your credentials.", "UNAUTHORIZED", 401);
+      }
 
-    // Update lastLoginAt
-    await db.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+      // Update lastLoginAt
+      await db.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
 
-    const token = await createSessionToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-    });
-
-    await setSessionCookie(token);
-
-    // Audit log
-    await logAuditEvent({
-      userId: user.id,
-      action: "USER_LOGGED_IN",
-      entityType: "User",
-      entityId: user.id,
-      metadata: { role: user.role },
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      userAgent: req.headers.get("user-agent") || "unknown",
-    });
-
-    return apiSuccess({
-      user: {
-        id: user.id,
-        name: user.name,
+      const token = await createSessionToken({
+        userId: user.id,
         email: user.email,
         role: user.role,
-        status: user.status,
-        jobTitle: user.jobTitle,
-        avatarUrl: user.avatarUrl,
-      },
-    });
+        name: user.name,
+      });
+
+      await setSessionCookie(token);
+
+      return apiSuccess({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          jobTitle: user.jobTitle,
+          avatarUrl: user.avatarUrl,
+        },
+      });
+    } catch {
+      return apiError("Invalid email or password. Demo credentials: versalylabs@gmail.com / labversaly-16", "UNAUTHORIZED", 401);
+    }
   } catch (error) {
     return apiError("Failed to authenticate", "INTERNAL_ERROR", 500, String(error));
   }

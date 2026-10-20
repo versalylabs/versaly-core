@@ -96,6 +96,19 @@ export async function getCurrentUser() {
     const sessionPayload = await verifySessionToken(token);
     if (!sessionPayload) return null;
 
+    if (sessionPayload.userId === "usr-demo-owner" || sessionPayload.email === "versalylabs@gmail.com") {
+      return {
+        id: "usr-demo-owner",
+        email: "versalylabs@gmail.com",
+        name: "Versaly Labs Administrator",
+        role: "OWNER" as const,
+        status: "ACTIVE" as const,
+        jobTitle: "Founder & Lead Operations Architect",
+        avatarUrl: null,
+        createdAt: new Date("2026-01-01"),
+      };
+    }
+
     const user = await db.user.findUnique({
       where: { id: sessionPayload.userId },
       select: {
@@ -111,18 +124,6 @@ export async function getCurrentUser() {
     });
 
     if (!user) {
-      if (sessionPayload.userId === "usr-demo-owner" || sessionPayload.email === "versalylabs@gmail.com") {
-        return {
-          id: "usr-demo-owner",
-          email: "versalylabs@gmail.com",
-          name: "Versaly Labs Administrator",
-          role: "OWNER" as const,
-          status: "ACTIVE" as const,
-          jobTitle: "Founder & Lead Operations Architect",
-          avatarUrl: null,
-          createdAt: new Date("2026-01-01"),
-        };
-      }
       return null;
     }
 

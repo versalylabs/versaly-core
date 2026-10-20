@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Circle,
   Check,
+  BarChart2,
 } from "lucide-react";
 import {
   INITIAL_SOCIAL_POSTS,
@@ -194,6 +195,49 @@ export default function MarketingContentPage() {
   const [formStatus, setFormStatus] = useState<ContentStatus>("Scheduled");
   const [formNotes, setFormNotes] = useState("");
 
+  // Form Fields - Engagement Metrics (Manual Inputs)
+  const [formViews, setFormViews] = useState<number>(0);
+  const [formInquiries, setFormInquiries] = useState<number>(0);
+  const [formLikes, setFormLikes] = useState<number>(0);
+  const [formShares, setFormShares] = useState<number>(0);
+
+  // Quick Metrics Log Modal
+  const [metricsPost, setMetricsPost] = useState<SocialPost | null>(null);
+  const [metricViews, setMetricViews] = useState<number>(0);
+  const [metricInquiries, setMetricInquiries] = useState<number>(0);
+  const [metricLikes, setMetricLikes] = useState<number>(0);
+  const [metricShares, setMetricShares] = useState<number>(0);
+
+  const openMetricsModal = (post: SocialPost) => {
+    setMetricsPost(post);
+    setMetricViews(post.engagement.views || 0);
+    setMetricInquiries(post.engagement.inquiries || 0);
+    setMetricLikes(post.engagement.likes || 0);
+    setMetricShares(post.engagement.shares || 0);
+  };
+
+  const handleSaveMetrics = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!metricsPost) return;
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === metricsPost.id
+          ? {
+              ...p,
+              engagement: {
+                ...p.engagement,
+                views: Math.max(0, Number(metricViews) || 0),
+                inquiries: Math.max(0, Number(metricInquiries) || 0),
+                likes: Math.max(0, Number(metricLikes) || 0),
+                shares: Math.max(0, Number(metricShares) || 0),
+              },
+            }
+          : p
+      )
+    );
+    setMetricsPost(null);
+  };
+
   // Sync to localStorage
   useEffect(() => {
     try {
@@ -207,8 +251,8 @@ export default function MarketingContentPage() {
   const stats = useMemo(() => {
     const published = posts.filter((p) => p.status === "Published");
     const scheduled = posts.filter((p) => p.status === "Scheduled");
-    const totalViews = published.reduce((acc, p) => acc + p.engagement.views, 0);
-    const totalInquiries = published.reduce((acc, p) => acc + p.engagement.inquiries, 0);
+    const totalViews = published.reduce((acc, p) => acc + (p.engagement?.views || 0), 0);
+    const totalInquiries = published.reduce((acc, p) => acc + (p.engagement?.inquiries || 0), 0);
     return {
       publishedCount: published.length,
       scheduledCount: scheduled.length,
@@ -250,6 +294,10 @@ export default function MarketingContentPage() {
     setFormMediaUrl("");
     setFormStatus("Scheduled");
     setFormNotes("");
+    setFormViews(0);
+    setFormInquiries(0);
+    setFormLikes(0);
+    setFormShares(0);
     setIsModalOpen(true);
   };
 
@@ -267,6 +315,10 @@ export default function MarketingContentPage() {
     setFormMediaUrl(post.mediaAssetUrl || "");
     setFormStatus(post.status);
     setFormNotes(post.notes || "");
+    setFormViews(post.engagement?.views || 0);
+    setFormInquiries(post.engagement?.inquiries || 0);
+    setFormLikes(post.engagement?.likes || 0);
+    setFormShares(post.engagement?.shares || 0);
     setIsModalOpen(true);
   };
 
@@ -286,16 +338,13 @@ export default function MarketingContentPage() {
       copy: formCopy.trim(),
       mediaAssetUrl: formMediaUrl.trim() || undefined,
       status: formStatus,
-      engagement:
-        modalMode === "EDIT" && editingId
-          ? posts.find((p) => p.id === editingId)?.engagement || {
-              views: 0,
-              likes: 0,
-              shares: 0,
-              comments: 0,
-              inquiries: 0,
-            }
-          : { views: 0, likes: 0, shares: 0, comments: 0, inquiries: 0 },
+      engagement: {
+        views: Math.max(0, Number(formViews) || 0),
+        inquiries: Math.max(0, Number(formInquiries) || 0),
+        likes: Math.max(0, Number(formLikes) || 0),
+        shares: Math.max(0, Number(formShares) || 0),
+        comments: modalMode === "EDIT" && editingId ? posts.find((p) => p.id === editingId)?.engagement?.comments || 0 : 0,
+      },
       notes: formNotes.trim() || undefined,
     };
 
@@ -322,7 +371,7 @@ export default function MarketingContentPage() {
     }
   };
 
-  // One-click Publish
+  // One-click Publish (retains real manually logged engagement)
   const handlePublishNow = (id: string) => {
     setPosts((prev) =>
       prev.map((p) =>
@@ -330,13 +379,6 @@ export default function MarketingContentPage() {
           ? {
               ...p,
               status: "Published",
-              engagement: {
-                ...p.engagement,
-                views: p.engagement.views === 0 ? 450 : p.engagement.views,
-                likes: p.engagement.likes === 0 ? 24 : p.engagement.likes,
-                shares: p.engagement.shares === 0 ? 6 : p.engagement.shares,
-                inquiries: p.engagement.inquiries === 0 ? 2 : p.engagement.inquiries,
-              },
             }
           : p
       )
@@ -504,9 +546,9 @@ export default function MarketingContentPage() {
             <div className="text-xl font-bold text-white font-mono mt-1">
               {stats.totalViews.toLocaleString()}
             </div>
-            <p className="text-[10px] text-slate-500">Across LinkedIn & Twitter</p>
-            <div className="text-[10px] text-emerald-400 font-medium pt-1">
-              +42% week-on-week
+            <p className="text-[10px] text-slate-500">Across LinkedIn, X & TikTok</p>
+            <div className="text-[10px] text-sky-400 font-medium pt-1">
+              {stats.publishedCount} published pieces logged
             </div>
           </div>
 
@@ -519,7 +561,7 @@ export default function MarketingContentPage() {
             <div className="text-xl font-bold text-emerald-400 font-mono mt-1">
               {stats.totalInquiries}
             </div>
-            <p className="text-[10px] text-slate-500">Converted into pipeline</p>
+            <p className="text-[10px] text-slate-500">Actual inquiries generated</p>
             <div className="text-[10px] text-indigo-400 font-medium pt-1">
               Zero ad cost inbound
             </div>
@@ -690,28 +732,49 @@ export default function MarketingContentPage() {
                   </div>
 
                   {/* Footer & Engagement / Action */}
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs gap-2">
                     {post.status === "Published" ? (
-                      <div className="flex items-center gap-4 text-[11px] text-slate-400 font-mono">
-                        <span className="flex items-center gap-1 text-white">
-                          <Eye className="h-3.5 w-3.5 text-sky-400" />
-                          {post.engagement.views} views
-                        </span>
-                        <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                          <MessageSquare className="h-3.5 w-3.5" />
-                          {post.engagement.inquiries} inquiries
-                        </span>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+                          <span className="flex items-center gap-1 text-white">
+                            <Eye className="h-3.5 w-3.5 text-sky-400" />
+                            {post.engagement?.views || 0} views
+                          </span>
+                          <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            {post.engagement?.inquiries || 0} inquiries
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openMetricsModal(post)}
+                          className="px-2 py-0.5 rounded-lg bg-sky-950/60 hover:bg-sky-900/60 text-sky-300 border border-sky-800/60 text-[10px] font-semibold transition flex items-center gap-1 cursor-pointer"
+                          title="Manually log actual impressions & messages"
+                        >
+                          <BarChart2 className="h-3 w-3 text-sky-400" />
+                          <span>Log Stats</span>
+                        </button>
                       </div>
                     ) : (
-                      <span className="text-[11px] text-slate-500">
-                        Ready for scheduled release
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-500">
+                          Ready for scheduled release
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => openMetricsModal(post)}
+                          className="text-[10px] text-slate-400 hover:text-sky-300 font-medium underline cursor-pointer"
+                          title="Pre-set results"
+                        >
+                          (Set stats)
+                        </button>
+                      </div>
                     )}
 
                     {post.status !== "Published" && (
                       <button
                         onClick={() => handlePublishNow(post.id)}
-                        className="px-3 py-1 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white shadow-sm transition flex items-center gap-1.5"
+                        className="px-3 py-1 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0"
                       >
                         <Send className="h-3 w-3" />
                         <span>Publish Now</span>
@@ -899,6 +962,80 @@ export default function MarketingContentPage() {
                 />
               </div>
 
+              {/* Manual Performance & Inbound Results Logging */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+                    <BarChart2 className="h-3.5 w-3.5" />
+                    <span>Actual Performance & Inbound Logs</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500">Manual Entry</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-snug">
+                  Manually record the impressions and messages this piece generated once published.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                      Impressions / Views
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formViews}
+                      onChange={(e) => setFormViews(Math.max(0, parseInt(e.target.value) || 0))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                      Inbound Messages / DMs
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formInquiries}
+                      onChange={(e) => setFormInquiries(Math.max(0, parseInt(e.target.value) || 0))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-emerald-400 font-mono text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1 text-[10px]">
+                      Likes & Reactions (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formLikes}
+                      onChange={(e) => setFormLikes(Math.max(0, parseInt(e.target.value) || 0))}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 font-mono text-[11px] focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1 text-[10px]">
+                      Shares & Reposts (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formShares}
+                      onChange={(e) => setFormShares(Math.max(0, parseInt(e.target.value) || 0))}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 font-mono text-[11px] focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
                 <button
                   type="button"
@@ -909,9 +1046,116 @@ export default function MarketingContentPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/25"
+                  className="px-5 py-2 rounded-xl font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/25 cursor-pointer"
                 >
-                  {modalMode === "ADD" ? "Schedule Post" : "Save Changes"}
+                  {modalMode === "ADD" ? "Save Daily Post" : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK LOG METRICS MODAL */}
+      {metricsPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="liquid-glass border border-sky-500/40 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative space-y-4">
+            <button
+              onClick={() => setMetricsPost(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-sky-400 flex items-center gap-1.5">
+                <BarChart2 className="h-3.5 w-3.5" />
+                <span>Manual Performance Log</span>
+              </span>
+              <h3 className="text-sm font-bold text-white truncate">
+                {metricsPost.title}
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                Enter the actual reach and messages generated from this post.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveMetrics} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5 text-sky-400" />
+                  <span>Impressions / Total Views *</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={metricViews}
+                  onChange={(e) => setMetricViews(Math.max(0, parseInt(e.target.value) || 0))}
+                  placeholder="e.g. 520"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Inbound Direct Messages / Leads *</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={metricInquiries}
+                  onChange={(e) => setMetricInquiries(Math.max(0, parseInt(e.target.value) || 0))}
+                  placeholder="e.g. 3"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-xs focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-slate-400 font-medium mb-1 text-[10px]">
+                    Likes / Reactions
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={metricLikes}
+                    onChange={(e) => setMetricLikes(Math.max(0, parseInt(e.target.value) || 0))}
+                    placeholder="0"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-medium mb-1 text-[10px]">
+                    Shares / Reposts
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={metricShares}
+                    onChange={(e) => setMetricShares(Math.max(0, parseInt(e.target.value) || 0))}
+                    placeholder="0"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setMetricsPost(null)}
+                  className="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-xl font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-md shadow-sky-600/25 cursor-pointer"
+                >
+                  Save Metrics
                 </button>
               </div>
             </form>

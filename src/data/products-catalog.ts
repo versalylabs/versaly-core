@@ -3,7 +3,7 @@ export interface VersalyProduct {
   slug: string;
   name: string;
   tagline: string;
-  category: "HR & Workforce Management" | "Advertising & Signage" | "Automotive" | "Laundry & Dry Cleaning" | "Fintech & Payments" | "Hospitality";
+  category: string;
   targetMarket: string;
   description: string;
   setupFee: number; // in KES
@@ -20,6 +20,15 @@ export interface VersalyProduct {
   pipelineDealsCount: number;
   status: "ACTIVE" | "BETA" | "ROADMAP";
 }
+
+export const DEFAULT_PRODUCT_CATEGORIES: string[] = [
+  "HR & Workforce Management",
+  "Automotive",
+  "Laundry & Dry Cleaning",
+  "Advertising & Signage",
+  "Fintech & Payments",
+  "Hospitality",
+];
 
 export const VERSALY_PRODUCTS: VersalyProduct[] = [
   {
@@ -65,8 +74,8 @@ export const VERSALY_PRODUCTS: VersalyProduct[] = [
         description: "High-converting outreach on reducing monthly payroll processing from 3 days to 15 minutes",
       },
     ],
-    activeClientsCount: 5,
-    pipelineDealsCount: 14,
+    activeClientsCount: 0,
+    pipelineDealsCount: 0,
     status: "ACTIVE",
   },
   {
@@ -94,8 +103,8 @@ export const VERSALY_PRODUCTS: VersalyProduct[] = [
       { title: "Adversoft 10-Minute Walkthrough Script", type: "demo_script", description: "Structured live pitch focusing on unsold display waste reduction" },
       { title: "Objection Response: 'We already use Excel for sites'", type: "objection_guide", description: "Clear comparison showing how spreadsheet versioning causes double-bookings" },
     ],
-    activeClientsCount: 4,
-    pipelineDealsCount: 7,
+    activeClientsCount: 0,
+    pipelineDealsCount: 0,
     status: "ACTIVE",
   },
   {
@@ -123,8 +132,8 @@ export const VERSALY_PRODUCTS: VersalyProduct[] = [
       { title: "Workshop Owner Walk-in Pitch Script", type: "whatsapp_script", description: "Quick 2-minute introductory script for in-person garage visits" },
       { title: "Vehisoft Live Job Card Demo Script", type: "demo_script", description: "Intake-to-invoice demo flow in under 8 minutes" },
     ],
-    activeClientsCount: 8,
-    pipelineDealsCount: 12,
+    activeClientsCount: 0,
+    pipelineDealsCount: 0,
     status: "ACTIVE",
   },
   {
@@ -152,8 +161,8 @@ export const VERSALY_PRODUCTS: VersalyProduct[] = [
       { title: "WhatsApp Customer Pickup Template", type: "whatsapp_script", description: "Polite automated notification with M-Pesa prompt" },
       { title: "Objection Response: 'Paper receipts work fine'", type: "objection_guide", description: "Illustrates lost revenue from unclaimed garments and disputes" },
     ],
-    activeClientsCount: 6,
-    pipelineDealsCount: 9,
+    activeClientsCount: 0,
+    pipelineDealsCount: 0,
     status: "ACTIVE",
   },
   {
@@ -181,8 +190,8 @@ export const VERSALY_PRODUCTS: VersalyProduct[] = [
       { title: "WhatsApp Overdue Payment Follow-Up Template", type: "whatsapp_script", description: "Professional 3-stage reminder messages" },
       { title: "eTIMS Integration Technical Primer", type: "demo_script", description: "Step-by-step breakdown of automated KRA compliance" },
     ],
-    activeClientsCount: 11,
-    pipelineDealsCount: 15,
+    activeClientsCount: 0,
+    pipelineDealsCount: 0,
     status: "ACTIVE",
   },
   {
@@ -210,8 +219,8 @@ export const VERSALY_PRODUCTS: VersalyProduct[] = [
       { title: "Restaurant Owner Live Pitch Script", type: "demo_script", description: "Tailored around peak-hour rush bottlenecks" },
       { title: "Objection Response: 'Hardware cost is too high'", type: "objection_guide", description: "Shows how Melio runs on existing Android tablets and smartphones" },
     ],
-    activeClientsCount: 5,
-    pipelineDealsCount: 8,
+    activeClientsCount: 0,
+    pipelineDealsCount: 0,
     status: "ACTIVE",
   },
 ];

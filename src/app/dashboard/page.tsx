@@ -229,7 +229,7 @@ export default function DashboardPage() {
     ].map((name) => {
       const collected = financeSummary.productRevenue[name] || 0;
       const mrr = financeSummary.productMRR[name] || 0;
-      const pct = totalCollected > 0 ? Math.round((collected / totalCollected) * 100) : 20;
+      const pct = totalCollected > 0 ? Math.round((collected / totalCollected) * 100) : 0;
       return {
         name,
         collected,
@@ -239,7 +239,7 @@ export default function DashboardPage() {
       };
     });
 
-    const activeCount = financeSummary.activeSubscriptionsCount || 1;
+    const activeCount = financeSummary.activeSubscriptionsCount || 0;
     const avgRevenue = activeCount > 0 ? Math.round(totalCollected / activeCount) : 0;
 
     return {
@@ -253,6 +253,7 @@ export default function DashboardPage() {
       overduePaymentsKES: financeSummary.totalOverdue,
       overdueClientsCount: financeSummary.overdueCount,
       averageRevenuePerClient: avgRevenue,
+      activePayingAccountsCount: activeCount,
       productRevenueBreakdown,
     };
   }, [financeSummary]);
@@ -1153,16 +1154,21 @@ export default function DashboardPage() {
               <div className="liquid-glass p-4 rounded-xl">
                 <div className="text-[11px] font-medium text-slate-400 flex items-center justify-between">
                   <span>Monthly Recurring</span>
-                  <span className="text-[9px] text-emerald-400 font-bold">+240% Target</span>
+                  <span className="text-[9px] text-emerald-400 font-bold font-mono">
+                    {money.mrrTarget > 0 ? `${((money.mrr / money.mrrTarget) * 100).toFixed(0)}% Target` : "0%"}
+                  </span>
                 </div>
                 <div className="text-xl font-bold text-indigo-300 mt-1">
                   KES {(money.mrr / 1000).toFixed(0)}k
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1">
-                  Base Target: KES 120k/mo
+                  Base Target: KES {(money.mrrTarget / 1000).toFixed(0)}k/mo
                 </div>
                 <div className="mt-2 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full w-full" />
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((money.mrr / money.mrrTarget) * 100))}%` }}
+                  />
                 </div>
               </div>
 
@@ -1181,7 +1187,9 @@ export default function DashboardPage() {
               <div className="liquid-glass p-4 rounded-xl">
                 <div className="text-[11px] font-medium text-slate-400 flex items-center justify-between">
                   <span>Outstanding Invoices</span>
-                  <span className="text-[9px] text-amber-400 font-mono">3 bills</span>
+                  <span className="text-[9px] text-amber-400 font-mono">
+                    {financeSummary.outstandingCount} {financeSummary.outstandingCount === 1 ? "bill" : "bills"}
+                  </span>
                 </div>
                 <div className="text-xl font-bold text-white mt-1">
                   KES {(money.outstandingInvoicesKES / 1000).toFixed(0)}k
@@ -1202,7 +1210,9 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-[10px] text-rose-400/90 mt-1.5 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  <span>{money.overdueClientsCount} clients need action</span>
+                  <span>
+                    {money.overdueClientsCount} {money.overdueClientsCount === 1 ? "client needs action" : "clients need action"}
+                  </span>
                 </div>
               </div>
 
@@ -1213,7 +1223,7 @@ export default function DashboardPage() {
                   KES {money.averageRevenuePerClient.toLocaleString()}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1.5">
-                  34 active paying accounts
+                  {money.activePayingAccountsCount} active paying {money.activePayingAccountsCount === 1 ? "account" : "accounts"}
                 </div>
               </div>
             </div>
@@ -1223,38 +1233,50 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                 <div>
                   <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                    <span>Revenue Collected & MRR Share by Product</span>
+                    <span>Revenue Collected &amp; MRR Share by Product</span>
                   </h3>
                   <p className="text-[11px] text-slate-400">
                     Which product is actively producing cash vs. predictable subscription recurring revenue
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                    <span>Vehisoft (35.2%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-cyan-500" />
-                    <span>Versandry (22.6%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-violet-500" />
-                    <span>Adversoft (21.2%)</span>
-                  </div>
+                  {money.revenueCollectedThisMonth === 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <span className="h-2 w-2 rounded-full bg-slate-600" />
+                      <span>Pre-Launch: KES 0 sales logged to date</span>
+                    </div>
+                  ) : (
+                    money.productRevenueBreakdown
+                      .filter((p) => p.pct > 0)
+                      .slice(0, 3)
+                      .map((item) => (
+                        <div key={item.name} className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span>
+                            {item.name} ({item.pct}%)
+                          </span>
+                        </div>
+                      ))
+                  )}
                 </div>
               </div>
 
               {/* Visual Stacked Bar Chart */}
               <div className="h-4 w-full bg-slate-900 rounded-full overflow-hidden flex shadow-inner">
-                {money.productRevenueBreakdown.map((item) => (
-                  <div
-                    key={item.name}
-                    className="h-full transition-all duration-300 hover:opacity-85"
-                    style={{ width: `${item.pct}%`, backgroundColor: item.color }}
-                    title={`${item.name}: KES ${item.collected.toLocaleString()} (${item.pct}%)`}
-                  />
-                ))}
+                {money.revenueCollectedThisMonth === 0 ? (
+                  <div className="h-full w-full flex items-center justify-center text-[10px] text-slate-500 font-medium bg-slate-900/50">
+                    No sales recorded yet (Pre-Launch Baseline)
+                  </div>
+                ) : (
+                  money.productRevenueBreakdown.map((item) => (
+                    <div
+                      key={item.name}
+                      className="h-full transition-all duration-300 hover:opacity-85"
+                      style={{ width: `${item.pct}%`, backgroundColor: item.color }}
+                      title={`${item.name}: KES ${item.collected.toLocaleString()} (${item.pct}%)`}
+                    />
+                  ))
+                )}
               </div>
 
               {/* Grid of Product Cash Breakdown */}

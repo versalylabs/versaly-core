@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
-import { VERSALY_PRODUCTS, VersalyProduct } from "@/data/products-catalog";
+import { VERSALY_PRODUCTS, VersalyProduct, DEFAULT_PRODUCT_CATEGORIES } from "@/data/products-catalog";
 import {
   Package,
   CheckCircle2,
@@ -17,11 +17,37 @@ import {
   Trash2,
   X,
   Sparkles,
+  Tag,
+  Tags,
+  Check,
+  Edit3,
+  AlertTriangle,
 } from "lucide-react";
 
 const STORAGE_KEY = "versaly_products_catalog";
+const CATEGORIES_STORAGE_KEY = "versaly_product_categories_v2";
 
 export default function ProductsPage() {
+  const [categories, setCategories] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+        if (stored !== null) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return DEFAULT_PRODUCT_CATEGORIES;
+  });
+
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [editingCatOld, setEditingCatOld] = useState<string | null>(null);
+  const [editingCatNew, setEditingCatNew] = useState("");
+
   const [products, setProducts] = useState<VersalyProduct[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -53,7 +79,7 @@ export default function ProductsPage() {
 
   // Form Fields
   const [formName, setFormName] = useState("");
-  const [formCategory, setFormCategory] = useState<VersalyProduct["category"]>("Automotive");
+  const [formCategory, setFormCategory] = useState<string>("HR & Workforce Management");
   const [formTagline, setFormTagline] = useState("");
   const [formTargetMarket, setFormTargetMarket] = useState("");
   const [formDescription, setFormDescription] = useState("");
@@ -64,7 +90,7 @@ export default function ProductsPage() {
   const [formStatus, setFormStatus] = useState<VersalyProduct["status"]>("ACTIVE");
   const [formFeatures, setFormFeatures] = useState("");
 
-  // Persist to localStorage
+  // Persist products to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
@@ -72,6 +98,104 @@ export default function ProductsPage() {
       // ignore
     }
   }, [products]);
+
+  // Persist categories to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+    } catch {
+      // ignore
+    }
+  }, [categories]);
+
+  // Category Management Handlers
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newCatName.trim();
+    if (!trimmed) return;
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      setToastMessage("Category already exists.");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+    const updated = [...categories, trimmed];
+    setCategories(updated);
+    setFormCategory(trimmed);
+    setNewCatName("");
+    setToastMessage(`✓ Added industry category "${trimmed}"`);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleStartEditCategory = (cat: string) => {
+    setEditingCatOld(cat);
+    setEditingCatNew(cat);
+  };
+
+  const handleSaveEditCategory = () => {
+    if (!editingCatOld) return;
+    const trimmed = editingCatNew.trim();
+    if (!trimmed) return;
+    if (
+      trimmed.toLowerCase() !== editingCatOld.toLowerCase() &&
+      categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())
+    ) {
+      setToastMessage("Category name already in use.");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    const updatedCategories = categories.map((c) =>
+      c === editingCatOld ? trimmed : c
+    );
+    setCategories(updatedCategories);
+
+    // Update any products currently assigned to this category
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.category === editingCatOld ? { ...p, category: trimmed } : p
+      )
+    );
+
+    if (formCategory === editingCatOld) {
+      setFormCategory(trimmed);
+    }
+
+    setEditingCatOld(null);
+    setEditingCatNew("");
+    setToastMessage(`✓ Renamed category to "${trimmed}"`);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDeleteCategory = (cat: string) => {
+    if (categories.length <= 1) {
+      alert("At least one industry category must remain.");
+      return;
+    }
+    const productsUsing = products.filter((p) => p.category === cat);
+    const fallback = categories.find((c) => c !== cat) || "General";
+    const confirmMsg =
+      productsUsing.length > 0
+        ? `"${cat}" is currently used by ${productsUsing.length} product(s). If deleted, they will be reassigned to "${fallback}". Proceed?`
+        : `Are you sure you want to delete the category "${cat}"?`;
+
+    if (confirm(confirmMsg)) {
+      const remaining = categories.filter((c) => c !== cat);
+      setCategories(remaining);
+
+      if (productsUsing.length > 0) {
+        setProducts((prev) =>
+          prev.map((p) => (p.category === cat ? { ...p, category: fallback } : p))
+        );
+      }
+
+      if (formCategory === cat) {
+        setFormCategory(fallback);
+      }
+
+      setToastMessage(`✓ Deleted category "${cat}"`);
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
 
   const openAddModal = () => {
     setEditingProduct(null);
@@ -217,8 +341,15 @@ export default function ProductsPage() {
 
           <div className="flex items-center gap-2.5 shrink-0">
             <button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 transition cursor-pointer"
+            >
+              <Tags className="h-4 w-4 text-indigo-400" />
+              <span>Manage Categories ({categories.length})</span>
+            </button>
+            <button
               onClick={openAddModal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>Add New Product</span>
@@ -429,18 +560,27 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Industry Category *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-slate-300 font-semibold text-xs">Industry Category *</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsCategoryModalOpen(true)}
+                        className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Tags className="h-3 w-3" />
+                        <span>+ Manage Categories</span>
+                      </button>
+                    </div>
                     <select
                       value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value as VersalyProduct["category"])}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
+                      onChange={(e) => setFormCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 cursor-pointer"
                     >
-                      <option value="HR & Workforce Management">HR &amp; Workforce Management</option>
-                      <option value="Automotive">Automotive</option>
-                      <option value="Laundry & Dry Cleaning">Laundry &amp; Dry Cleaning</option>
-                      <option value="Advertising & Signage">Advertising &amp; Signage</option>
-                      <option value="Fintech & Payments">Fintech &amp; Payments</option>
-                      <option value="Hospitality">Hospitality</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -614,6 +754,146 @@ export default function ProductsPage() {
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>Delete Product</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Manage Industry Categories */}
+        {isCategoryModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="liquid-glass max-w-lg w-full rounded-2xl p-6 space-y-5 shadow-2xl border border-indigo-500/30">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                    <Tags className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-white">Manage Industry Categories</h3>
+                    <p className="text-xs text-slate-400">
+                      Add, rename, or delete the industry classifications for your products.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsCategoryModalOpen(false);
+                    setEditingCatOld(null);
+                  }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Add New Category Form */}
+              <form onSubmit={handleAddCategory} className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-300">Add New Category</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Healthcare & Medical Clinics"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:outline-none text-white placeholder-slate-500"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-md shadow-indigo-600/20 shrink-0 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Categories List */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-400 font-medium px-1">
+                  <span>Configured Categories ({categories.length})</span>
+                  <span>Products In Category</span>
+                </div>
+
+                <div className="divide-y divide-slate-800/60 rounded-xl bg-slate-950/70 border border-slate-800 max-h-64 overflow-y-auto">
+                  {categories.map((cat) => {
+                    const count = products.filter((p) => p.category === cat).length;
+                    const isEditing = editingCatOld === cat;
+
+                    return (
+                      <div key={cat} className="p-3 flex items-center justify-between gap-3 text-xs">
+                        {isEditing ? (
+                          <div className="flex-1 flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editingCatNew}
+                              onChange={(e) => setEditingCatNew(e.target.value)}
+                              autoFocus
+                              className="flex-1 px-2.5 py-1 text-xs rounded-lg bg-slate-900 border border-indigo-500 text-white focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleSaveEditCategory}
+                              className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition cursor-pointer"
+                              title="Save Changes"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCatOld(null)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                              title="Cancel"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0" />
+                              <span className="font-semibold text-slate-200 truncate">{cat}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-400">
+                                {count} {count === 1 ? "product" : "products"}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditCategory(cat)}
+                                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+                                title="Rename Category"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(cat)}
+                                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition cursor-pointer"
+                                title="Delete Category"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-white transition cursor-pointer"
+                >
+                  Done
                 </button>
               </div>
             </div>

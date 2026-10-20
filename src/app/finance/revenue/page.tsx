@@ -44,10 +44,10 @@ export default function RevenueSubscriptionsPage() {
 
   const [formData, setFormData] = useState({
     clientName: "",
-    productSlug: "vehisoft" as "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom",
-    productName: "Vehisoft",
-    planTier: "Pro Dealer (Up to 100 Cars)",
-    monthlyFeeKES: 25000,
+    productSlug: "semplo" as "semplo" | "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom",
+    productName: "Semplo",
+    planTier: "HR & Payroll Pro (Up to 50 Staff)",
+    monthlyFeeKES: 20000,
     billingCycle: "MONTHLY" as "MONTHLY" | "QUARTERLY" | "ANNUAL",
     status: "ACTIVE" as "ACTIVE" | "TRIAL" | "PAST_DUE" | "CANCELLED",
     startDate: "2026-10-01",
@@ -108,10 +108,11 @@ export default function RevenueSubscriptionsPage() {
   // Product breakdown calculation
   const productMRRBreakdown = useMemo(() => {
     const map: Record<string, { count: number; mrr: number; color: string; slug: string }> = {
+      Semplo: { count: 0, mrr: 0, color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", slug: "semplo" },
       Vehisoft: { count: 0, mrr: 0, color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20", slug: "vehisoft" },
       Adversoft: { count: 0, mrr: 0, color: "text-purple-400 bg-purple-500/10 border-purple-500/20", slug: "adversoft" },
       Versandry: { count: 0, mrr: 0, color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20", slug: "versandry" },
-      LipaTim: { count: 0, mrr: 0, color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", slug: "lipatim" },
+      LipaTim: { count: 0, mrr: 0, color: "text-blue-400 bg-blue-500/10 border-blue-500/20", slug: "lipatim" },
       "Melio RMS": { count: 0, mrr: 0, color: "text-amber-400 bg-amber-500/10 border-amber-500/20", slug: "melio" },
     };
 
@@ -133,10 +134,10 @@ export default function RevenueSubscriptionsPage() {
     setEditingSub(null);
     setFormData({
       clientName: "",
-      productSlug: "vehisoft",
-      productName: "Vehisoft",
-      planTier: "Pro Dealer (Up to 100 Cars)",
-      monthlyFeeKES: 25000,
+      productSlug: "semplo",
+      productName: "Semplo",
+      planTier: "HR & Payroll Pro (Up to 50 Staff)",
+      monthlyFeeKES: 20000,
       billingCycle: "MONTHLY",
       status: "ACTIVE",
       startDate: new Date().toISOString().split("T")[0],
@@ -351,14 +352,16 @@ export default function RevenueSubscriptionsPage() {
                   <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        prod.slug === "vehisoft"
+                        prod.slug === "semplo"
+                          ? "bg-emerald-500"
+                          : prod.slug === "vehisoft"
                           ? "bg-indigo-500"
                           : prod.slug === "adversoft"
                           ? "bg-purple-500"
                           : prod.slug === "versandry"
                           ? "bg-cyan-500"
                           : prod.slug === "lipatim"
-                          ? "bg-emerald-500"
+                          ? "bg-blue-500"
                           : "bg-amber-500"
                       }`}
                       style={{ width: `${prod.pctOfTotal}%` }}
@@ -381,6 +384,18 @@ export default function RevenueSubscriptionsPage() {
               </p>
 
               <div className="space-y-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                  <div className="font-semibold text-emerald-400 mb-1 flex items-center justify-between">
+                    <span>Semplo (HR &amp; Payroll Management)</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase">Priority</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span>Starter: KES 12k/mo</span>
+                    <span>Pro: KES 20k/mo</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Setup &amp; calibration: KES 40,000</div>
+                </div>
+
                 <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
                   <div className="font-semibold text-indigo-400 mb-1">Vehisoft (Dealerships)</div>
                   <div className="flex justify-between text-slate-300">
@@ -463,6 +478,7 @@ export default function RevenueSubscriptionsPage() {
                 className="px-3 py-1.5 text-xs rounded-xl bg-slate-950/70 border border-slate-800 text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="ALL">All Products</option>
+                <option value="semplo">Semplo</option>
                 <option value="vehisoft">Vehisoft</option>
                 <option value="adversoft">Adversoft</option>
                 <option value="versandry">Versandry</option>
@@ -641,6 +657,7 @@ export default function RevenueSubscriptionsPage() {
                       onChange={(e) => {
                         const slug = e.target.value as any;
                         const nameMap: Record<string, string> = {
+                          semplo: "Semplo",
                           vehisoft: "Vehisoft",
                           adversoft: "Adversoft",
                           versandry: "Versandry",
@@ -650,11 +667,12 @@ export default function RevenueSubscriptionsPage() {
                         setFormData({
                           ...formData,
                           productSlug: slug,
-                          productName: nameMap[slug] || "Vehisoft",
+                          productName: nameMap[slug] || "Semplo",
                         });
                       }}
                       className="w-full px-3.5 py-2 text-sm rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none text-white cursor-pointer"
                     >
+                      <option value="semplo">Semplo (HR &amp; Payroll Management)</option>
                       <option value="vehisoft">Vehisoft (Dealerships)</option>
                       <option value="adversoft">Adversoft (Digital Signage)</option>
                       <option value="versandry">Versandry (Laundromats)</option>

@@ -324,7 +324,7 @@ export default function FinanceDashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {Object.entries(summary.productRevenue).map(([prod, rev]) => (
               <div key={prod} className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
                 <span className="text-slate-400 text-xs font-semibold block">{prod}</span>

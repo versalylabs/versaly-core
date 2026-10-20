@@ -26,7 +26,7 @@ export interface FinanceInvoice {
   clientName: string;
   clientEmail?: string;
   clientPhone?: string;
-  productSlug: "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom";
+  productSlug: "semplo" | "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom";
   productName: string;
   status: "DRAFT" | "SENT" | "OVERDUE" | "PAID" | "VOID";
   subtotalKES: number;
@@ -72,7 +72,7 @@ export const STORAGE_SUBSCRIPTIONS = "versaly_finance_subscriptions_v2";
 export interface ClientSubscription {
   id: string;
   clientName: string;
-  productSlug: "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom";
+  productSlug: "semplo" | "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom";
   productName: string;
   planTier: string;
   monthlyFeeKES: number;
@@ -86,6 +86,21 @@ export interface ClientSubscription {
 }
 
 export const INITIAL_SUBSCRIPTIONS: ClientSubscription[] = [
+  {
+    id: "sub-semplo-1",
+    clientName: "Horizon Logistics East Africa",
+    productSlug: "semplo",
+    productName: "Semplo",
+    planTier: "HR & Payroll Pro (Up to 50 Staff)",
+    monthlyFeeKES: 20000,
+    billingCycle: "MONTHLY",
+    status: "ACTIVE",
+    startDate: "2026-10-01",
+    nextBillingDate: "2026-11-01",
+    contactPerson: "Angela Mutua",
+    phone: "+254721445566",
+    notes: "Nairobi HQ + Mombasa transit depot with biometric attendance",
+  },
   {
     id: "sub-1",
     clientName: "Apex Motor Hub Nairobi",
@@ -169,7 +184,14 @@ export function loadSubscriptionsFromStorage(): ClientSubscription[] {
     const raw = localStorage.getItem(STORAGE_SUBSCRIPTIONS);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const hasSemplo = parsed.some((s: ClientSubscription) => s.productSlug === "semplo");
+        if (!hasSemplo) {
+          const semploSub = INITIAL_SUBSCRIPTIONS.find((s) => s.productSlug === "semplo");
+          if (semploSub) return [semploSub, ...parsed];
+        }
+        return parsed;
+      }
     }
   } catch {}
   return INITIAL_SUBSCRIPTIONS;
@@ -273,6 +295,7 @@ export function computeFinanceSummary(
 
   // Product splits
   const productRevenue: Record<string, number> = {
+    Semplo: 0,
     Vehisoft: 0,
     Adversoft: 0,
     Versandry: 0,
@@ -282,7 +305,8 @@ export function computeFinanceSummary(
 
   invoices.forEach((inv) => {
     const paid = inv.amountPaidKES || 0;
-    if (inv.productSlug === "vehisoft") productRevenue["Vehisoft"] += paid;
+    if (inv.productSlug === "semplo") productRevenue["Semplo"] += paid;
+    else if (inv.productSlug === "vehisoft") productRevenue["Vehisoft"] += paid;
     else if (inv.productSlug === "adversoft") productRevenue["Adversoft"] += paid;
     else if (inv.productSlug === "versandry") productRevenue["Versandry"] += paid;
     else if (inv.productSlug === "lipatim") productRevenue["LipaTim"] += paid;
@@ -291,6 +315,7 @@ export function computeFinanceSummary(
 
   // Product MRR splits from subscriptions
   const productMRR: Record<string, number> = {
+    Semplo: 0,
     Vehisoft: 0,
     Adversoft: 0,
     Versandry: 0,
@@ -299,7 +324,8 @@ export function computeFinanceSummary(
   };
 
   activeSubs.forEach((s) => {
-    if (s.productSlug === "vehisoft") productMRR["Vehisoft"] += s.monthlyFeeKES;
+    if (s.productSlug === "semplo") productMRR["Semplo"] += s.monthlyFeeKES;
+    else if (s.productSlug === "vehisoft") productMRR["Vehisoft"] += s.monthlyFeeKES;
     else if (s.productSlug === "adversoft") productMRR["Adversoft"] += s.monthlyFeeKES;
     else if (s.productSlug === "versandry") productMRR["Versandry"] += s.monthlyFeeKES;
     else if (s.productSlug === "lipatim") productMRR["LipaTim"] += s.monthlyFeeKES;

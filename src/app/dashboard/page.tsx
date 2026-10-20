@@ -211,14 +211,16 @@ export default function DashboardPage() {
   const money = useMemo(() => {
     const totalCollected = financeSummary.totalCollected;
     const colors: Record<string, string> = {
+      Semplo: "#10b981",
       Vehisoft: "#6366f1",
       Versandry: "#06b6d4",
       Adversoft: "#8b5cf6",
-      LipaTim: "#10b981",
+      LipaTim: "#3b82f6",
       "Melio RMS": "#f59e0b",
     };
 
     const productRevenueBreakdown = [
+      "Semplo",
       "Vehisoft",
       "Versandry",
       "Adversoft",
@@ -1256,7 +1258,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Grid of Product Cash Breakdown */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-3 border-t border-slate-800/60">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4 pt-3 border-t border-slate-800/60">
                 {money.productRevenueBreakdown.map((item) => (
                   <div key={item.name} className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
                     <div className="flex items-center justify-between text-[11px]">

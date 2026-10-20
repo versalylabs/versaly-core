@@ -29,6 +29,13 @@ export default function ProductsPage() {
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
+            const hasSemplo = parsed.some((p: VersalyProduct) => p.slug === "semplo");
+            if (!hasSemplo) {
+              const semplo = VERSALY_PRODUCTS.find((p) => p.slug === "semplo");
+              if (semplo) {
+                return [semplo, ...parsed];
+              }
+            }
             return parsed;
           }
         }
@@ -428,6 +435,7 @@ export default function ProductsPage() {
                       onChange={(e) => setFormCategory(e.target.value as VersalyProduct["category"])}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
+                      <option value="HR & Workforce Management">HR &amp; Workforce Management</option>
                       <option value="Automotive">Automotive</option>
                       <option value="Laundry & Dry Cleaning">Laundry &amp; Dry Cleaning</option>
                       <option value="Advertising & Signage">Advertising &amp; Signage</option>

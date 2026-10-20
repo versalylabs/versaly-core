@@ -37,6 +37,54 @@ export interface DecisionRecordSeed {
 
 export const KNOWLEDGE_ARTICLES: KnowledgeArticleSeed[] = [
   {
+    id: "kb-semplo-payroll",
+    slug: "semplo-kenyan-statutory-payroll-and-biometric-attendance-protocol",
+    title: "Semplo: Statutory Payroll Configuration & Attendance Deployment Protocol",
+    category: "SOP_PLAYBOOK",
+    productSlug: "semplo",
+    productName: "Semplo",
+    summary: "Standard setup guide for onboarding new enterprise clients onto Semplo HR, calibrating KRA PAYE, NSSF Tier I & II, SHIF, Housing Levy, and biometric attendance clocks.",
+    authorName: "Sarah (Product Lead)",
+    version: 1,
+    tags: ["Semplo", "HR", "Payroll", "KRA", "NSSF", "SHIF", "Housing Levy", "Biometric"],
+    isVerified: true,
+    nextReviewDate: "2026-12-31",
+    updatedAt: "2026-10-20",
+    contentMarkdown: `### Objectives
+Enable 100% compliant and penalty-free payroll processing for Kenyan businesses with under 15 minutes of monthly operational time.
+
+### Statutory Deductions Matrix
+- **KRA PAYE**: Progressive tax brackets based on graduated tax bands with personal relief (KES 2,400/month).
+- **NSSF Tier I & Tier II**: Tier I capped at lower earnings limit (KES 7,000) and Tier II up to upper limit (KES 36,000).
+- **SHIF (Social Health Insurance Fund)**: 2.75% of gross salary with minimum contribution of KES 300.
+- **Affordable Housing Levy**: 1.5% employee + 1.5% employer contribution on gross salary.
+
+### Biometric Hardware Integration
+- Plug ZKTeco or Anviz biometric time clock into the client LAN network.
+- Input Semplo WebSocket Gateway URL and Client License Token in the device network config.
+- Verify test employee punch shows up in Semplo live attendance feed within 3 seconds.`,
+    checklists: [
+      {
+        stepOrder: 1,
+        title: "Employee Master CSV Import",
+        description: "Upload staff master record including National ID, KRA PIN, NSSF No, SHIF No, and bank/M-Pesa payment details.",
+        roleScope: "Onboarding Specialist",
+      },
+      {
+        stepOrder: 2,
+        title: "Statutory Rate Verification",
+        description: "Verify PAYE tax bands, NSSF Tier I/II calculations, and SHIF 2.75% formulas against current gazetted legislation.",
+        roleScope: "Payroll Lead",
+      },
+      {
+        stepOrder: 3,
+        title: "Biometric Terminal Sync",
+        description: "Enroll employee fingerprints and test live clock-in synchronization with Semplo shift rostering.",
+        roleScope: "Field Engineer",
+      },
+    ],
+  },
+  {
     id: "kb-etims-melio",
     slug: "melio-etims-integration-runbook",
     title: "Melio RMS: KRA eTIMS VSCU Integration & Sign-off Runbook",

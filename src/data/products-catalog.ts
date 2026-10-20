@@ -3,7 +3,7 @@ export interface VersalyProduct {
   slug: string;
   name: string;
   tagline: string;
-  category: "Advertising & Signage" | "Automotive" | "Laundry & Dry Cleaning" | "Fintech & Payments" | "Hospitality";
+  category: "HR & Workforce Management" | "Advertising & Signage" | "Automotive" | "Laundry & Dry Cleaning" | "Fintech & Payments" | "Hospitality";
   targetMarket: string;
   description: string;
   setupFee: number; // in KES
@@ -22,6 +22,53 @@ export interface VersalyProduct {
 }
 
 export const VERSALY_PRODUCTS: VersalyProduct[] = [
+  {
+    id: "prod-semplo",
+    slug: "semplo",
+    name: "Semplo",
+    tagline: "Modern HR, automated Kenyan statutory payroll, biometric attendance & workforce operations.",
+    category: "HR & Workforce Management",
+    targetMarket: "Growing SMEs, logistics firms, retail chains, medical clinics, schools, and professional service offices (10 - 500+ staff)",
+    description:
+      "All-in-one human resource and payroll operating system built specifically for African businesses. Eliminates payroll errors with 100% compliant KRA PAYE, NSSF Tier I & II, SHIF, and Housing Levy calculations. Includes biometric/GPS mobile clock-in attendance, self-service leave requests, digital employee vaults, and instant M-Pesa bulk salary disbursement.",
+    setupFee: 40000,
+    monthlyFee: 15000,
+    pricingModel: "Monthly SaaS (Base tier up to 30 employees + per-staff volume scaling)",
+    guaranteeOffer: "100% Kenyan Statutory Compliance Guarantee: Zero-penalty calculation guarantee for KRA, SHIF, NSSF & Housing Levy.",
+    features: [
+      "Automated KRA, SHIF, NSSF Tier I & II, and Housing Levy compliant payroll engine",
+      "Biometric fingerprint & GPS mobile geofenced clock-in attendance tracking",
+      "Employee self-service portal for leave applications, expense claims & payslip downloads",
+      "Instant M-Pesa B2C bulk salary & advance disbursement integration",
+      "Digital employee document vault, contract renewal alerts & disciplinary logging",
+      "Performance appraisal KPI scorecards, overtime calculation & shift rostering",
+    ],
+    salesCollateral: [
+      {
+        title: "Semplo HR & Payroll 1-Page Executive Sales Sheet",
+        type: "sales_sheet",
+        description: "Highlights statutory compliance, zero payroll calculation errors, and attendance leakage prevention",
+      },
+      {
+        title: "HR Director & Finance Head 10-Minute Walkthrough Script",
+        type: "demo_script",
+        description: "Demo from employee clock-in to 1-click payslip generation and KRA P10 return export",
+      },
+      {
+        title: "Objection Response: 'We currently process payroll in Excel'",
+        type: "objection_guide",
+        description: "Exposes manual formula errors, changing statutory levy rates, and audit penalty risks",
+      },
+      {
+        title: "WhatsApp Intro Pitch for Business Owners & MDs",
+        type: "whatsapp_script",
+        description: "High-converting outreach on reducing monthly payroll processing from 3 days to 15 minutes",
+      },
+    ],
+    activeClientsCount: 5,
+    pipelineDealsCount: 14,
+    status: "ACTIVE",
+  },
   {
     id: "prod-adversoft",
     slug: "adversoft",

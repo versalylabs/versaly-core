@@ -5,6 +5,7 @@
 // ============================================================================
 
 export type MarketingProduct =
+  | "Semplo"
   | "Adversoft"
   | "Vehisoft"
   | "Versandry"

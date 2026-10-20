@@ -37,10 +37,11 @@ export const INITIAL_MONEY_METRICS = {
   overdueClientsCount: 0,
   averageRevenuePerClient: 0,
   productRevenueBreakdown: [
+    { name: "Semplo", collected: 0, mrr: 0, pct: 0, color: "#10b981" },
     { name: "Vehisoft", collected: 0, mrr: 0, pct: 0, color: "#6366f1" },
     { name: "Versandry", collected: 0, mrr: 0, pct: 0, color: "#06b6d4" },
     { name: "Adversoft", collected: 0, mrr: 0, pct: 0, color: "#8b5cf6" },
-    { name: "LipaTim", collected: 0, mrr: 0, pct: 0, color: "#10b981" },
+    { name: "LipaTim", collected: 0, mrr: 0, pct: 0, color: "#3b82f6" },
     { name: "Melio RMS", collected: 0, mrr: 0, pct: 0, color: "#f59e0b" },
   ],
 };
@@ -141,6 +142,23 @@ export const INITIAL_CLIENT_DELIVERY_METRICS = {
 };
 
 export const INITIAL_PRODUCT_PERFORMANCE: ProductPerformanceItem[] = [
+  {
+    id: "prod-semplo",
+    name: "Semplo",
+    slug: "semplo",
+    category: "HR & Workforce Operations",
+    leadsContacted: 0,
+    demosBooked: 0,
+    dealsWon: 0,
+    revenueCollected: 0,
+    mrr: 0,
+    activeClients: 0,
+    churnedClients: 0,
+    averageDealSize: 0,
+    conversionRatePct: 0,
+    tractionStatus: "Strong Traction",
+    day45Action: "Primary launch product. Target SMEs, logistics, and healthcare clinics for statutory payroll.",
+  },
   {
     id: "prod-vehisoft",
     name: "Vehisoft",

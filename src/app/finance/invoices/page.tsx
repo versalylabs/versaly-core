@@ -661,6 +661,7 @@ export default function InvoicesPage() {
                     onChange={(e) => {
                       const slug = e.target.value as FinanceInvoice["productSlug"];
                       setProductSlug(slug);
+                      if (slug === "semplo") setProductName("Semplo HR & Payroll");
                       if (slug === "vehisoft") setProductName("Vehisoft Auto DMS");
                       if (slug === "adversoft") setProductName("Adversoft Screen OS");
                       if (slug === "versandry") setProductName("Versandry POS");
@@ -669,6 +670,7 @@ export default function InvoicesPage() {
                     }}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
                   >
+                    <option value="semplo">Semplo (HR &amp; Payroll Management)</option>
                     <option value="vehisoft">Vehisoft (Car Yards / Dealerships)</option>
                     <option value="adversoft">Adversoft (Billboards &amp; Screens)</option>
                     <option value="versandry">Versandry (Commercial Laundries)</option>

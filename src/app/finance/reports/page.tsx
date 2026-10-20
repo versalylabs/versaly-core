@@ -112,6 +112,14 @@ export default function FinancialReportsPage() {
   const productMargins = useMemo(() => {
     const products = [
       {
+        slug: "semplo",
+        name: "Semplo",
+        tagline: "HR & Kenyan Statutory Payroll Suite",
+        color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+        barColor: "bg-emerald-500",
+        estMarginPct: 94,
+      },
+      {
         slug: "vehisoft",
         name: "Vehisoft",
         tagline: "Automotive Dealership DMS",
@@ -465,7 +473,7 @@ export default function FinancialReportsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {productMargins.map((prod) => (
               <div
                 key={prod.slug}

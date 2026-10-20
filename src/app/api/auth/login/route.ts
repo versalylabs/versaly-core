@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch {
-      return apiError("Invalid email or password. Demo credentials: versalylabs@gmail.com / labversaly-16", "UNAUTHORIZED", 401);
+      return apiError("Invalid email or password. Please check your credentials and try again.", "UNAUTHORIZED", 401);
     }
   } catch (error) {
     return apiError("Failed to authenticate", "INTERNAL_ERROR", 500, String(error));

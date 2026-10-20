@@ -22,6 +22,7 @@ import {
   SpendStatus,
   MarketingProduct,
 } from "@/data/marketing-seed";
+import { useProductsCatalog } from "@/lib/products-store";
 
 const STORAGE_KEY = "versaly_marketing_spend_v2";
 
@@ -35,16 +36,12 @@ const CHANNELS: SpendChannel[] = [
   "Influencer / Sponsorship",
 ];
 
-const PRODUCTS: MarketingProduct[] = [
-  "Adversoft",
-  "Vehisoft",
-  "Versandry",
-  "LipaTim",
-  "Melio RMS",
-  "Versaly Core / Brand",
-];
-
 export default function MarketingSpendPage() {
+  const { products: catalogProducts } = useProductsCatalog();
+  const productOptions = useMemo(
+    () => Array.from(new Set([...catalogProducts.map((p) => p.name), "Versaly Core / Brand"])),
+    [catalogProducts]
+  );
   const [spends, setSpends] = useState<AdSpendEntry[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -344,7 +341,7 @@ export default function MarketingSpendPage() {
               className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
             >
               <option value="ALL">All Products</option>
-              {PRODUCTS.map((p) => (
+              {productOptions.map((p) => (
                 <option key={p} value={p}>
                   {p}
                 </option>
@@ -555,10 +552,10 @@ export default function MarketingSpendPage() {
                   </label>
                   <select
                     value={formProduct}
-                    onChange={(e) => setFormProduct(e.target.value as MarketingProduct)}
+                    onChange={(e) => setFormProduct(e.target.value as any)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
                   >
-                    {PRODUCTS.map((p) => (
+                    {productOptions.map((p) => (
                       <option key={p} value={p}>
                         {p}
                       </option>

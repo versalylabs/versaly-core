@@ -20,6 +20,7 @@ import {
   CampaignChannel,
   CampaignStatus,
 } from "@/data/marketing-seed";
+import { useProductsCatalog } from "@/lib/products-store";
 
 const STORAGE_KEY = "versaly_marketing_campaigns_v2";
 
@@ -33,16 +34,12 @@ const CHANNELS: CampaignChannel[] = [
   "Direct / Events",
 ];
 
-const PRODUCTS: MarketingProduct[] = [
-  "Adversoft",
-  "Vehisoft",
-  "Versandry",
-  "LipaTim",
-  "Melio RMS",
-  "Versaly Core / Brand",
-];
-
 export default function MarketingCampaignsPage() {
+  const { products: catalogProducts } = useProductsCatalog();
+  const productOptions = useMemo(
+    () => Array.from(new Set([...catalogProducts.map((p) => p.name), "Versaly Core / Brand"])),
+    [catalogProducts]
+  );
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -581,10 +578,10 @@ export default function MarketingCampaignsPage() {
                   </label>
                   <select
                     value={formProduct}
-                    onChange={(e) => setFormProduct(e.target.value as MarketingProduct)}
+                    onChange={(e) => setFormProduct(e.target.value as any)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-rose-500"
                   >
-                    {PRODUCTS.map((p) => (
+                    {productOptions.map((p) => (
                       <option key={p} value={p}>
                         {p}
                       </option>

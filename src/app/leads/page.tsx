@@ -22,8 +22,10 @@ import {
   DealStageType,
 } from "@/data/leads-seed";
 import { renderTemplate } from "@/lib/templates";
+import { useProductsCatalog } from "@/lib/products-store";
 
 const DEALS_STORAGE_KEY = "versaly_active_deals_v2";
+const RAW_LEADS_STORAGE_KEY = "versaly_raw_leads_v2";
 
 const STAGE_CONFIG: { id: DealStageType; label: string; color: string; badge: string }[] = [
   { id: "CONTACTED", label: "First Contact", color: "border-indigo-500/30 bg-indigo-950/20", badge: "text-indigo-300" },
@@ -35,11 +37,26 @@ const STAGE_CONFIG: { id: DealStageType; label: string; color: string; badge: st
 ];
 
 export default function LeadsPage() {
+  const { products } = useProductsCatalog();
   const [activeTab, setActiveTab] = useState<"pipeline" | "raw_pool">("pipeline");
   const [productFilter, setProductFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [rawLeads, setRawLeads] = useState<RawLeadItem[]>(INITIAL_RAW_LEADS);
+  const [rawLeads, setRawLeads] = useState<RawLeadItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(RAW_LEADS_STORAGE_KEY);
+        if (stored !== null) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_RAW_LEADS;
+  });
+
   const [deals, setDeals] = useState<ActiveDealItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -58,7 +75,7 @@ export default function LeadsPage() {
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<DealStageType | null>(null);
 
-  // Save to localStorage
+  // Save deals to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(DEALS_STORAGE_KEY, JSON.stringify(deals));
@@ -66,6 +83,15 @@ export default function LeadsPage() {
       // ignore
     }
   }, [deals]);
+
+  // Save raw leads to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(RAW_LEADS_STORAGE_KEY, JSON.stringify(rawLeads));
+    } catch {
+      // ignore
+    }
+  }, [rawLeads]);
 
   const [selectedDeal, setSelectedDeal] = useState<ActiveDealItem | null>(null);
   const [proposalModalDeal, setProposalModalDeal] = useState<ActiveDealItem | null>(null);
@@ -77,9 +103,16 @@ export default function LeadsPage() {
   const [newBizName, setNewBizName] = useState("");
   const [newContactName, setNewContactName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newProduct, setNewProduct] = useState("vehisoft");
+  const [newProduct, setNewProduct] = useState("");
   const [newSource, setNewSource] = useState<RawLeadItem["source"]>("Walk-in Route");
   const [newNotes, setNewNotes] = useState("");
+
+  // Default product selection when products load
+  useEffect(() => {
+    if (products.length > 0 && !newProduct) {
+      setNewProduct(products[0].slug);
+    }
+  }, [products, newProduct]);
 
   // Promote raw lead to active deal
   function handlePromoteToDeal(lead: RawLeadItem) {
@@ -136,23 +169,19 @@ export default function LeadsPage() {
     e.preventDefault();
     if (!newBizName.trim()) return;
 
-    const prodNames: Record<string, string> = {
-      adversoft: "Adversoft",
-      vehisoft: "Vehisoft",
-      versandry: "Versandry",
-      lipatim: "LipaTim",
-      "melio-rms": "Melio RMS",
-    };
+    const matchedProduct = products.find((p) => p.slug === newProduct) || products[0];
+    const resolvedSlug = matchedProduct ? matchedProduct.slug : newProduct;
+    const resolvedName = matchedProduct ? matchedProduct.name : newProduct;
 
     const newLead: RawLeadItem = {
-      id: `raw-${newBizName.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${rawLeads.length + 1}`,
+      id: `raw-${newBizName.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now()}`,
       businessName: newBizName,
       contactName: newContactName,
       phone: newPhone,
       whatsapp: newPhone,
       email: "",
-      productSlug: newProduct,
-      productName: prodNames[newProduct] || "Core",
+      productSlug: resolvedSlug,
+      productName: resolvedName,
       location: "Nairobi",
       source: newSource,
       notes: newNotes,
@@ -368,11 +397,7 @@ If the system is not live and operational within 14 days, the setup fee is 100% 
           <span className="text-[11px] text-slate-500 font-medium">Product Filter:</span>
           {[
             { slug: "ALL", label: "All Products" },
-            { slug: "adversoft", label: "Adversoft" },
-            { slug: "vehisoft", label: "Vehisoft" },
-            { slug: "versandry", label: "Versandry" },
-            { slug: "lipatim", label: "LipaTim" },
-            { slug: "melio-rms", label: "Melio RMS" },
+            ...products.map((p) => ({ slug: p.slug, label: p.name })),
           ].map((p) => (
             <button
               key={p.slug}
@@ -718,11 +743,11 @@ If the system is not live and operational within 14 days, the setup fee is 100% 
                       onChange={(e) => setNewProduct(e.target.value)}
                       className="mt-1 w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="vehisoft">Vehisoft</option>
-                      <option value="adversoft">Adversoft</option>
-                      <option value="versandry">Versandry</option>
-                      <option value="lipatim">LipaTim</option>
-                      <option value="melio-rms">Melio RMS</option>
+                      {products.map((p) => (
+                        <option key={p.slug} value={p.slug}>
+                          {p.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

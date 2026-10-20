@@ -22,6 +22,7 @@ import {
   BarChart2,
   CheckSquare,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import {
   INITIAL_MONEY_METRICS,
@@ -38,6 +39,7 @@ import {
   SETUP_FEE_LAUNCH_TARGET,
   MRR_LAUNCH_TARGET,
 } from "@/lib/finance-store";
+import { useProductsCatalog, getProductColor } from "@/lib/products-store";
 
 const DASHBOARD_QUEUE_KEY = "versaly_dashboard_outreach_queue_v2";
 
@@ -59,30 +61,120 @@ interface OutreachItem {
   isOptedOut?: boolean;
 }
 
-interface FridayProductMetrics {
-  adversoft: string;
-  vehisoft: string;
-  versandry: string;
-  lipatim: string;
-}
+type FridayScorecardMetricKey =
+  | "contactsMade"
+  | "checksDelivered"
+  | "demosHeld"
+  | "clientsSigned"
+  | "clientsLive"
+  | "problemsReported"
+  | "referralsReceived";
 
 interface FridayScorecard {
-  contactsMade: FridayProductMetrics;
-  checksDelivered: FridayProductMetrics;
-  demosHeld: FridayProductMetrics;
-  clientsSigned: FridayProductMetrics;
-  clientsLive: FridayProductMetrics;
-  problemsReported: FridayProductMetrics;
-  referralsReceived: FridayProductMetrics;
+  contactsMade: Record<string, string>;
+  checksDelivered: Record<string, string>;
+  demosHeld: Record<string, string>;
+  clientsSigned: Record<string, string>;
+  clientsLive: Record<string, string>;
+  problemsReported: Record<string, string>;
+  referralsReceived: Record<string, string>;
   leadsStuckNotes: string;
   oneChangeTest: string;
   clientNeedsAttention: string;
 }
 
+const SCORECARD_ROWS: { key: FridayScorecardMetricKey; label: string }[] = [
+  { key: "contactsMade", label: "1. Contacts made this week" },
+  { key: "checksDelivered", label: "2. Free checks or maps delivered" },
+  { key: "demosHeld", label: "3. Demos held" },
+  { key: "clientsSigned", label: "4. Clients signed" },
+  { key: "clientsLive", label: "5. Clients gone live" },
+  { key: "problemsReported", label: "6. Problems or bugs reported" },
+  { key: "referralsReceived", label: "7. Referrals received" },
+];
+
 const INITIAL_QUEUE: OutreachItem[] = [];
+
+// ── Intelligence Briefing helper (runs outside React, reads localStorage) ──
+function computeIntelligenceBriefing() {
+  if (typeof window === "undefined") {
+    return { activeTasks: 0, upcomingEvents: 0, activeProjects: 0, openDeals: 0, overdueInvoices: 0, uncontactedLeads: 0 };
+  }
+
+  // Active (incomplete) tasks
+  let activeTasks = 0;
+  try {
+    const raw = localStorage.getItem("versaly_daily_tasks");
+    if (raw) {
+      const tasks = JSON.parse(raw) as Array<{ completed?: boolean }>;
+      activeTasks = tasks.filter((t) => !t.completed).length;
+    }
+  } catch { /* ignore */ }
+
+  // Upcoming events in next 7 days
+  let upcomingEvents = 0;
+  try {
+    const raw = localStorage.getItem("versaly_business_calendar_v2");
+    if (raw) {
+      const events = JSON.parse(raw) as Array<{ date?: string }>;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const next7 = new Date(today);
+      next7.setDate(next7.getDate() + 7);
+      upcomingEvents = events.filter((e) => {
+        if (!e.date) return false;
+        const d = new Date(e.date);
+        return d >= today && d <= next7;
+      }).length;
+    }
+  } catch { /* ignore */ }
+
+  // Active projects
+  let activeProjects = 0;
+  try {
+    const raw = localStorage.getItem("versaly_projects_list_v2");
+    if (raw) {
+      const projects = JSON.parse(raw) as Array<{ status?: string }>;
+      activeProjects = projects.filter((p) => p.status === "ACTIVE" || (p.status !== "COMPLETED" && p.status !== "CANCELLED")).length;
+    }
+  } catch { /* ignore */ }
+
+  // Open deals (not WON or LOST)
+  let openDeals = 0;
+  try {
+    const raw = localStorage.getItem("versaly_active_deals_v2");
+    if (raw) {
+      const deals = JSON.parse(raw) as Array<{ stage?: string }>;
+      openDeals = deals.filter((d) => d.stage !== "WON" && d.stage !== "LOST").length;
+    }
+  } catch { /* ignore */ }
+
+  // Overdue invoices
+  let overdueInvoices = 0;
+  try {
+    const raw = localStorage.getItem("versaly_finance_invoices_v2");
+    if (raw) {
+      const invoices = JSON.parse(raw) as Array<{ status?: string }>;
+      overdueInvoices = invoices.filter((i) => i.status === "OVERDUE").length;
+    }
+  } catch { /* ignore */ }
+
+  // Uncontacted leads
+  let uncontactedLeads = 0;
+  try {
+    const raw = localStorage.getItem("versaly_raw_leads_v2");
+    if (raw) {
+      const leads = JSON.parse(raw) as Array<{ status?: string }>;
+      uncontactedLeads = leads.filter((l) => l.status === "UNCONTACTED").length;
+    }
+  } catch { /* ignore */ }
+
+  return { activeTasks, upcomingEvents, activeProjects, openDeals, overdueInvoices, uncontactedLeads };
+}
 
 
 export default function DashboardPage() {
+  const { products: catalogProducts } = useProductsCatalog();
   const [activeSection, setActiveSection] = useState<"ALL" | "MONEY" | "SALES" | "PIPELINE" | "DELIVERY" | "PRODUCTS">("ALL");
   const [isFridayReview, setIsFridayReview] = useState(false);
   const [selectedProductFilter, setSelectedProductFilter] = useState<string>("ALL");
@@ -208,34 +300,55 @@ export default function DashboardPage() {
     return computeFinanceSummary(finInvoices, finExpenses, finSubscriptions);
   }, [finInvoices, finExpenses, finSubscriptions]);
 
+  // ── Intelligence Briefing ─────────────────────────────────────────────────
+  const [intelligenceBriefing, setIntelligenceBriefing] = useState(() =>
+    computeIntelligenceBriefing()
+  );
+
+  useEffect(() => {
+    const refresh = () => setIntelligenceBriefing(computeIntelligenceBriefing());
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("versaly_products_updated", refresh);
+    window.addEventListener("versaly_tasks_updated", refresh);
+    window.addEventListener("versaly_calendar_updated", refresh);
+    window.addEventListener("versaly_projects_updated", refresh);
+    window.addEventListener("versaly_deals_updated", refresh);
+    window.addEventListener("versaly_leads_updated", refresh);
+    window.addEventListener("versaly_invoices_updated", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("versaly_products_updated", refresh);
+      window.removeEventListener("versaly_tasks_updated", refresh);
+      window.removeEventListener("versaly_calendar_updated", refresh);
+      window.removeEventListener("versaly_projects_updated", refresh);
+      window.removeEventListener("versaly_deals_updated", refresh);
+      window.removeEventListener("versaly_leads_updated", refresh);
+      window.removeEventListener("versaly_invoices_updated", refresh);
+    };
+  }, []);
+
   const money = useMemo(() => {
     const totalCollected = financeSummary.totalCollected;
-    const colors: Record<string, string> = {
-      Semplo: "#10b981",
-      Vehisoft: "#6366f1",
-      Versandry: "#06b6d4",
-      Adversoft: "#8b5cf6",
-      LipaTim: "#3b82f6",
-      "Melio RMS": "#f59e0b",
-    };
 
-    const productRevenueBreakdown = [
-      "Semplo",
-      "Vehisoft",
-      "Versandry",
-      "Adversoft",
-      "LipaTim",
-      "Melio RMS",
-    ].map((name) => {
-      const collected = financeSummary.productRevenue[name] || 0;
-      const mrr = financeSummary.productMRR[name] || 0;
+    const productRevenueBreakdown = catalogProducts.map((prod) => {
+      const collected =
+        financeSummary.productRevenue[prod.name] ||
+        financeSummary.productRevenue[prod.slug] ||
+        0;
+      const mrr =
+        financeSummary.productMRR[prod.name] ||
+        financeSummary.productMRR[prod.slug] ||
+        0;
       const pct = totalCollected > 0 ? Math.round((collected / totalCollected) * 100) : 0;
       return {
-        name,
+        name: prod.name,
+        slug: prod.slug,
         collected,
         mrr,
         pct,
-        color: colors[name] || "#6366f1",
+        color: getProductColor(prod.slug || prod.name),
       };
     });
 
@@ -256,7 +369,8 @@ export default function DashboardPage() {
       activePayingAccountsCount: activeCount,
       productRevenueBreakdown,
     };
-  }, [financeSummary]);
+  }, [financeSummary, catalogProducts]);
+
   const sales = useMemo(() => {
     return {
       ...INITIAL_SALES_ACTIVITY_METRICS,
@@ -264,9 +378,53 @@ export default function DashboardPage() {
       outreachThisWeek: INITIAL_SALES_ACTIVITY_METRICS.outreachThisWeek + loggedCount,
     };
   }, [loggedCount]);
+
   const pipeline = INITIAL_PIPELINE_METRICS;
   const clientDelivery = INITIAL_CLIENT_DELIVERY_METRICS;
-  const products = INITIAL_PRODUCT_PERFORMANCE;
+
+  const products = useMemo(() => {
+    return catalogProducts.map((p) => {
+      const existing = INITIAL_PRODUCT_PERFORMANCE.find(
+        (item) => item.slug === p.slug || item.name.toLowerCase() === p.name.toLowerCase()
+      );
+      const collected =
+        financeSummary.productRevenue[p.name] || financeSummary.productRevenue[p.slug] || 0;
+      const mrr =
+        financeSummary.productMRR[p.name] ||
+        financeSummary.productMRR[p.slug] ||
+        p.monthlyFee * (p.activeClientsCount || 0);
+
+      if (existing) {
+        return {
+          ...existing,
+          category: p.category || existing.category,
+          name: p.name,
+          slug: p.slug,
+          revenueCollected: collected,
+          mrr: mrr,
+          activeClients: p.activeClientsCount || existing.activeClients,
+        };
+      }
+
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        category: p.category,
+        leadsContacted: 0,
+        demosBooked: 0,
+        dealsWon: 0,
+        revenueCollected: collected,
+        mrr: mrr,
+        activeClients: p.activeClientsCount || 0,
+        churnedClients: 0,
+        averageDealSize: p.setupFee || 35000,
+        conversionRatePct: 0,
+        tractionStatus: "Strong Traction" as const,
+        day45Action: `${p.name} active pipeline expansion and direct client acquisition.`,
+      };
+    });
+  }, [catalogProducts, financeSummary]);
 
   const filteredProducts = useMemo(() => {
     if (selectedProductFilter === "ALL") return products;
@@ -432,50 +590,67 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Business Health Bar: 82/100 */}
-        <div className="liquid-glass p-4 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 border border-indigo-500/20">
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center font-extrabold text-emerald-400 text-base shadow-sm">
-              82
+        {/* Versaly Intelligence Briefing */}
+        <div className="liquid-glass p-4 rounded-2xl border border-indigo-500/20">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+              <Sparkles className="h-5 w-5 text-indigo-400" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-white">Business Health Score</span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  82 / 100 • Strong
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span className="font-bold text-xs text-white">Versaly Intelligence Briefing</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  Autonomous
                 </span>
+                {intelligenceBriefing.overdueInvoices > 0 && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse">
+                    ⚠ Action Required
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Composite index tracking 5 core operational vectors across the 4-week launch push.
+              <p className="text-[12px] text-slate-400 leading-relaxed italic">
+                &ldquo;Good day. You have{" "}
+                <span className="font-bold text-white not-italic">{intelligenceBriefing.activeTasks} active task{intelligenceBriefing.activeTasks !== 1 ? "s" : ""}</span>{" "}
+                in your execution queue,{" "}
+                <span className="font-bold text-white not-italic">{intelligenceBriefing.upcomingEvents} upcoming event{intelligenceBriefing.upcomingEvents !== 1 ? "s" : ""}</span>{" "}
+                in the next 7 days,{" "}
+                <span className="font-bold text-white not-italic">{intelligenceBriefing.activeProjects} active project{intelligenceBriefing.activeProjects !== 1 ? "s" : ""}</span>{" "}
+                in delivery, and{" "}
+                <span className="font-bold text-white not-italic">{intelligenceBriefing.openDeals} open deal{intelligenceBriefing.openDeals !== 1 ? "s" : ""}</span>{" "}
+                in the pipeline.
+                {intelligenceBriefing.overdueInvoices > 0
+                  ? <> <span className="font-bold text-rose-400 not-italic">{intelligenceBriefing.overdueInvoices} invoice{intelligenceBriefing.overdueInvoices !== 1 ? "s are" : " is"} overdue</span> — immediate attention required.</>
+                  : " All invoices are current."
+                }
+                {intelligenceBriefing.uncontactedLeads > 0 && (
+                  <> <span className="font-bold text-amber-400 not-italic">{intelligenceBriefing.uncontactedLeads} cold lead{intelligenceBriefing.uncontactedLeads !== 1 ? "s" : ""}</span> await first contact.&rdquo;</>
+                )}
+                {intelligenceBriefing.uncontactedLeads === 0 && " Versaly has organized your priorities across all subsystems.\u201d"}
               </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap text-[11px]">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="text-slate-300 font-medium">Sales:</span>
-              <span className="text-emerald-400 font-semibold">🟢 88/100</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="text-slate-300 font-medium">Clients:</span>
-              <span className="text-emerald-400 font-semibold">🟢 90/100</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="text-slate-300 font-medium">Projects:</span>
-              <span className="text-amber-400 font-semibold">🟡 72/100</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="text-slate-300 font-medium">Cash:</span>
-              <span className="text-amber-400 font-semibold">🟡 75/100</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="text-slate-300 font-medium">Operations:</span>
-              <span className="text-emerald-400 font-semibold">🟢 85/100</span>
+              <div className="flex items-center gap-2 mt-2.5 flex-wrap text-[10px]">
+                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
+                  📋 {intelligenceBriefing.activeTasks} Tasks
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
+                  📅 {intelligenceBriefing.upcomingEvents} Events
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
+                  🚀 {intelligenceBriefing.activeProjects} Projects
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300">
+                  💼 {intelligenceBriefing.openDeals} Pipeline
+                </span>
+                {intelligenceBriefing.uncontactedLeads > 0 && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                    ⚡ {intelligenceBriefing.uncontactedLeads} Cold Leads
+                  </span>
+                )}
+                {intelligenceBriefing.overdueInvoices > 0 && (
+                  <span className="px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                    ⚠️ {intelligenceBriefing.overdueInvoices} Overdue
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -527,410 +702,43 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* 4-Product Scorecard Table */}
+            {/* Dynamic Product Scorecard Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-900/60">
                     <th className="p-3">Weekly Review Question</th>
-                    <th className="p-3 text-center text-indigo-400">Adversoft</th>
-                    <th className="p-3 text-center text-indigo-400">Vehisoft</th>
-                    <th className="p-3 text-center text-indigo-400">Versandry</th>
-                    <th className="p-3 text-center text-indigo-400">LipaTim</th>
+                    {catalogProducts.map((cp) => (
+                      <th key={cp.slug} className="p-3 text-center text-indigo-400 whitespace-nowrap">
+                        {cp.name}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  <tr>
-                    <td className="p-3 font-medium text-slate-200">1. Contacts made this week</td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.contactsMade.adversoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            contactsMade: { ...p.contactsMade, adversoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.contactsMade.vehisoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            contactsMade: { ...p.contactsMade, vehisoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.contactsMade.versandry}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            contactsMade: { ...p.contactsMade, versandry: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.contactsMade.lipatim}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            contactsMade: { ...p.contactsMade, lipatim: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="p-3 font-medium text-slate-200">2. Free checks or maps delivered</td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.checksDelivered.adversoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            checksDelivered: { ...p.checksDelivered, adversoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.checksDelivered.vehisoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            checksDelivered: { ...p.checksDelivered, vehisoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.checksDelivered.versandry}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            checksDelivered: { ...p.checksDelivered, versandry: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.checksDelivered.lipatim}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            checksDelivered: { ...p.checksDelivered, lipatim: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="p-3 font-medium text-slate-200">3. Demos held</td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.demosHeld.adversoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            demosHeld: { ...p.demosHeld, adversoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.demosHeld.vehisoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            demosHeld: { ...p.demosHeld, vehisoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.demosHeld.versandry}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            demosHeld: { ...p.demosHeld, versandry: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.demosHeld.lipatim}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            demosHeld: { ...p.demosHeld, lipatim: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="p-3 font-medium text-slate-200">4. Clients signed</td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsSigned.adversoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsSigned: { ...p.clientsSigned, adversoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsSigned.vehisoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsSigned: { ...p.clientsSigned, vehisoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsSigned.versandry}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsSigned: { ...p.clientsSigned, versandry: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsSigned.lipatim}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsSigned: { ...p.clientsSigned, lipatim: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono font-bold text-emerald-400 rounded bg-slate-900 border border-slate-800"
-                      />
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="p-3 font-medium text-slate-200">5. Clients live</td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsLive.adversoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsLive: { ...p.clientsLive, adversoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsLive.vehisoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsLive: { ...p.clientsLive, vehisoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsLive.versandry}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsLive: { ...p.clientsLive, versandry: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.clientsLive.lipatim}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            clientsLive: { ...p.clientsLive, lipatim: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="p-3 font-medium text-slate-200">6. Problems reported by clients</td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.problemsReported.adversoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            problemsReported: { ...p.problemsReported, adversoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.problemsReported.vehisoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            problemsReported: { ...p.problemsReported, vehisoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.problemsReported.versandry}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            problemsReported: { ...p.problemsReported, versandry: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.problemsReported.lipatim}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            problemsReported: { ...p.problemsReported, lipatim: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="p-3 font-medium text-slate-200">7. Referrals received</td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.referralsReceived.adversoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            referralsReceived: { ...p.referralsReceived, adversoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.referralsReceived.vehisoft}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            referralsReceived: { ...p.referralsReceived, vehisoft: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.referralsReceived.versandry}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            referralsReceived: { ...p.referralsReceived, versandry: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <input
-                        type="text"
-                        value={fridayScorecard.referralsReceived.lipatim}
-                        onChange={(e) =>
-                          setFridayScorecard((p) => ({
-                            ...p,
-                            referralsReceived: { ...p.referralsReceived, lipatim: e.target.value },
-                          }))
-                        }
-                        className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100"
-                      />
-                    </td>
-                  </tr>
+                  {SCORECARD_ROWS.map((row) => (
+                    <tr key={row.key}>
+                      <td className="p-3 font-medium text-slate-200">{row.label}</td>
+                      {catalogProducts.map((cp) => (
+                        <td key={cp.slug} className="p-2 text-center">
+                          <input
+                            type="text"
+                            value={fridayScorecard[row.key]?.[cp.slug] || "0"}
+                            onChange={(e) =>
+                              setFridayScorecard((p) => ({
+                                ...p,
+                                [row.key]: {
+                                  ...p[row.key],
+                                  [cp.slug]: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-16 px-2 py-1 text-center font-mono rounded bg-slate-900 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -1982,12 +1790,12 @@ export default function DashboardPage() {
                   onChange={(e) => setSelectedProductFilter(e.target.value)}
                   className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="ALL">All 5 Products</option>
-                  <option value="vehisoft">Vehisoft (Garages)</option>
-                  <option value="versandry">Versandry (Laundromats)</option>
-                  <option value="adversoft">Adversoft (Signage)</option>
-                  <option value="lipatim">LipaTim (Rent Billing)</option>
-                  <option value="melio-rms">Melio RMS (Restaurants)</option>
+                  <option value="ALL">All Products ({catalogProducts.length})</option>
+                  {catalogProducts.map((p) => (
+                    <option key={p.slug} value={p.slug}>
+                      {p.name} ({p.category})
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -2281,11 +2089,11 @@ export default function DashboardPage() {
                       onChange={(e) => setNewProduct(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="Vehisoft">Vehisoft</option>
-                      <option value="Versandry">Versandry</option>
-                      <option value="Adversoft">Adversoft</option>
-                      <option value="LipaTim">LipaTim</option>
-                      <option value="Melio RMS">Melio RMS</option>
+                      {catalogProducts.map((p) => (
+                        <option key={p.slug} value={p.name}>
+                          {p.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

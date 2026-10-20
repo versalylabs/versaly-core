@@ -29,6 +29,7 @@ import {
   get5AMCycleKey,
   getRhythmTasksForDate,
 } from "@/data/tasks-data";
+import { useProductsCatalog } from "@/lib/products-store";
 
 const STORAGE_KEY = "versaly_daily_tasks";
 const CYCLE_KEY = "versaly_last_5am_cycle";
@@ -36,6 +37,7 @@ const ROADMAP_STORAGE_KEY = "versaly_launch_roadmap_weeks";
 const RHYTHM_STORAGE_KEY = "versaly_weekly_rhythms";
 
 export default function TasksPage() {
+  const { products: catalogProducts } = useProductsCatalog();
   const [tasks, setTasks] = useState<DailyTask[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -1245,11 +1247,11 @@ export default function TasksPage() {
                       onChange={(e) => setFormProduct(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="Adversoft">Adversoft</option>
-                      <option value="Vehisoft">Vehisoft</option>
-                      <option value="Versandry">Versandry</option>
-                      <option value="LipaTim">LipaTim</option>
-                      <option value="Melio RMS">Melio RMS</option>
+                      {catalogProducts.map((p) => (
+                        <option key={p.slug} value={p.name}>
+                          {p.name}
+                        </option>
+                      ))}
                       <option value="Multi-product">Multi-product</option>
                     </select>
                   </div>
@@ -1683,11 +1685,11 @@ export default function TasksPage() {
                         onChange={(e) => setNewRhythmTaskProduct(e.target.value)}
                         className="w-full px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200"
                       >
-                        <option value="Adversoft">Adversoft</option>
-                        <option value="Vehisoft">Vehisoft</option>
-                        <option value="Versandry">Versandry</option>
-                        <option value="LipaTim">LipaTim</option>
-                        <option value="Melio RMS">Melio RMS</option>
+                        {catalogProducts.map((p) => (
+                          <option key={p.slug} value={p.name}>
+                            {p.name}
+                          </option>
+                        ))}
                         <option value="Multi-product">Multi-product</option>
                       </select>
                     </div>

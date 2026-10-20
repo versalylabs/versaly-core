@@ -18,6 +18,7 @@ import {
   ImplementationProjectItem,
   ProjectTaskItem,
 } from "@/data/clients-projects-seed";
+import { useProductsCatalog } from "@/lib/products-store";
 
 const STORAGE_KEY = "versaly_projects_list_v2";
 
@@ -33,6 +34,7 @@ const DEFAULT_8_STEPS = [
 ];
 
 export default function ProjectsPage() {
+  const { products: catalogProducts } = useProductsCatalog();
   const [projects, setProjects] = useState<ImplementationProjectItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -93,13 +95,13 @@ export default function ProjectsPage() {
     }
   }, [projects]);
 
-  const productMap: Record<string, string> = {
-    adversoft: "Adversoft",
-    vehisoft: "Vehisoft",
-    versandry: "Versandry",
-    lipatim: "LipaTim",
-    "melio-rms": "Melio RMS",
-  };
+  const productMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    catalogProducts.forEach((p) => {
+      map[p.slug] = p.name;
+    });
+    return map;
+  }, [catalogProducts]);
 
   // Toggle task completion
   function handleToggleTask(projectId: string, taskId: string) {
@@ -348,11 +350,7 @@ export default function ProjectsPage() {
           <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
             {[
               { slug: "ALL", label: "All Products" },
-              { slug: "adversoft", label: "Adversoft" },
-              { slug: "vehisoft", label: "Vehisoft" },
-              { slug: "versandry", label: "Versandry" },
-              { slug: "lipatim", label: "LipaTim" },
-              { slug: "melio-rms", label: "Melio RMS" },
+              ...catalogProducts.map((p) => ({ slug: p.slug, label: p.name })),
             ].map((p) => (
               <button
                 key={p.slug}
@@ -664,11 +662,11 @@ export default function ProjectsPage() {
                       onChange={(e) => setFormProductSlug(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="vehisoft">Vehisoft</option>
-                      <option value="versandry">Versandry</option>
-                      <option value="adversoft">Adversoft</option>
-                      <option value="lipatim">LipaTim</option>
-                      <option value="melio-rms">Melio RMS</option>
+                      {catalogProducts.map((p) => (
+                        <option key={p.slug} value={p.slug}>
+                          {p.name} ({p.category})
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

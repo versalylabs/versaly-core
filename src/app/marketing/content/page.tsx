@@ -30,6 +30,7 @@ import {
   ContentCategory,
   MarketingProduct,
 } from "@/data/marketing-seed";
+import { useProductsCatalog } from "@/lib/products-store";
 
 const STORAGE_KEY = "versaly_marketing_posts_v2";
 
@@ -104,6 +105,11 @@ function getCurrentWeekDays(): WeekDayItem[] {
 }
 
 export default function MarketingContentPage() {
+  const { products: catalogProducts } = useProductsCatalog();
+  const productOptions = useMemo(
+    () => Array.from(new Set([...catalogProducts.map((p) => p.name), "Versaly Core / Brand"])),
+    [catalogProducts]
+  );
   const [posts, setPosts] = useState<SocialPost[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -603,7 +609,7 @@ export default function MarketingContentPage() {
               className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-sky-500"
             >
               <option value="ALL">All Products</option>
-              {PRODUCTS.map((p) => (
+              {productOptions.map((p) => (
                 <option key={p} value={p}>
                   {p}
                 </option>
@@ -833,10 +839,10 @@ export default function MarketingContentPage() {
                   </label>
                   <select
                     value={formProduct}
-                    onChange={(e) => setFormProduct(e.target.value as MarketingProduct)}
+                    onChange={(e) => setFormProduct(e.target.value as any)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-sky-500"
                   >
-                    {PRODUCTS.map((p) => (
+                    {productOptions.map((p) => (
                       <option key={p} value={p}>
                         {p}
                       </option>

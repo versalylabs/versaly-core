@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
-import { VERSALY_PRODUCTS, VersalyProduct, DEFAULT_PRODUCT_CATEGORIES } from "@/data/products-catalog";
+import { VersalyProduct } from "@/data/products-catalog";
+import { useProductsCatalog, useProductCategories } from "@/lib/products-store";
 import {
   Package,
   CheckCircle2,
@@ -24,53 +25,14 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-const STORAGE_KEY = "versaly_products_catalog";
-const CATEGORIES_STORAGE_KEY = "versaly_product_categories_v2";
-
 export default function ProductsPage() {
-  const [categories, setCategories] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
-        if (stored !== null) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
-        }
-      } catch {}
-    }
-    return DEFAULT_PRODUCT_CATEGORIES;
-  });
+  const { categories, setCategories } = useProductCategories();
+  const { products, setProducts } = useProductsCatalog();
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [editingCatOld, setEditingCatOld] = useState<string | null>(null);
   const [editingCatNew, setEditingCatNew] = useState("");
-
-  const [products, setProducts] = useState<VersalyProduct[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored !== null) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            const hasSemplo = parsed.some((p: VersalyProduct) => p.slug === "semplo");
-            if (!hasSemplo) {
-              const semplo = VERSALY_PRODUCTS.find((p) => p.slug === "semplo");
-              if (semplo) {
-                return [semplo, ...parsed];
-              }
-            }
-            return parsed;
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return VERSALY_PRODUCTS;
-  });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,24 +51,6 @@ export default function ProductsPage() {
   const [formGuarantee, setFormGuarantee] = useState("14-Day Live Implementation Guarantee.");
   const [formStatus, setFormStatus] = useState<VersalyProduct["status"]>("ACTIVE");
   const [formFeatures, setFormFeatures] = useState("");
-
-  // Persist products to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    } catch {
-      // ignore
-    }
-  }, [products]);
-
-  // Persist categories to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
-    } catch {
-      // ignore
-    }
-  }, [categories]);
 
   // Category Management Handlers
   const handleAddCategory = (e: React.FormEvent) => {

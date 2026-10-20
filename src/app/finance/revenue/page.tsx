@@ -31,8 +31,10 @@ import {
   SETUP_FEE_LAUNCH_TARGET,
   MRR_LAUNCH_TARGET,
 } from "@/lib/finance-store";
+import { useProductsCatalog, getProductColor } from "@/lib/products-store";
 
 export default function RevenueSubscriptionsPage() {
+  const { products: catalogProducts } = useProductsCatalog();
   const [subscriptions, setSubscriptions] = useState<ClientSubscription[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>("ALL");
@@ -44,7 +46,7 @@ export default function RevenueSubscriptionsPage() {
 
   const [formData, setFormData] = useState({
     clientName: "",
-    productSlug: "semplo" as "semplo" | "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom",
+    productSlug: "semplo" as string,
     productName: "Semplo",
     planTier: "HR & Payroll Pro (Up to 50 Staff)",
     monthlyFeeKES: 20000,
@@ -107,28 +109,27 @@ export default function RevenueSubscriptionsPage() {
 
   // Product breakdown calculation
   const productMRRBreakdown = useMemo(() => {
-    const map: Record<string, { count: number; mrr: number; color: string; slug: string }> = {
-      Semplo: { count: 0, mrr: 0, color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", slug: "semplo" },
-      Vehisoft: { count: 0, mrr: 0, color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20", slug: "vehisoft" },
-      Adversoft: { count: 0, mrr: 0, color: "text-purple-400 bg-purple-500/10 border-purple-500/20", slug: "adversoft" },
-      Versandry: { count: 0, mrr: 0, color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20", slug: "versandry" },
-      LipaTim: { count: 0, mrr: 0, color: "text-blue-400 bg-blue-500/10 border-blue-500/20", slug: "lipatim" },
-      "Melio RMS": { count: 0, mrr: 0, color: "text-amber-400 bg-amber-500/10 border-amber-500/20", slug: "melio" },
-    };
+    const map: Record<string, { count: number; mrr: number; slug: string }> = {};
+    catalogProducts.forEach((p) => {
+      map[p.name] = { count: 0, mrr: 0, slug: p.slug };
+    });
 
     activeSubs.forEach((s) => {
-      if (map[s.productName]) {
-        map[s.productName].count += 1;
-        map[s.productName].mrr += s.monthlyFeeKES;
+      const key = s.productName || catalogProducts.find((p) => p.slug === s.productSlug)?.name || s.productSlug;
+      if (!map[key]) {
+        map[key] = { count: 0, mrr: 0, slug: s.productSlug };
       }
+      map[key].count += 1;
+      map[key].mrr += s.monthlyFeeKES;
     });
 
     return Object.entries(map).map(([name, data]) => ({
       name,
       ...data,
+      color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
       pctOfTotal: totalMRR > 0 ? Math.round((data.mrr / totalMRR) * 100) : 0,
     }));
-  }, [activeSubs, totalMRR]);
+  }, [catalogProducts, activeSubs, totalMRR]);
 
   const handleOpenAddModal = () => {
     setEditingSub(null);
@@ -478,11 +479,11 @@ export default function RevenueSubscriptionsPage() {
                 className="px-3 py-1.5 text-xs rounded-xl bg-slate-950/70 border border-slate-800 text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="ALL">All Products</option>
-                <option value="semplo">Semplo</option>
-                <option value="vehisoft">Vehisoft</option>
-                <option value="adversoft">Adversoft</option>
-                <option value="versandry">Versandry</option>
-                <option value="lipatim">LipaTim</option>
+                {catalogProducts.map((p) => (
+                  <option key={p.slug} value={p.slug}>
+                    {p.name}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -655,29 +656,22 @@ export default function RevenueSubscriptionsPage() {
                     <select
                       value={formData.productSlug}
                       onChange={(e) => {
-                        const slug = e.target.value as any;
-                        const nameMap: Record<string, string> = {
-                          semplo: "Semplo",
-                          vehisoft: "Vehisoft",
-                          adversoft: "Adversoft",
-                          versandry: "Versandry",
-                          lipatim: "LipaTim",
-                          melio: "Melio RMS",
-                        };
+                        const slug = e.target.value;
+                        const found = catalogProducts.find((p) => p.slug === slug);
                         setFormData({
                           ...formData,
-                          productSlug: slug,
-                          productName: nameMap[slug] || "Semplo",
+                          productSlug: slug as any,
+                          productName: found ? found.name : slug,
+                          monthlyFeeKES: found ? found.monthlyFee : formData.monthlyFeeKES,
                         });
                       }}
                       className="w-full px-3.5 py-2 text-sm rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none text-white cursor-pointer"
                     >
-                      <option value="semplo">Semplo (HR &amp; Payroll Management)</option>
-                      <option value="vehisoft">Vehisoft (Dealerships)</option>
-                      <option value="adversoft">Adversoft (Digital Signage)</option>
-                      <option value="versandry">Versandry (Laundromats)</option>
-                      <option value="lipatim">LipaTim (eTIMS Retail)</option>
-                      <option value="melio">Melio RMS</option>
+                      {catalogProducts.map((p) => (
+                        <option key={p.slug} value={p.slug}>
+                          {p.name} ({p.category})
+                        </option>
+                      ))}
                     </select>
                   </div>
 

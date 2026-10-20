@@ -26,7 +26,7 @@ export interface FinanceInvoice {
   clientName: string;
   clientEmail?: string;
   clientPhone?: string;
-  productSlug: "semplo" | "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom";
+  productSlug: string;
   productName: string;
   status: "DRAFT" | "SENT" | "OVERDUE" | "PAID" | "VOID";
   subtotalKES: number;
@@ -72,7 +72,7 @@ export const STORAGE_SUBSCRIPTIONS = "versaly_finance_subscriptions_v2";
 export interface ClientSubscription {
   id: string;
   clientName: string;
-  productSlug: "semplo" | "vehisoft" | "adversoft" | "versandry" | "lipatim" | "melio" | "custom";
+  productSlug: string;
   productName: string;
   planTier: string;
   monthlyFeeKES: number;
@@ -211,42 +211,20 @@ export function computeFinanceSummary(
   const effectiveARR = effectiveMRR * 12;
 
   // Product splits
-  const productRevenue: Record<string, number> = {
-    Semplo: 0,
-    Vehisoft: 0,
-    Adversoft: 0,
-    Versandry: 0,
-    LipaTim: 0,
-    "Melio RMS": 0,
-  };
+  const productRevenue: Record<string, number> = {};
 
   invoices.forEach((inv) => {
     const paid = inv.amountPaidKES || 0;
-    if (inv.productSlug === "semplo") productRevenue["Semplo"] += paid;
-    else if (inv.productSlug === "vehisoft") productRevenue["Vehisoft"] += paid;
-    else if (inv.productSlug === "adversoft") productRevenue["Adversoft"] += paid;
-    else if (inv.productSlug === "versandry") productRevenue["Versandry"] += paid;
-    else if (inv.productSlug === "lipatim") productRevenue["LipaTim"] += paid;
-    else if (inv.productSlug === "melio") productRevenue["Melio RMS"] += paid;
+    const key = inv.productName || inv.productSlug || "Other";
+    productRevenue[key] = (productRevenue[key] || 0) + paid;
   });
 
   // Product MRR splits from subscriptions
-  const productMRR: Record<string, number> = {
-    Semplo: 0,
-    Vehisoft: 0,
-    Adversoft: 0,
-    Versandry: 0,
-    LipaTim: 0,
-    "Melio RMS": 0,
-  };
+  const productMRR: Record<string, number> = {};
 
   activeSubs.forEach((s) => {
-    if (s.productSlug === "semplo") productMRR["Semplo"] += s.monthlyFeeKES;
-    else if (s.productSlug === "vehisoft") productMRR["Vehisoft"] += s.monthlyFeeKES;
-    else if (s.productSlug === "adversoft") productMRR["Adversoft"] += s.monthlyFeeKES;
-    else if (s.productSlug === "versandry") productMRR["Versandry"] += s.monthlyFeeKES;
-    else if (s.productSlug === "lipatim") productMRR["LipaTim"] += s.monthlyFeeKES;
-    else if (s.productSlug === "melio") productMRR["Melio RMS"] += s.monthlyFeeKES;
+    const key = s.productName || s.productSlug || "Other";
+    productMRR[key] = (productMRR[key] || 0) + s.monthlyFeeKES;
   });
 
   // Extract all payment transactions

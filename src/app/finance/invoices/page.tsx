@@ -10,6 +10,7 @@ import {
   loadInvoicesFromStorage,
   saveInvoicesToStorage,
 } from "@/lib/finance-store";
+import { useProductsCatalog } from "@/lib/products-store";
 import {
   Receipt,
   Plus,
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 
 export default function InvoicesPage() {
+  const { products: catalogProducts } = useProductsCatalog();
   const [invoices, setInvoices] = useState<FinanceInvoice[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -43,9 +45,16 @@ export default function InvoicesPage() {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("+254 ");
-  const [productSlug, setProductSlug] = useState<FinanceInvoice["productSlug"]>("vehisoft");
-  const [productName, setProductName] = useState("Vehisoft Auto DMS");
+  const [productSlug, setProductSlug] = useState<string>("semplo");
+  const [productName, setProductName] = useState("Semplo");
   const [issueDate, setIssueDate] = useState("2026-10-20");
+
+  useEffect(() => {
+    if (catalogProducts.length > 0 && !catalogProducts.some((p) => p.slug === productSlug)) {
+      setProductSlug(catalogProducts[0].slug);
+      setProductName(catalogProducts[0].name);
+    }
+  }, [catalogProducts, productSlug]);
   const [dueDate, setDueDate] = useState("");
   const [invoiceStatus, setInvoiceStatus] = useState<FinanceInvoice["status"]>("SENT");
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([
@@ -659,23 +668,20 @@ export default function InvoicesPage() {
                   <select
                     value={productSlug}
                     onChange={(e) => {
-                      const slug = e.target.value as FinanceInvoice["productSlug"];
+                      const slug = e.target.value;
                       setProductSlug(slug);
-                      if (slug === "semplo") setProductName("Semplo HR & Payroll");
-                      if (slug === "vehisoft") setProductName("Vehisoft Auto DMS");
-                      if (slug === "adversoft") setProductName("Adversoft Screen OS");
-                      if (slug === "versandry") setProductName("Versandry POS");
-                      if (slug === "lipatim") setProductName("LipaTim eTIMS Cashier");
-                      if (slug === "melio") setProductName("Melio RMS");
+                      const found = catalogProducts.find((p) => p.slug === slug);
+                      if (found) {
+                        setProductName(found.name);
+                      }
                     }}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="semplo">Semplo (HR &amp; Payroll Management)</option>
-                    <option value="vehisoft">Vehisoft (Car Yards / Dealerships)</option>
-                    <option value="adversoft">Adversoft (Billboards &amp; Screens)</option>
-                    <option value="versandry">Versandry (Commercial Laundries)</option>
-                    <option value="lipatim">LipaTim (Retail &amp; eTIMS POS)</option>
-                    <option value="melio">Melio RMS</option>
+                    {catalogProducts.map((p) => (
+                      <option key={p.slug} value={p.slug}>
+                        {p.name} ({p.category})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

@@ -19,10 +19,12 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { INITIAL_CLIENTS, ClientItem } from "@/data/clients-projects-seed";
+import { useProductsCatalog } from "@/lib/products-store";
 
 const STORAGE_KEY = "versaly_clients_list_v2";
 
 export default function ClientsPage() {
+  const { products: catalogProducts } = useProductsCatalog();
   const [clients, setClients] = useState<ClientItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -110,13 +112,13 @@ export default function ClientsPage() {
     return clients.filter((c) => c.status === "ONBOARDING").length;
   }, [clients]);
 
-  const productMap: Record<string, string> = {
-    adversoft: "Adversoft",
-    vehisoft: "Vehisoft",
-    versandry: "Versandry",
-    lipatim: "LipaTim",
-    "melio-rms": "Melio RMS",
-  };
+  const productMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    catalogProducts.forEach((p) => {
+      map[p.slug] = p.name;
+    });
+    return map;
+  }, [catalogProducts]);
 
   const openAddModal = () => {
     setEditingClient(null);
@@ -618,14 +620,20 @@ export default function ClientsPage() {
                     <label className="block text-slate-300 font-semibold mb-1">Product Solution</label>
                     <select
                       value={formProductSlug}
-                      onChange={(e) => setFormProductSlug(e.target.value)}
+                      onChange={(e) => {
+                        setFormProductSlug(e.target.value);
+                        const found = catalogProducts.find((p) => p.slug === e.target.value);
+                        if (found) {
+                          setFormMonthlyMRR(found.monthlyFee.toString());
+                        }
+                      }}
                       className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="vehisoft">Vehisoft (Automotive Garage OS)</option>
-                      <option value="versandry">Versandry (Laundromat & Drycleaner)</option>
-                      <option value="adversoft">Adversoft (Advertising & Signage)</option>
-                      <option value="lipatim">LipaTim (Fintech & Rent Collections)</option>
-                      <option value="melio-rms">Melio RMS (Restaurant POS)</option>
+                      {catalogProducts.map((prod) => (
+                        <option key={prod.slug} value={prod.slug}>
+                          {prod.name} ({prod.category})
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

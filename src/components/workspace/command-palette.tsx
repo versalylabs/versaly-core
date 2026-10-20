@@ -30,7 +30,7 @@ import {
   ShieldAlert,
   Cpu,
 } from "lucide-react";
-import { VERSALY_PRODUCTS } from "@/data/products-catalog";
+import { getStoredProducts } from "@/lib/products-store";
 
 interface CommandItem {
   id: string;
@@ -99,7 +99,8 @@ export function CommandPalette({
       { id: "nav-settings", category: "Navigation", title: "Workspace Settings", subtitle: "Team, roles, company profile", href: "/settings", icon: Settings },
     ];
 
-    const products: CommandItem[] = VERSALY_PRODUCTS.map((prod) => ({
+    const dynamicProducts = getStoredProducts();
+    const products: CommandItem[] = dynamicProducts.map((prod) => ({
       id: `prod-${prod.slug}`,
       category: "Products",
       title: prod.name,

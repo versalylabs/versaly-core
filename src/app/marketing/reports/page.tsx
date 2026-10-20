@@ -16,17 +16,17 @@ import {
   AdSpendEntry,
 } from "@/data/marketing-seed";
 
-const CAMPAIGNS_STORAGE = "versaly_marketing_campaigns_v1";
-const SPEND_STORAGE = "versaly_marketing_spend_v1";
+const CAMPAIGNS_STORAGE = "versaly_marketing_campaigns_v2";
+const SPEND_STORAGE = "versaly_marketing_spend_v2";
 
 export default function MarketingReportsPage() {
   const [campaigns] = useState<MarketingCampaign[]>(() => {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(CAMPAIGNS_STORAGE);
-        if (stored) {
+        if (stored !== null) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) return parsed;
         }
       } catch {
         // ignore
@@ -39,9 +39,9 @@ export default function MarketingReportsPage() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(SPEND_STORAGE);
-        if (stored) {
+        if (stored !== null) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) return parsed;
         }
       } catch {
         // ignore
@@ -87,8 +87,10 @@ export default function MarketingReportsPage() {
     return totalLeads > 0 ? Math.round(totalSpend / totalLeads) : 0;
   }, [totalSpend, totalLeads]);
 
-  // Channel Attribution Table Data
+  // Channel Attribution Table Data - Dynamically calculated from campaigns & spends
   const channelData = useMemo(() => {
+    if (campaigns.length === 0 && spends.length === 0) return [];
+
     const map: Record<
       string,
       {
@@ -99,48 +101,27 @@ export default function MarketingReportsPage() {
         dealsWon: number;
         revenue: number;
       }
-    > = {
-      "Billboard / Outdoor": {
-        spend: 150000,
-        impressions: 480000,
-        clicks: 1240,
-        leads: 28,
-        dealsWon: 2,
-        revenue: 240000,
-      },
-      "Meta Ads (FB/IG)": {
-        spend: 24500,
-        impressions: 112000,
-        clicks: 3450,
-        leads: 42,
-        dealsWon: 3,
-        revenue: 195000,
-      },
-      "Google Ads": {
-        spend: 18200,
-        impressions: 38400,
-        clicks: 1980,
-        leads: 31,
-        dealsWon: 4,
-        revenue: 140000,
-      },
-      "TikTok Ads": {
-        spend: 12800,
-        impressions: 215000,
-        clicks: 4120,
-        leads: 26,
-        dealsWon: 2,
-        revenue: 90000,
-      },
-      "Print & Direct Flyers": {
-        spend: 8500,
-        impressions: 5000,
-        clicks: 0,
-        leads: 14,
-        dealsWon: 2,
-        revenue: 65000,
-      },
-    };
+    > = {};
+
+    spends.forEach((s) => {
+      const channelKey = s.channel;
+      if (!map[channelKey]) {
+        map[channelKey] = { spend: 0, impressions: 0, clicks: 0, leads: 0, dealsWon: 0, revenue: 0 };
+      }
+      map[channelKey].spend += s.amount;
+    });
+
+    campaigns.forEach((c) => {
+      const channelKey = c.channel;
+      if (!map[channelKey]) {
+        map[channelKey] = { spend: 0, impressions: 0, clicks: 0, leads: 0, dealsWon: 0, revenue: 0 };
+      }
+      map[channelKey].impressions += c.impressions;
+      map[channelKey].clicks += c.clicks;
+      map[channelKey].leads += c.leadsGenerated;
+      map[channelKey].dealsWon += c.dealsWon;
+      map[channelKey].revenue += c.revenueGenerated;
+    });
 
     return Object.entries(map).map(([channel, data]) => {
       const cpl = data.leads > 0 ? Math.round(data.spend / data.leads) : 0;
@@ -148,49 +129,55 @@ export default function MarketingReportsPage() {
       const roas = data.spend > 0 ? (data.revenue / data.spend).toFixed(2) : "0.00";
       return { channel, ...data, cpl, cac, roas };
     });
-  }, []);
+  }, [campaigns, spends]);
 
-  // Product-Level ROI
+  // Product-Level ROI - Dynamically calculated from campaigns & spends
   const productData = useMemo(() => {
-    return [
+    if (campaigns.length === 0 && spends.length === 0) return [];
+
+    const map: Record<
+      string,
       {
-        product: "Adversoft",
-        channels: "Billboard (Westlands & Ngong Rd) + Agency Outreach",
-        spend: 150000,
-        leads: 28,
-        won: 2,
-        revenue: 240000,
-        roas: "1.60x",
-      },
-      {
-        product: "Vehisoft",
-        channels: "Meta Lead Gen Ads + Kiambu Rd Flyers",
-        spend: 33000,
-        leads: 56,
-        won: 5,
-        revenue: 260000,
-        roas: "7.88x",
-      },
-      {
-        product: "LipaTim",
-        channels: "Google Search (eTIMS) + WhatsApp Retail Check",
-        spend: 18200,
-        leads: 31,
-        won: 4,
-        revenue: 140000,
-        roas: "7.69x",
-      },
-      {
-        product: "Versandry",
-        channels: "TikTok Laundromat Problem Reels",
-        spend: 12800,
-        leads: 26,
-        won: 2,
-        revenue: 90000,
-        roas: "7.03x",
-      },
-    ];
-  }, []);
+        spend: number;
+        leads: number;
+        won: number;
+        revenue: number;
+        channels: Set<string>;
+      }
+    > = {};
+
+    spends.forEach((s) => {
+      if (!map[s.product]) {
+        map[s.product] = { spend: 0, leads: 0, won: 0, revenue: 0, channels: new Set() };
+      }
+      map[s.product].spend += s.amount;
+      map[s.product].channels.add(s.channel);
+    });
+
+    campaigns.forEach((c) => {
+      if (!map[c.product]) {
+        map[c.product] = { spend: 0, leads: 0, won: 0, revenue: 0, channels: new Set() };
+      }
+      map[c.product].leads += c.leadsGenerated;
+      map[c.product].won += c.dealsWon;
+      map[c.product].revenue += c.revenueGenerated;
+      map[c.product].channels.add(c.channel);
+    });
+
+    return Object.entries(map).map(([product, data]) => {
+      const roas = data.spend > 0 ? (data.revenue / data.spend).toFixed(2) + "x" : "0.00x";
+      const channelsText = Array.from(data.channels).join(", ") || "Direct";
+      return {
+        product,
+        channels: channelsText,
+        spend: data.spend,
+        leads: data.leads,
+        won: data.won,
+        revenue: data.revenue,
+        roas,
+      };
+    });
+  }, [campaigns, spends]);
 
   // CSV Export Action
   const handleExportCSV = () => {
@@ -412,37 +399,45 @@ export default function MarketingReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                {channelData.map((row) => (
-                  <tr key={row.channel} className="hover:bg-slate-900/30 transition">
-                    <td className="py-3.5 px-4 font-semibold text-white">
-                      {row.channel}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono">
-                      KES {row.spend.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-400">
-                      {row.impressions.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-indigo-400 font-semibold">
-                      {row.leads}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-amber-400">
-                      KES {row.cpl.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-white font-semibold">
-                      {row.dealsWon}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-emerald-400 font-bold">
-                      KES {row.revenue.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-rose-400 font-semibold">
-                      {row.roas}x
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-right font-medium">
-                      KES {row.cac.toLocaleString()}
+                {channelData.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-10 text-center text-slate-500">
+                      No marketing activity recorded yet. Launch campaigns or log ad spend to see channel attribution.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  channelData.map((row) => (
+                    <tr key={row.channel} className="hover:bg-slate-900/30 transition">
+                      <td className="py-3.5 px-4 font-semibold text-white">
+                        {row.channel}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono">
+                        KES {row.spend.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-400">
+                        {row.impressions.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-indigo-400 font-semibold">
+                        {row.leads}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-amber-400">
+                        KES {row.cpl.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-white font-semibold">
+                        {row.dealsWon}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-emerald-400 font-bold">
+                        KES {row.revenue.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-rose-400 font-semibold">
+                        {row.roas}x
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-right font-medium">
+                        KES {row.cac.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -457,43 +452,49 @@ export default function MarketingReportsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {productData.map((item) => (
-              <div
-                key={item.product}
-                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2.5 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">{item.product}</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                      {item.roas} ROAS
-                    </span>
+          {productData.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
+              No product-level marketing attribution available yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {productData.map((item) => (
+                <div
+                  key={item.product}
+                  className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2.5 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">{item.product}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                        {item.roas} ROAS
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">
+                      {item.channels}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">
-                    {item.channels}
-                  </p>
-                </div>
 
-                <div className="pt-2 border-t border-slate-800 space-y-1 text-[11px] font-mono">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Invested:</span>
-                    <span className="text-white">KES {item.spend.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Inbound Leads:</span>
-                    <span className="text-indigo-400">{item.leads} leads</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Won Revenue:</span>
-                    <span className="text-emerald-400 font-bold">
-                      KES {item.revenue.toLocaleString()}
-                    </span>
+                  <div className="pt-2 border-t border-slate-800 space-y-1 text-[11px] font-mono">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Invested:</span>
+                      <span className="text-white">KES {item.spend.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Inbound Leads:</span>
+                      <span className="text-indigo-400">{item.leads} leads</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Won Revenue:</span>
+                      <span className="text-emerald-400 font-bold">
+                        KES {item.revenue.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Strategic Marketing Insights */}

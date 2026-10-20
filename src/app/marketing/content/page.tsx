@@ -27,7 +27,7 @@ import {
   MarketingProduct,
 } from "@/data/marketing-seed";
 
-const STORAGE_KEY = "versaly_marketing_posts_v1";
+const STORAGE_KEY = "versaly_marketing_posts_v2";
 
 const CHANNELS: SocialChannel[] = [
   "LinkedIn",
@@ -61,9 +61,9 @@ export default function MarketingContentPage() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
+        if (stored !== null) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) return parsed;
         }
       } catch {
         // ignore
@@ -216,6 +216,13 @@ export default function MarketingContentPage() {
     }
   };
 
+  // Handle Clear All
+  const handleClearAll = () => {
+    if (confirm("Clear all scheduled/draft posts to start afresh? This cannot be undone.")) {
+      setPosts([]);
+    }
+  };
+
   // One-click Publish
   const handlePublishNow = (id: string) => {
     setPosts((prev) =>
@@ -266,6 +273,16 @@ export default function MarketingContentPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            {posts.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-950/30 hover:bg-rose-900/40 text-rose-300 border border-rose-800/50 transition"
+                title="Clear all social posts to start afresh"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                <span>Start Afresh</span>
+              </button>
+            )}
             <Link
               href="/marketing/creatives"
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"

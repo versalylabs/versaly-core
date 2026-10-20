@@ -21,7 +21,7 @@ import {
   CampaignStatus,
 } from "@/data/marketing-seed";
 
-const STORAGE_KEY = "versaly_marketing_campaigns_v1";
+const STORAGE_KEY = "versaly_marketing_campaigns_v2";
 
 const CHANNELS: CampaignChannel[] = [
   "Billboard",
@@ -47,9 +47,9 @@ export default function MarketingCampaignsPage() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
+        if (stored !== null) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) return parsed;
         }
       } catch {
         // ignore
@@ -209,6 +209,13 @@ export default function MarketingCampaignsPage() {
     }
   };
 
+  // Handle Clear All
+  const handleClearAll = () => {
+    if (confirm("Clear all marketing campaigns to start afresh? This cannot be undone.")) {
+      setCampaigns([]);
+    }
+  };
+
   // Quick Toggle Status
   const toggleStatus = (id: string, current: CampaignStatus) => {
     const next: CampaignStatus =
@@ -238,6 +245,16 @@ export default function MarketingCampaignsPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            {campaigns.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-950/30 hover:bg-rose-900/40 text-rose-300 border border-rose-800/50 transition"
+                title="Wipe all demo campaigns to start afresh"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                <span>Start Afresh</span>
+              </button>
+            )}
             <Link
               href="/marketing/spend"
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"

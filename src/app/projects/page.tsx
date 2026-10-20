@@ -90,6 +90,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+      window.dispatchEvent(new CustomEvent("versaly_projects_updated"));
     } catch {
       // ignore
     }

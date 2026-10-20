@@ -116,6 +116,7 @@ export default function CalendarPage() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      window.dispatchEvent(new CustomEvent("versaly_calendar_updated"));
     } catch {
       // ignore
     }

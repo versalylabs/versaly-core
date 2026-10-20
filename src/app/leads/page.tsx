@@ -79,6 +79,7 @@ export default function LeadsPage() {
   useEffect(() => {
     try {
       localStorage.setItem(DEALS_STORAGE_KEY, JSON.stringify(deals));
+      window.dispatchEvent(new CustomEvent("versaly_deals_updated"));
     } catch {
       // ignore
     }
@@ -88,6 +89,7 @@ export default function LeadsPage() {
   useEffect(() => {
     try {
       localStorage.setItem(RAW_LEADS_STORAGE_KEY, JSON.stringify(rawLeads));
+      window.dispatchEvent(new CustomEvent("versaly_leads_updated"));
     } catch {
       // ignore
     }

@@ -118,6 +118,8 @@ export function saveSubscriptionsToStorage(subs: ClientSubscription[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_SUBSCRIPTIONS, JSON.stringify(subs));
+    window.dispatchEvent(new CustomEvent("versaly_subscriptions_updated"));
+    window.dispatchEvent(new CustomEvent("versaly_finance_updated"));
   } catch {}
 }
 
@@ -141,6 +143,8 @@ export function saveInvoicesToStorage(invoices: FinanceInvoice[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_INVOICES, JSON.stringify(invoices));
+    window.dispatchEvent(new CustomEvent("versaly_invoices_updated"));
+    window.dispatchEvent(new CustomEvent("versaly_finance_updated"));
   } catch {}
 }
 
@@ -160,6 +164,8 @@ export function saveExpensesToStorage(expenses: FinanceExpense[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_EXPENSES, JSON.stringify(expenses));
+    window.dispatchEvent(new CustomEvent("versaly_expenses_updated"));
+    window.dispatchEvent(new CustomEvent("versaly_finance_updated"));
   } catch {}
 }
 

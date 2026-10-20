@@ -292,9 +292,15 @@ export default function DashboardPage() {
     };
     window.addEventListener("focus", handleSync);
     window.addEventListener("storage", handleSync);
+    window.addEventListener("versaly_finance_updated", handleSync);
+    window.addEventListener("versaly_invoices_updated", handleSync);
+    window.addEventListener("versaly_subscriptions_updated", handleSync);
     return () => {
       window.removeEventListener("focus", handleSync);
       window.removeEventListener("storage", handleSync);
+      window.removeEventListener("versaly_finance_updated", handleSync);
+      window.removeEventListener("versaly_invoices_updated", handleSync);
+      window.removeEventListener("versaly_subscriptions_updated", handleSync);
     };
   }, []);
 
@@ -318,6 +324,8 @@ export default function DashboardPage() {
     window.addEventListener("versaly_deals_updated", refresh);
     window.addEventListener("versaly_leads_updated", refresh);
     window.addEventListener("versaly_invoices_updated", refresh);
+    window.addEventListener("versaly_finance_updated", refresh);
+    window.addEventListener("versaly_clients_updated", refresh);
     return () => {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("focus", refresh);
@@ -328,6 +336,8 @@ export default function DashboardPage() {
       window.removeEventListener("versaly_deals_updated", refresh);
       window.removeEventListener("versaly_leads_updated", refresh);
       window.removeEventListener("versaly_invoices_updated", refresh);
+      window.removeEventListener("versaly_finance_updated", refresh);
+      window.removeEventListener("versaly_clients_updated", refresh);
     };
   }, []);
 
@@ -1114,7 +1124,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Grid of Product Cash Breakdown */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4 pt-3 border-t border-slate-800/60">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 mt-4 pt-3 border-t border-slate-800/60">
                 {money.productRevenueBreakdown.map((item) => (
                   <div key={item.name} className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
                     <div className="flex items-center justify-between text-[11px]">

@@ -174,6 +174,7 @@ export default function TasksPage() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      window.dispatchEvent(new CustomEvent("versaly_tasks_updated"));
     } catch {
       // ignore
     }

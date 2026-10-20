@@ -84,6 +84,7 @@ export default function ClientsPage() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+      window.dispatchEvent(new CustomEvent("versaly_clients_updated"));
     } catch {
       // ignore
     }

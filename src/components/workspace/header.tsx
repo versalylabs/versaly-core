@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Search, Plus, Bell, Menu, Sun, Moon, Clock } from "lucide-react";
 import { NotificationCenter } from "./notification-center";
 import { useTheme } from "@/context/theme-context";
+import { OfflineStatusPill } from "./offline-banner";
 
 interface HeaderProps {
   onOpenCommandPalette: () => void;
@@ -163,6 +164,8 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
             onClose={() => setShowNotifications(false)}
           />
         </div>
+
+        <OfflineStatusPill />
 
         <Link
           href="/calendar"

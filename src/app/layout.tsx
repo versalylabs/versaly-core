@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/context/theme-context";
+import { OfflineProvider } from "@/context/offline-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,9 +14,35 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#020617",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "Versaly Core — Operating System for Versaly",
+  title: {
+    default: "Versaly Core — Operating System for Versaly",
+    template: "%s | Versaly Core",
+  },
   description: "Centralized business operations platform and single source of truth for Versaly.",
+  applicationName: "Versaly Core",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Versaly Core",
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +56,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
-        <ThemeProvider>{children}</ThemeProvider>
+        <OfflineProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </OfflineProvider>
       </body>
     </html>
   );

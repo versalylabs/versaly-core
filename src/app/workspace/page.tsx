@@ -222,12 +222,14 @@ export default function MyWorkspacePage() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_TASKS, JSON.stringify(myTasks));
+      window.dispatchEvent(new CustomEvent("versaly_tasks_updated"));
     } catch {}
   }, [myTasks]);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_PROJECTS, JSON.stringify(myProjects));
+      window.dispatchEvent(new CustomEvent("versaly_projects_updated"));
     } catch {}
   }, [myProjects]);
 

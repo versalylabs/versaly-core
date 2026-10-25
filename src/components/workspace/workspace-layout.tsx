@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { CommandPalette } from "./command-palette";
+import { OfflineBanner } from "./offline-banner";
 
 export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -19,6 +20,7 @@ export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
+        <OfflineBanner />
         <Header
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           onOpenMobileNav={() => setIsMobileNavOpen(true)}

@@ -597,3 +597,259 @@ model AutomationRule {
   @@index([triggerType])
   @@index([isActive])
 }
+
+// ============================================================================
+// VERSALY FINANCIAL MANAGEMENT ENGINE
+// ============================================================================
+
+enum AccountType {
+  BANK_CHECKING
+  BANK_SAVINGS
+  MPESA_PAYBILL
+  MPESA_TILL
+  PETTY_CASH
+  RESERVE_ESCROW
+}
+
+model CompanyAccount {
+  id            String      @id @default(cuid())
+  name          String      // e.g. "KCB Corporate Checking", "Safaricom Paybill 408221", "M-Pesa Till 89201"
+  accountType   AccountType @default(BANK_CHECKING)
+  accountNumber String      // e.g. "1284920491", "408221"
+  institution   String      // "KCB Bank Kenya", "Equity Bank", "Safaricom M-Pesa", "NCBA", "Internal Vault"
+  currency      String      @default("KES")
+  balanceKES    Float       @default(0)
+  isDefault     Boolean     @default(false)
+  status        String      @default("ACTIVE")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  ledgerEntries FinancialLedgerEntry[]
+
+  @@index([accountType])
+  @@index([status])
+}
+
+enum LedgerEntryType {
+  DEBIT  // Cash out
+  CREDIT // Cash in
+}
+
+model FinancialLedgerEntry {
+  id              String          @id @default(cuid())
+  accountId       String
+  date            DateTime        @default(now())
+  entryType       LedgerEntryType
+  amountKES       Float
+  balanceAfterKES Float           @default(0)
+  category        String          // e.g. "CLIENT_PAYMENT", "CAPITAL_CONTRIBUTION", "OPERATIONAL_EXPENSE", "SALARY", "RESERVE_TRANSFER"
+  description     String
+  reference       String?         // Transaction ref, e.g. M-Pesa code, Bank wire ref, Invoice No
+  reconciled      Boolean         @default(true)
+  reconciledAt    DateTime?
+  reconciledBy    String?
+  entityType      String?         // INVOICE, EXPENSE, CAPITAL, LOAN, COMPENSATION, RESERVE
+  entityId        String?
+  notes           String?
+  createdAt       DateTime        @default(now())
+
+  account         CompanyAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([date])
+  @@index([category])
+  @@index([reference])
+}
+
+enum CapitalContributionType {
+  EQUITY_CAPITAL
+  SHAREHOLDER_LOAN
+  REIMBURSABLE_EXPENSE
+  GRANT_SUBSIDY
+  OTHER
+}
+
+model CapitalContribution {
+  id              String                  @id @default(cuid())
+  contributorName String                  // e.g. "Ted (Founder & CEO)", "Co-Founder", "Angel Investor"
+  amountKES       Float
+  contributionDate DateTime               @default(now())
+  type            CapitalContributionType @default(EQUITY_CAPITAL)
+  status          String                  @default("RECEIVED") // RECEIVED, PENDING, REIMBURSED
+  supportingDoc   String?                 // Legal document URL, investment agreement ref
+  notes           String?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  loan            ShareholderLoan?
+
+  @@index([type])
+  @@index([status])
+}
+
+model ShareholderLoan {
+  id                    String              @id @default(cuid())
+  contributionId        String              @unique
+  lenderName            String
+  principalAmountKES    Float
+  interestRateAnnualPct Float               @default(0)
+  startDate             DateTime            @default(now())
+  maturityDate          DateTime?
+  repaymentTermMonths   Int                 @default(12)
+  amountRepaidKES       Float               @default(0)
+  remainingBalanceKES   Float
+  status                String              @default("ACTIVE") // ACTIVE, FULLY_REPAID, DEFAULTED, RENEGOTIATED
+  repaymentSchedule     Json?               // Monthly repayment schedule items
+  notes                 String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  contribution          CapitalContribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model EquityScenario {
+  id              String   @id @default(cuid())
+  scenarioName    String   // e.g. "Proposed Pre-Seed Split", "Legally Issued Founding Cap Table"
+  isLegallyIssued Boolean  @default(false) // Strict guardrail: distinguishes proposed scenarios from legal reality
+  totalAuthorizedShares Int @default(1000000)
+  totalIssuedShares     Int @default(100000)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  stakeholders    Shareholding[]
+}
+
+model Shareholding {
+  id                  String         @id @default(cuid())
+  scenarioId          String
+  shareholderName     String
+  roleTitle           String         // "Founder & CEO", "Co-Founder & CTO", "Strategic Partner"
+  percentage          Float          // e.g. 51.0, 29.0, 20.0
+  sharesCount         Int            @default(0)
+  shareClass          String         @default("ORDINARY_A") // ORDINARY_A, ORDINARY_B, PREFERRED
+  vestingMonths       Int            @default(48)
+  cliffMonths         Int            @default(12)
+  vestingStartDate    DateTime       @default(now())
+  isLegallyBinding    Boolean        @default(false)
+  votingRights        Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  scenario            EquityScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId])
+}
+
+enum BudgetPeriod {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+  NINETY_DAY_STARTUP
+}
+
+model BudgetPlan {
+  id              String       @id @default(cuid())
+  name            String       // e.g. "90-Day Startup Launch Budget", "Q4 2026 Operational Budget"
+  period          BudgetPeriod @default(NINETY_DAY_STARTUP)
+  year            Int          @default(2026)
+  quarter         Int?
+  month           Int?
+  totalBudgetKES  Float
+  status          String       @default("APPROVED") // DRAFT, SUBMITTED, APPROVED, ARCHIVED
+  notes           String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  items           BudgetItem[]
+
+  @@index([period])
+  @@index([year])
+  @@index([status])
+}
+
+model BudgetItem {
+  id            String     @id @default(cuid())
+  budgetId      String
+  category      String     // e.g. "Registration & Legal", "Hosting & Software", "Sales Outreach"
+  allocatedKES  Float
+  spentKES      Float      @default(0)
+  department    String     @default("Operations") // Operations, Engineering, Sales, Marketing, Admin
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  budget        BudgetPlan @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId])
+  @@index([department])
+}
+
+model VendorSubscription {
+  id              String   @id @default(cuid())
+  provider        String   // "Vercel", "OpenAI", "AWS", "Google Workspace", "GitHub", "Safaricom Daraja"
+  serviceName     String   // "Pro Hosting & Analytics", "GPT-4o API Retainer", "Domain Renewals"
+  category        String   @default("CLOUD_INFRASTRUCTURE")
+  costAmount      Float
+  currency        String   @default("KES")
+  costKES         Float    // Normalized to KES
+  billingCycle    String   @default("MONTHLY") // MONTHLY, ANNUAL, QUARTERLY
+  renewalDate     DateTime
+  paymentMethod   String   @default("CARD") // CARD, MPESA, BANK_TRANSFER
+  responsiblePerson String @default("Ted (Founder)")
+  status          String   @default("ACTIVE") // ACTIVE, REVIEW_FOR_CANCEL, CANCELLED
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([renewalDate])
+}
+
+model CashReserveFund {
+  id                 String   @id @default(cuid())
+  fundName           String   // "Emergency Operating Reserve", "KRA Tax Provision", "Infrastructure Fund", "Growth & Marketing"
+  targetKES          Float
+  currentAllocatedKES Float   @default(0)
+  targetMonthsRunway Int      @default(3)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([fundName])
+}
+
+enum CompensationType {
+  SALARY
+  COMMISSION
+  CONTRACTOR_FEE
+  REIMBURSEMENT
+  SHAREHOLDER_LOAN_REPAYMENT
+  DIVIDEND_DISTRIBUTION
+}
+
+model CompensationRecord {
+  id              String           @id @default(cuid())
+  recipientName   String
+  roleTitle       String
+  type            CompensationType @default(SALARY)
+  amountKES       Float
+  paymentDate     DateTime         @default(now())
+  paymentMethod   String           @default("MPESA") // MPESA_B2C, BANK_TRANSFER, CASH
+  status          String           @default("PAID") // PENDING_APPROVAL, APPROVED, PAID, CANCELLED
+  approvedBy      String?
+  approvalDate    DateTime?
+  periodCovered   String           // e.g. "October 2026", "Deal #deal-vehisoft-10"
+  referenceNumber String?
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([type])
+  @@index([status])
+}
+

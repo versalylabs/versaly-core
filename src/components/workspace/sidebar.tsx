@@ -42,6 +42,12 @@ import {
   Receipt,
   ArrowDownLeft,
   TrendingDown,
+  Landmark,
+  PieChart,
+  Calculator,
+  PiggyBank,
+  Banknote,
+  Repeat,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -113,9 +119,15 @@ const CATEGORIES: NavCategory[] = [
     items: [
       { title: "Finance Dashboard", href: "/finance", icon: Wallet },
       { title: "Invoices", href: "/finance/invoices", icon: Receipt },
-      { title: "Payments & Receivables", href: "/finance/payments", icon: ArrowDownLeft },
-      { title: "Expenses", href: "/finance/expenses", icon: TrendingDown },
-      { title: "Revenue & Subscriptions", href: "/finance/revenue", icon: TrendingUp },
+      { title: "Payments & Income", href: "/finance/payments", icon: ArrowDownLeft },
+      { title: "Expenses & Payables", href: "/finance/expenses", icon: TrendingDown },
+      { title: "Budgets & 90-Day Plan", href: "/finance/budgets", icon: Calculator },
+      { title: "Subscriptions (SaaS)", href: "/finance/subscriptions", icon: Repeat },
+      { title: "Capital & Loans", href: "/finance/capital", icon: Landmark },
+      { title: "Ownership & Equity", href: "/finance/equity", icon: PieChart },
+      { title: "Cash Reserves", href: "/finance/reserves", icon: PiggyBank },
+      { title: "Compensation & Payouts", href: "/finance/compensation", icon: Banknote },
+      { title: "Client Revenue & MRR", href: "/finance/revenue", icon: TrendingUp },
       { title: "Financial Reports", href: "/finance/reports", icon: BarChart3 },
     ],
   },

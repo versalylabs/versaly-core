@@ -27,6 +27,7 @@ import {
   Edit2,
   Trash2,
   X,
+  Check,
   Scale,
   Landmark,
 } from "lucide-react";
@@ -52,6 +53,10 @@ export default function CashReservesPage() {
   const [fundAllocatedKES, setFundAllocatedKES] = useState<number>(50000);
   const [fundRunwayMonths, setFundRunwayMonths] = useState<number>(3);
   const [fundNotes, setFundNotes] = useState("");
+
+  // Quick inline edit of Allocated Balance on card
+  const [editingBalanceFundId, setEditingBalanceFundId] = useState<string | null>(null);
+  const [quickBalanceValue, setQuickBalanceValue] = useState<number>(0);
 
   useEffect(() => {
     setReserves(loadReservesFromStorage());
@@ -201,6 +206,24 @@ export default function CashReservesPage() {
     saveReservesToStorage(next);
     setReserves(next);
     showToast(`Removed reserve fund "${name}"`);
+  };
+
+  const handleStartQuickEdit = (fund: CashReserveFund) => {
+    setEditingBalanceFundId(fund.id);
+    setQuickBalanceValue(fund.currentAllocatedKES);
+  };
+
+  const handleSaveQuickBalance = (fundId: string) => {
+    const fund = reserves.find((r) => r.id === fundId);
+    if (!fund) return;
+    const newAllocated = Math.max(0, quickBalanceValue);
+    const nextReserves = reserves.map((r) =>
+      r.id === fundId ? { ...r, currentAllocatedKES: newAllocated } : r
+    );
+    saveReservesToStorage(nextReserves);
+    setReserves(nextReserves);
+    setEditingBalanceFundId(null);
+    showToast(`Updated ${fund.fundName} allocated balance to ${formatKES(newAllocated)}`);
   };
 
   return (
@@ -368,11 +391,60 @@ export default function CashReservesPage() {
                     </div>
 
                     <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-3">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between text-xs py-0.5">
                         <span className="text-slate-400">Allocated Balance:</span>
-                        <span className="font-bold text-white font-mono text-sm">
-                          {formatKES(fund.currentAllocatedKES)}
-                        </span>
+                        {editingBalanceFundId === fund.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min="0"
+                              value={quickBalanceValue}
+                              onChange={(e) => setQuickBalanceValue(Math.max(0, Number(e.target.value)))}
+                              className="w-28 sm:w-32 bg-slate-900 border border-indigo-500 rounded-lg px-2 py-1 text-xs text-white font-mono focus:outline-none"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveQuickBalance(fund.id);
+                                if (e.key === "Escape") setEditingBalanceFundId(null);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveQuickBalance(fund.id)}
+                              className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[11px] flex items-center gap-1 transition"
+                              title="Save"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Save</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingBalanceFundId(null)}
+                              className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition"
+                              title="Cancel"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span
+                              onClick={() => handleStartQuickEdit(fund)}
+                              className="font-bold text-white font-mono text-sm cursor-pointer hover:text-indigo-300 transition-colors"
+                              title="Click to edit balance"
+                            >
+                              {formatKES(fund.currentAllocatedKES)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartQuickEdit(fund)}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-600/30 border border-indigo-500/20 transition-all cursor-pointer"
+                              title="Edit Allocated Balance"
+                            >
+                              <Edit2 className="w-2.5 h-2.5" />
+                              <span>Edit</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-400">Target Envelope:</span>
@@ -557,7 +629,18 @@ export default function CashReservesPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-300 block mb-1">Allocated Balance (KES) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      value={fundAllocatedKES}
+                      onChange={(e) => setFundAllocatedKES(Math.max(0, Number(e.target.value)))}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono"
+                    />
+                  </div>
                   <div>
                     <label className="text-xs font-medium text-slate-300 block mb-1">Target Amount (KES) *</label>
                     <input
@@ -566,11 +649,11 @@ export default function CashReservesPage() {
                       min="0"
                       value={fundTargetKES}
                       onChange={(e) => setFundTargetKES(Math.max(0, Number(e.target.value)))}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-300 block mb-1">Target Runway (Months)</label>
+                    <label className="text-xs font-medium text-slate-300 block mb-1">Runway (Months)</label>
                     <input
                       type="number"
                       min="1"

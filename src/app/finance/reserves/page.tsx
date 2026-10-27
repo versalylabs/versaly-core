@@ -5,6 +5,7 @@ import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
   CashReserveFund,
+  CompanyAccount,
   loadReservesFromStorage,
   saveReservesToStorage,
   loadAccountsFromStorage,
@@ -30,6 +31,8 @@ import {
   Check,
   Scale,
   Landmark,
+  Building2,
+  CreditCard,
 } from "lucide-react";
 
 export default function CashReservesPage() {
@@ -57,6 +60,17 @@ export default function CashReservesPage() {
   // Quick inline edit of Allocated Balance on card
   const [editingBalanceFundId, setEditingBalanceFundId] = useState<string | null>(null);
   const [quickBalanceValue, setQuickBalanceValue] = useState<number>(0);
+
+  // Manage Company Vault Accounts Modal
+  const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+  const [editingAccounts, setEditingAccounts] = useState<CompanyAccount[]>([]);
+  const [isAddingNewAccount, setIsAddingNewAccount] = useState(false);
+  const [newAccName, setNewAccName] = useState("");
+  const [newAccInstitution, setNewAccInstitution] = useState("");
+  const [newAccNumber, setNewAccNumber] = useState("");
+  const [newAccBalance, setNewAccBalance] = useState<number>(50000);
+  const [newAccCurrency, setNewAccCurrency] = useState("KES");
+  const [newAccType, setNewAccType] = useState<CompanyAccount["accountType"]>("BANK_CHECKING");
 
   useEffect(() => {
     setReserves(loadReservesFromStorage());
@@ -226,6 +240,58 @@ export default function CashReservesPage() {
     showToast(`Updated ${fund.fundName} allocated balance to ${formatKES(newAllocated)}`);
   };
 
+  const handleOpenAccountsModal = () => {
+    setEditingAccounts(accounts.map((a) => ({ ...a })));
+    setIsAddingNewAccount(false);
+    setIsAccountsModalOpen(true);
+  };
+
+  const handleAccountBalanceChange = (id: string, val: number) => {
+    setEditingAccounts((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, balanceKES: Math.max(0, val) } : a))
+    );
+  };
+
+  const handleAddNewAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAccName || !newAccInstitution) {
+      alert("Please provide the account name and institution");
+      return;
+    }
+    const newAcc: CompanyAccount = {
+      id: `acc-${Date.now()}`,
+      name: newAccName,
+      institution: newAccInstitution,
+      accountNumber: newAccNumber || "N/A",
+      accountType: newAccType,
+      currency: newAccCurrency,
+      balanceKES: Math.max(0, newAccBalance),
+      isDefault: false,
+      status: "ACTIVE",
+    };
+    const next = [...editingAccounts, newAcc];
+    setEditingAccounts(next);
+    setIsAddingNewAccount(false);
+    setNewAccName("");
+    setNewAccInstitution("");
+    setNewAccNumber("");
+    setNewAccBalance(50000);
+  };
+
+  const handleDeleteAccount = (id: string, name: string) => {
+    if (!confirm(`Remove account "${name}" from company vault?`)) return;
+    setEditingAccounts((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handleSaveAccounts = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveAccountsToStorage(editingAccounts);
+    setAccounts(editingAccounts);
+    setIsAccountsModalOpen(false);
+    const newTotal = editingAccounts.reduce((sum, a) => sum + (Number(a.balanceKES) || 0), 0);
+    showToast(`Company vault accounts updated. Total Vault Cash is now ${formatKES(newTotal)}`);
+  };
+
   return (
     <WorkspaceLayout>
       <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 space-y-8">
@@ -256,6 +322,14 @@ export default function CashReservesPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <button
+              type="button"
+              onClick={handleOpenAccountsModal}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 font-medium text-sm transition-all cursor-pointer"
+            >
+              <Landmark className="w-4 h-4" />
+              <span>Manage Vault Balances</span>
+            </button>
+            <button
               onClick={handleOpenAddFund}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium text-sm shadow-lg shadow-indigo-500/25 transition-all"
             >
@@ -284,17 +358,35 @@ export default function CashReservesPage() {
 
         {/* Vault Liquidity Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800">
+          <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800 relative group">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-400">Total Company Vault Cash</span>
               <Landmark className="w-4 h-4 text-indigo-400" />
             </div>
-            <p className="text-2xl font-bold text-white mt-2 font-mono">
-              {formatKES(stats.totalCompanyCash)}
-            </p>
-            <span className="text-xs text-slate-500 mt-1 block">
-              Across KCB, Safaricom M-Pesa & Petty Cash
-            </span>
+            <div className="flex items-baseline justify-between mt-2">
+              <p className="text-2xl font-bold text-white font-mono">
+                {formatKES(stats.totalCompanyCash)}
+              </p>
+              <button
+                type="button"
+                onClick={handleOpenAccountsModal}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all cursor-pointer"
+                title="Adjust Company Bank & Vault Balances"
+              >
+                <Edit2 className="w-3 h-3" />
+                <span>Adjust</span>
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
+              <span>Across {accounts.length} bank &amp; M-Pesa accounts</span>
+              <button
+                type="button"
+                onClick={handleOpenAccountsModal}
+                className="text-[11px] text-indigo-400 hover:underline cursor-pointer"
+              >
+                Edit Vaults &rarr;
+              </button>
+            </div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800">
@@ -688,6 +780,191 @@ export default function CashReservesPage() {
                     className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all"
                   >
                     Save Fund
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MANAGE COMPANY VAULT ACCOUNTS MODAL */}
+        {isAccountsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+            <div className="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-800 p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Landmark className="w-5 h-5 text-indigo-400" />
+                  <h3 className="text-lg font-bold text-white">Company Vault Accounts &amp; Real Cash Balances</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAccountsModalOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Live Aggregate Summary Banner */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs text-slate-400 block font-medium">Consolidated Vault Liquidity</span>
+                  <p className="text-2xl font-black text-white font-mono mt-0.5">
+                    {formatKES(editingAccounts.reduce((sum, a) => sum + (Number(a.balanceKES) || 0), 0))}
+                  </p>
+                </div>
+                <div className="text-left sm:text-right text-xs text-slate-400">
+                  <span>Unencumbered Free Cash: </span>
+                  <span className="font-bold text-emerald-400 font-mono">
+                    {formatKES(
+                      Math.max(
+                        0,
+                        editingAccounts.reduce((sum, a) => sum + (Number(a.balanceKES) || 0), 0) - stats.totalEarmarkedReserves
+                      )
+                    )}
+                  </span>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    ({formatKES(stats.totalEarmarkedReserves)} internal reserves earmarked)
+                  </div>
+                </div>
+              </div>
+
+              {/* Account list with balance inputs */}
+              <form onSubmit={handleSaveAccounts} className="space-y-4">
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                  {editingAccounts.map((acc) => (
+                    <div
+                      key={acc.id}
+                      className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white text-sm">{acc.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono">
+                            {acc.currency}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                          <span>{acc.institution}</span>
+                          <span className="text-slate-600">&bull;</span>
+                          <span className="font-mono text-slate-500">Acc: {acc.accountNumber}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <label className="text-[10px] text-slate-400 block font-medium">Balance (KES)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            required
+                            value={acc.balanceKES}
+                            onChange={(e) => handleAccountBalanceChange(acc.id, Number(e.target.value))}
+                            className="w-36 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm text-white font-mono text-right focus:outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                        {editingAccounts.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAccount(acc.id, acc.name)}
+                            className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition mt-3"
+                            title="Remove account"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add new account expandable form */}
+                {!isAddingNewAccount ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingNewAccount(true)}
+                    className="w-full py-2.5 border border-dashed border-slate-700 hover:border-indigo-500/50 rounded-xl text-xs font-semibold text-slate-400 hover:text-indigo-300 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Another Account / Vault</span>
+                  </button>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">Add New Account</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingNewAccount(false)}
+                        className="text-xs text-slate-400 hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Account Name *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Equity Bank Checking"
+                          value={newAccName}
+                          onChange={(e) => setNewAccName(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Institution *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Equity Bank Kenya"
+                          value={newAccInstitution}
+                          onChange={(e) => setNewAccInstitution(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Account / Till / Paybill #</label>
+                        <input
+                          type="text"
+                          placeholder="Account or Till number"
+                          value={newAccNumber}
+                          onChange={(e) => setNewAccNumber(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Initial Balance (KES)</label>
+                        <input
+                          type="number"
+                          placeholder="Initial Balance"
+                          value={newAccBalance}
+                          onChange={(e) => setNewAccBalance(Number(e.target.value))}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddNewAccount}
+                      className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer"
+                    >
+                      Add to Vault List
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsAccountsModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/25 cursor-pointer"
+                  >
+                    Save Vault Balances
                   </button>
                 </div>
               </form>

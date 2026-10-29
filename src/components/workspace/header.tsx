@@ -7,6 +7,7 @@ import { Search, Plus, Bell, Menu, Sun, Moon, Clock } from "lucide-react";
 import { NotificationCenter } from "./notification-center";
 import { useTheme } from "@/context/theme-context";
 import { OfflineStatusPill } from "./offline-banner";
+import { HeaderInstallButton } from "./pwa-install";
 
 interface HeaderProps {
   onOpenCommandPalette: () => void;
@@ -176,6 +177,8 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
             onClose={() => setShowNotifications(false)}
           />
         </div>
+
+        <HeaderInstallButton />
 
         <OfflineStatusPill />
 

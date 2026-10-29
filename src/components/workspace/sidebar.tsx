@@ -49,6 +49,7 @@ import {
   Banknote,
   Repeat,
 } from "lucide-react";
+import { SidebarInstallButton } from "./pwa-install";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -293,7 +294,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         </div>
 
         {/* Footer Profile Badge & Logout */}
-        <div className="p-3 border-t border-slate-800/80 shrink-0">
+        <div className="p-3 border-t border-slate-800/80 shrink-0 space-y-2">
+          {/* PWA Install Button */}
+          <SidebarInstallButton />
+
           <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/80 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-[11px] font-bold text-white shadow-sm shrink-0">

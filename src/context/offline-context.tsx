@@ -68,15 +68,11 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Register Service Worker for offline PWA caching
+  // Register Service Worker for offline PWA caching and installability
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      "serviceWorker" in navigator &&
-      process.env.NODE_ENV === "production"
-    ) {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js")
+        .register("/sw.js", { scope: "/" })
         .then((reg) => {
           setServiceWorkerRegistered(true);
           // Check for worker updates

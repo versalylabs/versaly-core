@@ -606,7 +606,7 @@ export default function TasksPage() {
         )}
 
         {/* Action View Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
           <button
             onClick={() => setActiveTab("DAILY")}
             className={`px-3.5 py-1.5 rounded-xl font-semibold transition whitespace-nowrap border flex items-center gap-1.5 ${
@@ -684,7 +684,7 @@ export default function TasksPage() {
 
             {/* Filters & Search */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
-              <div className="flex items-center gap-1 overflow-x-auto">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                 {["ALL", "PENDING", "COMPLETED"].map((status) => (
                   <button
                     key={status}

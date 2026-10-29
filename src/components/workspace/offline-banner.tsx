@@ -113,7 +113,7 @@ export function OfflineStatusPill() {
     <div className="relative">
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border ${
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border whitespace-nowrap shrink-0 ${
           effectiveOffline
             ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:border-amber-500/50 shadow-sm shadow-amber-500/10"
             : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 hover:border-emerald-500/40"
@@ -121,11 +121,11 @@ export function OfflineStatusPill() {
         title={effectiveOffline ? "Offline Mode: Working Locally" : "Online: Live System"}
       >
         <span
-          className={`h-2 w-2 rounded-full ${
+          className={`h-2 w-2 rounded-full shrink-0 ${
             effectiveOffline ? "bg-amber-400 animate-pulse" : "bg-emerald-400"
           }`}
         />
-        <span className="hidden sm:inline">
+        <span className="hidden sm:inline whitespace-nowrap">
           {effectiveOffline ? (isSimulatedOffline ? "Offline (Test)" : "Offline") : "Online"}
         </span>
       </button>

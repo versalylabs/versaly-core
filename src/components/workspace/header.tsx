@@ -78,36 +78,41 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
   }
 
   return (
-    <header className="h-16 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between">
+    <header className="h-16 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 overflow-hidden">
       {/* Left Area: Mobile Menu Toggle + Breadcrumb & Path */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
         {onOpenMobileNav && (
           <button
             onClick={onOpenMobileNav}
-            className="lg:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
+            className="lg:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition shrink-0"
             title="Open Menu"
           >
             <Menu className="h-4 w-4" />
           </button>
         )}
-        <span className="hidden sm:inline text-xs text-slate-500 font-medium">Versaly Core</span>
-        <span className="hidden sm:inline text-slate-700">/</span>
-        <h1 className="text-sm font-bold text-slate-100 truncate max-w-[150px] sm:max-w-xs">
+        <span className="hidden md:inline text-xs text-slate-500 font-medium whitespace-nowrap shrink-0">
+          Versaly Core
+        </span>
+        <span className="hidden md:inline text-slate-700 shrink-0">/</span>
+        <h1 className="text-sm font-bold text-slate-100 truncate whitespace-nowrap min-w-0">
           {getBreadcrumbTitle(pathname)}
         </h1>
       </div>
 
       {/* Center Command Bar Trigger */}
-      <div className="flex-1 max-w-md mx-6 hidden sm:block">
+      <div className="flex-1 max-w-md mx-2 lg:mx-6 hidden md:block min-w-0">
         <button
           onClick={onOpenCommandPalette}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-300 transition shadow-inner"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-300 transition shadow-inner min-w-0 cursor-pointer"
         >
-          <div className="flex items-center gap-2">
-            <Search className="h-3.5 w-3.5 text-slate-500" />
-            <span>Search people, clients, activities, deals or SOPs...</span>
+          <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
+            <Search className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+            <span className="truncate whitespace-nowrap block">
+              <span className="hidden lg:inline">Search people, clients, activities, deals or SOPs...</span>
+              <span className="lg:hidden">Search workspace...</span>
+            </span>
           </div>
-          <div className="flex items-center gap-1 font-mono text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400">
+          <div className="hidden lg:flex items-center gap-1 font-mono text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400 shrink-0 ml-2">
             <span>Ctrl</span>
             <span>K</span>
           </div>
@@ -115,36 +120,37 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
       </div>
 
       {/* Right Action Icons */}
-      <div className="flex items-center gap-3 relative">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 relative shrink-0">
         <button
           onClick={onOpenCommandPalette}
-          className="inline-flex sm:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200"
-          title="Search"
+          className="inline-flex md:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 shrink-0 cursor-pointer"
+          title="Search (Ctrl + K)"
         >
           <Search className="h-4 w-4" />
         </button>
 
         <Link
           href="/workspace"
-          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition"
+          className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition shrink-0"
         >
           <span>My Cockpit</span>
         </Link>
 
         <button
           onClick={onOpenCommandPalette}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition"
+          className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition shrink-0 cursor-pointer"
+          title="Quick Action"
         >
           <Plus className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Quick Action</span>
+          <span className="hidden lg:inline">Quick Action</span>
         </button>
 
-        <div className="h-4 w-px bg-slate-800" />
+        <div className="h-4 w-px bg-slate-800 shrink-0 hidden sm:block" />
 
         {/* Light/Dark Theme Switcher */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-100 transition"
+          className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-100 transition shrink-0 cursor-pointer"
           title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
           aria-label="Toggle theme"
         >
@@ -155,10 +161,10 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
           )}
         </button>
 
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition"
+            className="relative p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition shrink-0 cursor-pointer"
             title="Notifications & Attention"
           >
             <Bell className="h-4 w-4" />
@@ -176,7 +182,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
         <Link
           href="/calendar"
           title="Current local time • Click to view Business Calendar"
-          className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white text-xs font-mono transition shadow-inner"
+          className="hidden 2xl:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white text-xs font-mono transition shadow-inner shrink-0"
         >
           <Clock className="h-3.5 w-3.5 text-indigo-400" />
           <span>{currentTime || "--:--:--"}</span>

@@ -861,7 +861,7 @@ export default function DashboardPage() {
         )}
 
         {/* Section Navigation Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
           <button
             onClick={() => setActiveSection("ALL")}
             className={`px-3.5 py-1.5 rounded-xl font-semibold transition whitespace-nowrap border ${

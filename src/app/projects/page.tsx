@@ -21,19 +21,11 @@ import {
   ProjectTaskItem,
 } from "@/data/clients-projects-seed";
 import { useProductsCatalog } from "@/lib/products-store";
+import { ONBOARDING_STEPS } from "@/lib/workflows";
 
 const STORAGE_KEY = "versaly_projects_list_v2";
 
-const DEFAULT_8_STEPS = [
-  { stepNumber: 1, title: "Agreement & Payment Instructions", description: "Send MSA contract and setup fee Paybill invoice", assignedTo: "Ted" },
-  { stepNumber: 2, title: "Payment Confirmation", description: "Confirm setup fee receipt via M-Pesa or bank", assignedTo: "Finance" },
-  { stepNumber: 3, title: "Data Collection & Layout", description: "Collect operational catalogs, floor/bay layout, and contacts", assignedTo: "David" },
-  { stepNumber: 4, title: "Product Configuration & Setup", description: "Upload initial database catalogs and configure rates", assignedTo: "Ted" },
-  { stepNumber: 5, title: "Team & Staff Training", description: "Conduct training with frontline operational team", assignedTo: "David" },
-  { stepNumber: 6, title: "First Live Intake Transaction", description: "Shadow live transaction intake on premise", assignedTo: "David" },
-  { stepNumber: 7, title: "First Measurable Win Confirmation", description: "Confirm 100% digital tracking across 3 consecutive days", assignedTo: "Ted" },
-  { stepNumber: 8, title: "30-Day Executive Review & Referral", description: "Review metrics and request client referral", assignedTo: "Mercy" },
-];
+const DEFAULT_8_STEPS = ONBOARDING_STEPS;
 
 export default function ProjectsPage() {
   const { products: catalogProducts } = useProductsCatalog();

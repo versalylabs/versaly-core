@@ -25,6 +25,7 @@ import {
 } from "@/data/leads-seed";
 import { renderTemplate } from "@/lib/templates";
 import { useProductsCatalog } from "@/lib/products-store";
+import { convertWonDeal } from "@/lib/workflows";
 
 const DEALS_STORAGE_KEY = "versaly_active_deals_v2";
 const RAW_LEADS_STORAGE_KEY = "versaly_raw_leads_v2";
@@ -99,7 +100,7 @@ export default function LeadsPage() {
 
   const [selectedDeal, setSelectedDeal] = useState<ActiveDealItem | null>(null);
   const [proposalModalDeal, setProposalModalDeal] = useState<ActiveDealItem | null>(null);
-  const [wonNotice, setWonNotice] = useState<string | null>(null);
+  const [wonNotice, setWonNotice] = useState<{ message: string; links: { label: string; href: string }[] } | null>(null);
   const [copiedProposal, setCopiedProposal] = useState(false);
 
   // New Lead Form Modal
@@ -147,19 +148,40 @@ export default function LeadsPage() {
 
   // Update deal stage
   function handleUpdateStage(dealId: string, newStage: DealStageType) {
+    const target = deals.find((d) => d.id === dealId);
+
+    // A newly won deal creates the client, onboarding project, setup invoice and subscription
+    if (newStage === "WON" && target && target.stage !== "WON") {
+      const result = convertWonDeal({ ...target, stage: "WON" });
+      const made: string[] = [];
+      if (result.created.client) made.push("client record");
+      if (result.created.project) made.push("8-step onboarding project");
+      if (result.created.invoice) made.push(`setup invoice ${result.invoiceNumber} (draft)`);
+      if (result.created.subscription) made.push("subscription (trial until go-live)");
+      const links = [
+        { label: "Client", href: "/clients" },
+        { label: "Project", href: "/projects" },
+        ...(result.invoiceId ? [{ label: "Invoice", href: "/finance/invoices" }] : []),
+        ...(result.subscriptionId ? [{ label: "Subscription", href: "/finance/revenue" }] : []),
+      ];
+      setWonNotice({
+        message: made.length
+          ? `Deal won! Created for ${target.businessName}: ${made.join(", ")}.`
+          : `Deal won! ${target.businessName} already had its client, project and billing set up.`,
+        links,
+      });
+      setTimeout(() => setWonNotice(null), 15000);
+    }
+
     setDeals((prev) =>
       prev.map((d) => {
-        if (d.id === dealId) {
-          const updated = { ...d, stage: newStage };
-          if (newStage === "WON") {
-            updated.onboardingProjectCreated = true;
-            updated.winProbability = 100;
-            setWonNotice(`Deal Won! Automatically provisioned 8-Step Onboarding Project for ${d.businessName}.`);
-            setTimeout(() => setWonNotice(null), 5000);
-          }
-          return updated;
+        if (d.id !== dealId) return d;
+        const updated = { ...d, stage: newStage };
+        if (newStage === "WON") {
+          updated.onboardingProjectCreated = true;
+          updated.winProbability = 100;
         }
-        return d;
+        return updated;
       })
     );
 
@@ -313,7 +335,16 @@ If the system is not live and operational within 14 days, the setup fee is 100% 
           <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs animate-in slide-in-from-top-2 duration-200 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-              <span className="font-semibold">{wonNotice}</span>
+              <div className="space-y-1.5">
+                <span className="font-semibold">{wonNotice.message}</span>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                  {wonNotice.links.map((l) => (
+                    <a key={l.href} href={l.href} className="text-emerald-300 underline underline-offset-2 hover:text-white">
+                      View {l.label} →
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
             <button
               onClick={() => setWonNotice(null)}

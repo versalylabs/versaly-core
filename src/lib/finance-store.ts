@@ -29,6 +29,9 @@ export interface PaymentRecord {
 
 export interface FinanceInvoice {
   id: string;
+  /** Links back to the client record (and the deal it came from), when known. */
+  clientId?: string;
+  dealId?: string;
   invoiceNumber: string;
   clientName: string;
   clientEmail?: string;
@@ -847,6 +850,7 @@ export const FINANCE_ROLES: { id: FinanceRole; label: string; permissions: strin
 
 export interface ClientSubscription {
   id: string;
+  clientId?: string;
   clientName: string;
   productSlug: string;
   productName: string;

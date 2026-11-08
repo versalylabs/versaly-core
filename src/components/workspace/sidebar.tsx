@@ -177,8 +177,19 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("versaly_auth_active");
       localStorage.removeItem("versaly_current_user");
+      // Remove offline copies of signed-in pages from this device
+      try {
+        navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_PAGE_CACHE" });
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.filter((k) => k.startsWith("versaly-core-offline")).map((k) => caches.delete(k)));
+        }
+      } catch {
+        // ignore
+      }
     }
-    router.push("/login");
+    router.replace("/login");
+    router.refresh();
   };
 
   return (

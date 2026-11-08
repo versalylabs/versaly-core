@@ -1,50 +1,59 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { hashPassword, createSessionToken, setSessionCookie } from "@/lib/auth";
+import { getCurrentUser, hashPassword } from "@/lib/auth";
 import { logAuditEvent } from "@/lib/audit";
 import { apiSuccess, apiError } from "@/lib/api-response";
-import { UserRole } from "@prisma/client";
+import { logger } from "@/lib/logger";
+import { clientIp } from "@/lib/rate-limit";
 
+/**
+ * Create a team member account. Public sign-up is disabled: only a signed-in
+ * OWNER or ADMIN can add users, and the caller stays signed in as themselves.
+ */
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Valid email address is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(12, "Password must be at least 12 characters").max(200),
   jobTitle: z.string().optional(),
+  role: z.enum(["ADMIN", "MANAGER", "STAFF", "READ_ONLY"]).default("STAFF"),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const parsed = registerSchema.safeParse(body);
+    const actor = await getCurrentUser();
+    if (!actor) {
+      return apiError("Unauthenticated", "UNAUTHORIZED", 401);
+    }
+    if (actor.role !== "OWNER" && actor.role !== "ADMIN") {
+      return apiError("Only owners and admins can add team members", "FORBIDDEN", 403);
+    }
 
+    const body = await req.json().catch(() => null);
+    const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
       return apiError("Validation failed", "INVALID_INPUT", 400, parsed.error.format());
     }
 
-    const { name, email, password, jobTitle } = parsed.data;
+    const { name, email, password, jobTitle, role } = parsed.data;
+
+    // Admins cannot create other admins; only the owner can.
+    if (role === "ADMIN" && actor.role !== "OWNER") {
+      return apiError("Only the owner can create admin accounts", "FORBIDDEN", 403);
+    }
+
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists
-    const existing = await db.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
+    const existing = await db.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       return apiError("A user with this email already exists", "USER_EXISTS", 409);
     }
-
-    // Determine initial role: First user is OWNER, subsequent users default to STAFF
-    const userCount = await db.user.count();
-    const role: UserRole = userCount === 0 ? "OWNER" : "STAFF";
-
-    const passwordHash = await hashPassword(password);
 
     const user = await db.user.create({
       data: {
         name,
         email: normalizedEmail,
-        passwordHash,
+        passwordHash: await hashPassword(password),
         role,
         jobTitle,
         status: "ACTIVE",
@@ -60,29 +69,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Create session token and set cookie
-    const token = await createSessionToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-    });
-
-    await setSessionCookie(token);
-
-    // Record audit event
     await logAuditEvent({
-      userId: user.id,
-      action: "USER_REGISTERED",
+      userId: actor.id.startsWith("env-") ? null : actor.id,
+      action: "USER_CREATED",
       entityType: "User",
       entityId: user.id,
-      metadata: { role: user.role, email: user.email },
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+      metadata: { role: user.role, email: user.email, createdBy: actor.email },
+      ipAddress: clientIp(req.headers),
       userAgent: req.headers.get("user-agent") || "unknown",
     });
 
     return apiSuccess({ user }, 201);
   } catch (error) {
-    return apiError("Failed to register user", "INTERNAL_ERROR", 500, String(error));
+    logger.error("User registration failed", {}, error);
+    return apiError("Failed to register user", "INTERNAL_ERROR", 500);
   }
 }

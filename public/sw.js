@@ -1,21 +1,9 @@
 // Versaly Core Offline Service Worker
-const CACHE_NAME = "versaly-core-offline-v1";
+const CACHE_NAME = "versaly-core-offline-v2";
 
+// Only public assets are pre-cached. Signed-in pages are cached as you visit them,
+// so a signed-out device never fetches (or stores) protected pages.
 const PRECACHE_URLS = [
-  "/",
-  "/dashboard",
-  "/tasks",
-  "/workspace",
-  "/calendar",
-  "/leads",
-  "/projects",
-  "/clients",
-  "/products",
-  "/finance",
-  "/finance/invoices",
-  "/finance/revenue",
-  "/finance/expenses",
-  "/settings",
   "/icon.svg",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -65,6 +53,13 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Sign-out: drop cached pages so they can't be opened offline afterwards
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "CLEAR_PAGE_CACHE") {
+    event.waitUntil(caches.delete(CACHE_NAME));
+  }
+});
+
 // Fetch: Strategy based on request type
 self.addEventListener("fetch", (event) => {
   const request = event.request;
@@ -80,7 +75,13 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          // Never cache redirects (e.g. a signed-out visit bounced to /login)
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            !networkResponse.redirected &&
+            url.pathname !== "/login"
+          ) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseClone);

@@ -1,23 +1,16 @@
 import bcrypt from "bcryptjs";
-import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+import { getOwnerProfile, OWNER_USER_ID } from "@/lib/owner";
+import {
+  SESSION_COOKIE_NAME,
+  SESSION_DURATION_DAYS,
+  createSessionToken,
+  verifySessionToken,
+  type SessionPayload,
+} from "@/lib/session";
 
-const SESSION_COOKIE_NAME = "versaly_session";
-const SESSION_DURATION_DAYS = 7;
-
-function getJwtSecret() {
-  const secret = process.env.AUTH_SECRET || "versaly_core_dev_secret_key_change_in_production_min_32_chars";
-  return new TextEncoder().encode(secret);
-}
-
-export interface SessionPayload {
-  userId: string;
-  email: string;
-  role: UserRole;
-  name: string;
-}
+export { createSessionToken, verifySessionToken, type SessionPayload };
 
 /**
  * Hash a plain text password with bcrypt
@@ -32,34 +25,6 @@ export async function hashPassword(password: string): Promise<string> {
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
-}
-
-/**
- * Issue a signed JWT token
- */
-export async function createSessionToken(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_DURATION_DAYS}d`)
-    .sign(getJwtSecret());
-}
-
-/**
- * Verify a signed JWT token
- */
-export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, getJwtSecret());
-    return {
-      userId: payload.userId as string,
-      email: payload.email as string,
-      role: payload.role as UserRole,
-      name: payload.name as string,
-    };
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -96,17 +61,11 @@ export async function getCurrentUser() {
     const sessionPayload = await verifySessionToken(token);
     if (!sessionPayload) return null;
 
-    if (sessionPayload.userId === "usr-demo-owner" || sessionPayload.email === "versalylabs@gmail.com") {
-      return {
-        id: "usr-demo-owner",
-        email: "versalylabs@gmail.com",
-        name: "Versaly Labs Administrator",
-        role: "OWNER" as const,
-        status: "ACTIVE" as const,
-        jobTitle: "Founder & Lead Operations Architect",
-        avatarUrl: null,
-        createdAt: new Date("2026-01-01"),
-      };
+    // Environment-configured owner account (no database row)
+    if (sessionPayload.userId === OWNER_USER_ID) {
+      const owner = getOwnerProfile();
+      if (!owner || owner.email !== sessionPayload.email) return null;
+      return owner;
     }
 
     const user = await db.user.findUnique({
@@ -123,11 +82,7 @@ export async function getCurrentUser() {
       },
     });
 
-    if (!user) {
-      return null;
-    }
-
-    if (user.status !== "ACTIVE") {
+    if (!user || user.status !== "ACTIVE") {
       return null;
     }
 

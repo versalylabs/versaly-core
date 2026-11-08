@@ -60,28 +60,17 @@ export default function LoginPage() {
         );
       }
 
-      // Successful login redirect to operations dashboard
-      router.push("/dashboard");
+      // Return to the page the user originally asked for (same-origin paths only)
+      const next = new URLSearchParams(window.location.search).get("next");
+      const destination =
+        next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login")
+          ? next
+          : "/dashboard";
+      router.replace(destination);
+      router.refresh();
     } catch {
-      // Fallback for offline / edge verification
-      if (email.trim().toLowerCase() === "versalylabs@gmail.com" && password === "labversaly-16") {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("versaly_auth_active", "true");
-          localStorage.setItem(
-            "versaly_current_user",
-            JSON.stringify({
-              id: "usr-demo-owner",
-              email: "versalylabs@gmail.com",
-              name: "Versaly Labs Administrator",
-              role: "OWNER",
-            })
-          );
-        }
-        router.push("/dashboard");
-      } else {
-        setErrorMessage("Invalid email or password. Please check your credentials and try again.");
-        setIsLoading(false);
-      }
+      setErrorMessage("Could not reach the server. Check your connection and try again.");
+      setIsLoading(false);
     }
   };
 
@@ -223,22 +212,12 @@ export default function LoginPage() {
             </form>
           </div>
 
-          {/* Quick Bypass / Exploration */}
-          <div className="text-center">
-            <Link
-              href="/dashboard"
-              className="text-xs text-slate-500 hover:text-slate-300 transition inline-flex items-center gap-1"
-            >
-              <span>Explore dashboard directly without signing in</span>
-              <span>→</span>
-            </Link>
-          </div>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="p-6 text-center text-xs text-slate-600 relative z-10">
-        © 2026 Versaly Operations Ltd. Enterprise RBAC, CSP & Multi-Factor Security Enabled.
+        © 2026 Versaly Operations Ltd.
       </footer>
     </div>
   );

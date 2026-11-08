@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -29,7 +31,7 @@ export default function ActivityPage() {
   const [activities, setActivities] = useState<UniversalActivityItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -59,7 +61,7 @@ export default function ActivityPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(activities));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(activities));
     } catch {
       // ignore
     }

@@ -2,7 +2,25 @@
 
 import React, { useState, useEffect } from "react";
 import { useOffline } from "@/context/offline-context";
-import { Wifi, WifiOff, CheckCircle2, ShieldCheck, HardDrive, X, RefreshCw } from "lucide-react";
+import { useSyncState } from "@/context/sync-context";
+import type { SyncState } from "@/lib/app-storage";
+import { Wifi, WifiOff, CheckCircle2, ShieldCheck, HardDrive, X, RefreshCw, Download, CloudUpload, AlertTriangle } from "lucide-react";
+
+function syncLabel(sync: SyncState, offline: boolean) {
+  if (offline || sync.status === "offline")
+    return { text: sync.pending ? `Offline · ${sync.pending} unsaved` : "Offline", tone: "amber" as const };
+  if (sync.status === "error") return { text: "Not saved · retrying", tone: "rose" as const };
+  if (sync.status === "signed-out") return { text: "Sign in to save", tone: "amber" as const };
+  if (sync.status === "saving" || sync.pending) return { text: "Saving…", tone: "indigo" as const };
+  return { text: "Saved", tone: "emerald" as const };
+}
+
+const TONE_CLASSES = {
+  emerald: { pill: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 hover:border-emerald-500/40", dot: "bg-emerald-400" },
+  indigo: { pill: "bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:border-indigo-500/50", dot: "bg-indigo-400 animate-pulse" },
+  amber: { pill: "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:border-amber-500/50 shadow-sm shadow-amber-500/10", dot: "bg-amber-400 animate-pulse" },
+  rose: { pill: "bg-rose-500/10 text-rose-300 border-rose-500/30 hover:border-rose-500/50", dot: "bg-rose-400 animate-pulse" },
+};
 
 export function OfflineBanner() {
   const { effectiveOffline, isSimulatedOffline, toggleSimulatedOffline, lastLocalSaveTime } = useOffline();
@@ -108,25 +126,20 @@ export function OfflineBanner() {
 export function OfflineStatusPill() {
   const { effectiveOffline, isSimulatedOffline, toggleSimulatedOffline, lastLocalSaveTime } = useOffline();
   const [showMenu, setShowMenu] = useState(false);
+  const sync = useSyncState();
+  const label = syncLabel(sync, effectiveOffline);
+  const tone = TONE_CLASSES[label.tone];
 
   return (
     <div className="relative">
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border whitespace-nowrap shrink-0 ${
-          effectiveOffline
-            ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:border-amber-500/50 shadow-sm shadow-amber-500/10"
-            : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 hover:border-emerald-500/40"
-        }`}
-        title={effectiveOffline ? "Offline Mode: Working Locally" : "Online: Live System"}
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition border whitespace-nowrap shrink-0 ${tone.pill}`}
+        title={sync.message || label.text}
       >
-        <span
-          className={`h-2 w-2 rounded-full shrink-0 ${
-            effectiveOffline ? "bg-amber-400 animate-pulse" : "bg-emerald-400"
-          }`}
-        />
+        <span className={`h-2 w-2 rounded-full shrink-0 ${tone.dot}`} />
         <span className="hidden sm:inline whitespace-nowrap">
-          {effectiveOffline ? (isSimulatedOffline ? "Offline (Test)" : "Offline") : "Online"}
+          {isSimulatedOffline ? "Offline (Test)" : label.text}
         </span>
       </button>
 
@@ -158,8 +171,31 @@ export function OfflineStatusPill() {
             </div>
 
             <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
-              Versaly Core stores tasks, leads, calendar events, and financial records locally in your browser storage so you can continue working without an internet connection.
+              Your data is saved to the Versaly Core database and shared across your devices. A copy is kept on this device so you can keep working offline; changes upload automatically when you reconnect.
             </p>
+
+            <div className="space-y-1.5 text-[11px] p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 mb-3">
+              <div className="flex items-center justify-between text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  {label.tone === "rose" ? (
+                    <AlertTriangle className="h-3 w-3 text-rose-400" />
+                  ) : (
+                    <CloudUpload className="h-3 w-3 text-indigo-400" />
+                  )}
+                  Cloud Sync:
+                </span>
+                <span className="text-slate-200 font-semibold">{label.text}</span>
+              </div>
+              {sync.lastSyncedAt && (
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Last Synced:</span>
+                  <span className="text-slate-300 font-mono">
+                    {new Date(sync.lastSyncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              )}
+              {sync.message && label.tone === "rose" && <p className="text-rose-300">{sync.message}</p>}
+            </div>
 
             <div className="space-y-1.5 text-[11px] p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 mb-3">
               <div className="flex items-center justify-between text-slate-400">
@@ -185,6 +221,14 @@ export function OfflineStatusPill() {
                 </div>
               )}
             </div>
+
+            <a
+              href="/api/sync/export"
+              className="w-full mb-2 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-[11px] transition"
+            >
+              <Download className="h-3 w-3" />
+              <span>Download Backup (JSON)</span>
+            </a>
 
             <button
               onClick={() => {

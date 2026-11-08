@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -45,7 +47,7 @@ export default function LeadsPage() {
   const [rawLeads, setRawLeads] = useState<RawLeadItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(RAW_LEADS_STORAGE_KEY);
+        const stored = appStorage.getItem(RAW_LEADS_STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -60,7 +62,7 @@ export default function LeadsPage() {
   const [deals, setDeals] = useState<ActiveDealItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(DEALS_STORAGE_KEY);
+        const stored = appStorage.getItem(DEALS_STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -78,7 +80,7 @@ export default function LeadsPage() {
   // Save deals to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(DEALS_STORAGE_KEY, JSON.stringify(deals));
+      appStorage.setItem(DEALS_STORAGE_KEY, JSON.stringify(deals));
       window.dispatchEvent(new CustomEvent("versaly_deals_updated"));
     } catch {
       // ignore
@@ -88,7 +90,7 @@ export default function LeadsPage() {
   // Save raw leads to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(RAW_LEADS_STORAGE_KEY, JSON.stringify(rawLeads));
+      appStorage.setItem(RAW_LEADS_STORAGE_KEY, JSON.stringify(rawLeads));
       window.dispatchEvent(new CustomEvent("versaly_leads_updated"));
     } catch {
       // ignore

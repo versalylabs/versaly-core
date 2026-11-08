@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -106,7 +108,7 @@ function computeIntelligenceBriefing() {
   // Active (incomplete) tasks
   let activeTasks = 0;
   try {
-    const raw = localStorage.getItem("versaly_daily_tasks");
+    const raw = appStorage.getItem("versaly_daily_tasks");
     if (raw) {
       const tasks = JSON.parse(raw) as Array<{ completed?: boolean }>;
       activeTasks = tasks.filter((t) => !t.completed).length;
@@ -118,7 +120,7 @@ function computeIntelligenceBriefing() {
   // Upcoming events in next 7 days
   let upcomingEvents = 0;
   try {
-    const raw = localStorage.getItem("versaly_business_calendar_v2");
+    const raw = appStorage.getItem("versaly_business_calendar_v2");
     const sourceEvents = raw ? (JSON.parse(raw) as Array<{ date?: string }>) : INITIAL_CALENDAR_EVENTS;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -134,7 +136,7 @@ function computeIntelligenceBriefing() {
   // Active projects
   let activeProjects = 0;
   try {
-    const raw = localStorage.getItem("versaly_projects_list_v2");
+    const raw = appStorage.getItem("versaly_projects_list_v2");
     if (raw) {
       const projects = JSON.parse(raw) as Array<{ status?: string }>;
       activeProjects = projects.filter((p) => p.status === "ACTIVE" || (p.status !== "COMPLETED" && p.status !== "CANCELLED")).length;
@@ -144,7 +146,7 @@ function computeIntelligenceBriefing() {
   // Open deals (not WON or LOST)
   let openDeals = 0;
   try {
-    const raw = localStorage.getItem("versaly_active_deals_v2");
+    const raw = appStorage.getItem("versaly_active_deals_v2");
     if (raw) {
       const deals = JSON.parse(raw) as Array<{ stage?: string }>;
       openDeals = deals.filter((d) => d.stage !== "WON" && d.stage !== "LOST").length;
@@ -154,7 +156,7 @@ function computeIntelligenceBriefing() {
   // Overdue invoices
   let overdueInvoices = 0;
   try {
-    const raw = localStorage.getItem("versaly_finance_invoices_v2");
+    const raw = appStorage.getItem("versaly_finance_invoices_v2");
     if (raw) {
       const invoices = JSON.parse(raw) as Array<{ status?: string }>;
       overdueInvoices = invoices.filter((i) => i.status === "OVERDUE").length;
@@ -164,7 +166,7 @@ function computeIntelligenceBriefing() {
   // Uncontacted leads
   let uncontactedLeads = 0;
   try {
-    const raw = localStorage.getItem("versaly_raw_leads_v2");
+    const raw = appStorage.getItem("versaly_raw_leads_v2");
     if (raw) {
       const leads = JSON.parse(raw) as Array<{ status?: string }>;
       uncontactedLeads = leads.filter((l) => l.status === "UNCONTACTED").length;
@@ -184,7 +186,7 @@ export default function DashboardPage() {
   const [queue, setQueue] = useState<OutreachItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(DASHBOARD_QUEUE_KEY);
+        const stored = appStorage.getItem(DASHBOARD_QUEUE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -226,7 +228,7 @@ export default function DashboardPage() {
   const [fridayScorecard, setFridayScorecard] = useState<FridayScorecard>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("versaly_friday_weekly_review_v2");
+        const stored = appStorage.getItem("versaly_friday_weekly_review_v2");
         if (stored) return JSON.parse(stored) as FridayScorecard;
       } catch {
         // ignore
@@ -249,7 +251,7 @@ export default function DashboardPage() {
   // Save Friday Scorecard
   const handleSaveFridayScorecard = () => {
     try {
-      localStorage.setItem("versaly_friday_weekly_review_v2", JSON.stringify(fridayScorecard));
+      appStorage.setItem("versaly_friday_weekly_review_v2", JSON.stringify(fridayScorecard));
       setToastMessage("✓ Friday Weekly Review Scorecard saved successfully!");
       setTimeout(() => setToastMessage(null), 3500);
     } catch {
@@ -260,7 +262,7 @@ export default function DashboardPage() {
   // Save queue to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(DASHBOARD_QUEUE_KEY, JSON.stringify(queue));
+      appStorage.setItem(DASHBOARD_QUEUE_KEY, JSON.stringify(queue));
     } catch {
       // ignore
     }

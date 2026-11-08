@@ -49,25 +49,34 @@ export async function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
+export class DatabaseUnavailableError extends Error {
+  constructor(cause?: unknown) {
+    super("Database unavailable", { cause });
+    this.name = "DatabaseUnavailableError";
+  }
+}
+
 /**
- * Get the current authenticated user from session cookie
+ * Get the current authenticated user from session cookie.
+ * Returns null when signed out; throws DatabaseUnavailableError if the user
+ * can't be looked up (so callers can answer 503 instead of "signed out").
  */
 export async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (!token) return null;
+
+  const sessionPayload = await verifySessionToken(token);
+  if (!sessionPayload) return null;
+
+  // Environment-configured owner account (no database row)
+  if (sessionPayload.userId === OWNER_USER_ID) {
+    const owner = getOwnerProfile();
+    if (!owner || owner.email !== sessionPayload.email) return null;
+    return owner;
+  }
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    if (!token) return null;
-
-    const sessionPayload = await verifySessionToken(token);
-    if (!sessionPayload) return null;
-
-    // Environment-configured owner account (no database row)
-    if (sessionPayload.userId === OWNER_USER_ID) {
-      const owner = getOwnerProfile();
-      if (!owner || owner.email !== sessionPayload.email) return null;
-      return owner;
-    }
-
     const user = await db.user.findUnique({
       where: { id: sessionPayload.userId },
       select: {
@@ -87,7 +96,7 @@ export async function getCurrentUser() {
     }
 
     return user;
-  } catch {
-    return null;
+  } catch (error) {
+    throw new DatabaseUnavailableError(error);
   }
 }

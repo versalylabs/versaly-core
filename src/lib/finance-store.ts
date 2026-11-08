@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useEffect } from "react";
 
 // ============================================================================
@@ -890,7 +892,7 @@ export const MRR_LAUNCH_TARGET = 120000;
 function safeGetStorage<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
-    const raw = localStorage.getItem(key);
+    const raw = appStorage.getItem(key);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
       return parsed as T;
@@ -902,7 +904,7 @@ function safeGetStorage<T>(key: string, fallback: T): T {
 function safeSetStorage<T>(key: string, value: T, eventName?: string): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    appStorage.setItem(key, JSON.stringify(value));
     if (eventName) {
       window.dispatchEvent(new CustomEvent(eventName));
     }
@@ -1083,7 +1085,7 @@ export function saveCompensationRecords(comps: CompensationRecord[]): void {
 // Role Settings
 export function loadFinanceRole(): FinanceRole {
   if (typeof window === "undefined") return "CEO_ADMIN";
-  const stored = localStorage.getItem(STORAGE_FINANCE_ROLE);
+  const stored = appStorage.getItem(STORAGE_FINANCE_ROLE);
   if (stored && ["CEO_ADMIN", "FINANCE_MANAGER", "SALES_LEAD", "AUDITOR_READONLY"].includes(stored)) {
     return stored as FinanceRole;
   }
@@ -1092,7 +1094,7 @@ export function loadFinanceRole(): FinanceRole {
 
 export function saveFinanceRole(role: FinanceRole): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_FINANCE_ROLE, role);
+  appStorage.setItem(STORAGE_FINANCE_ROLE, role);
   window.dispatchEvent(new CustomEvent("versaly_finance_role_updated"));
 }
 

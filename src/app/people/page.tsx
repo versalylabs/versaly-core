@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -40,7 +42,7 @@ export default function PeoplePage() {
   const [people, setPeople] = useState<PersonItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -91,7 +93,7 @@ export default function PeoplePage() {
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(people));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(people));
     } catch {
       // ignore
     }
@@ -300,7 +302,7 @@ export default function PeoplePage() {
     if (window.confirm("Are you sure you want to clear all stakeholders and start afresh?")) {
       setPeople([]);
       setSelectedPersonId("");
-      localStorage.removeItem(STORAGE_KEY);
+      appStorage.removeItem(STORAGE_KEY);
       setToastMessage("✓ People directory cleared. Ready for your live network.");
       setTimeout(() => setToastMessage(null), 3500);
     }

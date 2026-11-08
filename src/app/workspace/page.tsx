@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -169,7 +171,7 @@ export default function MyWorkspacePage() {
   const [myTasks, setMyTasks] = useState<WorkspaceTask[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_TASKS);
+        const stored = appStorage.getItem(STORAGE_TASKS);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -182,7 +184,7 @@ export default function MyWorkspacePage() {
   const [myProjects, setMyProjects] = useState<WorkspaceProject[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_PROJECTS);
+        const stored = appStorage.getItem(STORAGE_PROJECTS);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -195,7 +197,7 @@ export default function MyWorkspacePage() {
   const [myFollowUps, setMyFollowUps] = useState<WorkspaceFollowUp[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_FOLLOWUPS);
+        const stored = appStorage.getItem(STORAGE_FOLLOWUPS);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -208,7 +210,7 @@ export default function MyWorkspacePage() {
   const [myApprovals, setMyApprovals] = useState<WorkspaceApproval[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_APPROVALS);
+        const stored = appStorage.getItem(STORAGE_APPROVALS);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -221,27 +223,27 @@ export default function MyWorkspacePage() {
   // Sync state changes to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_TASKS, JSON.stringify(myTasks));
+      appStorage.setItem(STORAGE_TASKS, JSON.stringify(myTasks));
       window.dispatchEvent(new CustomEvent("versaly_tasks_updated"));
     } catch {}
   }, [myTasks]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_PROJECTS, JSON.stringify(myProjects));
+      appStorage.setItem(STORAGE_PROJECTS, JSON.stringify(myProjects));
       window.dispatchEvent(new CustomEvent("versaly_projects_updated"));
     } catch {}
   }, [myProjects]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_FOLLOWUPS, JSON.stringify(myFollowUps));
+      appStorage.setItem(STORAGE_FOLLOWUPS, JSON.stringify(myFollowUps));
     } catch {}
   }, [myFollowUps]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_APPROVALS, JSON.stringify(myApprovals));
+      appStorage.setItem(STORAGE_APPROVALS, JSON.stringify(myApprovals));
     } catch {}
   }, [myApprovals]);
 

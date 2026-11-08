@@ -4,7 +4,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { apiSuccess } from "@/lib/api-response";
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUser().catch(() => null);
 
   if (user) {
     await logAuditEvent({

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -28,7 +30,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -47,7 +49,7 @@ export default function ClientsPage() {
   const [selectedClientId, setSelectedClientId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -83,7 +85,7 @@ export default function ClientsPage() {
   // Save to localStorage when changed
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
       window.dispatchEvent(new CustomEvent("versaly_clients_updated"));
     } catch {
       // ignore

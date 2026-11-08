@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useEffect, useCallback } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -41,7 +43,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<DailyTask[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -63,7 +65,7 @@ export default function TasksPage() {
   const [roadmapWeeks, setRoadmapWeeks] = useState<RoadmapWeek[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(ROADMAP_STORAGE_KEY);
+        const stored = appStorage.getItem(ROADMAP_STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -78,7 +80,7 @@ export default function TasksPage() {
   // Save Roadmap state to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(roadmapWeeks));
+      appStorage.setItem(ROADMAP_STORAGE_KEY, JSON.stringify(roadmapWeeks));
     } catch {
       // ignore
     }
@@ -88,7 +90,7 @@ export default function TasksPage() {
   const [weeklyRhythms, setWeeklyRhythms] = useState<Record<number, DayRhythm>>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(RHYTHM_STORAGE_KEY);
+        const stored = appStorage.getItem(RHYTHM_STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed && typeof parsed === "object") return parsed;
@@ -103,7 +105,7 @@ export default function TasksPage() {
   // Save Weekly Rhythm state to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(RHYTHM_STORAGE_KEY, JSON.stringify(weeklyRhythms));
+      appStorage.setItem(RHYTHM_STORAGE_KEY, JSON.stringify(weeklyRhythms));
     } catch {
       // ignore
     }
@@ -173,7 +175,7 @@ export default function TasksPage() {
   // Save tasks to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
       window.dispatchEvent(new CustomEvent("versaly_tasks_updated"));
     } catch {
       // ignore
@@ -183,7 +185,7 @@ export default function TasksPage() {
   // Execute 5:00 AM Reset & Reload
   const execute5AMReset = useCallback((forceManual: boolean = false) => {
     const currentCycle = get5AMCycleKey(new Date());
-    const storedCycle = typeof window !== "undefined" ? localStorage.getItem(CYCLE_KEY) : null;
+    const storedCycle = typeof window !== "undefined" ? appStorage.getItem(CYCLE_KEY) : null;
 
     if (forceManual || storedCycle !== currentCycle) {
       const todayRhythmTasks = getRhythmTasksForDate(new Date(), weeklyRhythms);
@@ -197,7 +199,7 @@ export default function TasksPage() {
       });
 
       try {
-        localStorage.setItem(CYCLE_KEY, currentCycle);
+        appStorage.setItem(CYCLE_KEY, currentCycle);
       } catch {
         // ignore
       }
@@ -226,7 +228,7 @@ export default function TasksPage() {
 
     const interval = setInterval(() => {
       const currentCycle = get5AMCycleKey(new Date());
-      const storedCycle = localStorage.getItem(CYCLE_KEY);
+      const storedCycle = appStorage.getItem(CYCLE_KEY);
       if (storedCycle !== currentCycle) {
         execute5AMReset(false);
       }

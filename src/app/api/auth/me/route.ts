@@ -3,7 +3,12 @@ import { apiSuccess, apiError } from "@/lib/api-response";
 import { hasPermission, Permission } from "@/lib/rbac";
 
 export async function GET() {
-  const user = await getCurrentUser();
+  let user;
+  try {
+    user = await getCurrentUser();
+  } catch {
+    return apiError("Database unavailable", "DB_UNAVAILABLE", 503);
+  }
 
   if (!user) {
     return apiError("Unauthenticated", "UNAUTHORIZED", 401);

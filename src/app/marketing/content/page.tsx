@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -113,7 +115,7 @@ export default function MarketingContentPage() {
   const [posts, setPosts] = useState<SocialPost[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -130,7 +132,7 @@ export default function MarketingContentPage() {
   const [tickedDates, setTickedDates] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STREAK_STORAGE_KEY);
+        const stored = appStorage.getItem(STREAK_STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (parsed && typeof parsed === "object") return parsed;
@@ -151,7 +153,7 @@ export default function MarketingContentPage() {
         : posts.some((p) => p.date === dateStr && p.status === "Published");
       const next = { ...prev, [dateStr]: !isCurrentlyPosted };
       try {
-        localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(next));
+        appStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -247,7 +249,7 @@ export default function MarketingContentPage() {
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
     } catch {
       // ignore
     }

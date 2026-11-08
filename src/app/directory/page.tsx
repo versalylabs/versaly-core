@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -31,7 +33,7 @@ export default function DirectoryPage() {
   const [organizations, setOrganizations] = useState<DirectoryOrganization[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -51,7 +53,7 @@ export default function DirectoryPage() {
   const [selectedOrgId, setSelectedOrgId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -88,7 +90,7 @@ export default function DirectoryPage() {
   // Save to localStorage when changed
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(organizations));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(organizations));
     } catch {
       // ignore
     }

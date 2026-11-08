@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -25,7 +27,7 @@ export default function NotesPage() {
   const [notes, setNotes] = useState<RandomNote[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -42,7 +44,7 @@ export default function NotesPage() {
   const [projects] = useState<ImplementationProjectItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("versaly_projects_list_v2");
+        const stored = appStorage.getItem("versaly_projects_list_v2");
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -62,7 +64,7 @@ export default function NotesPage() {
   const [selectedNoteId, setSelectedNoteId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -93,7 +95,7 @@ export default function NotesPage() {
   // Save to localStorage when notes change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
     } catch {
       // ignore
     }

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -81,7 +83,7 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -115,7 +117,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(events));
       window.dispatchEvent(new CustomEvent("versaly_calendar_updated"));
     } catch {
       // ignore

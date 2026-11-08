@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { clearLocalWorkspace } from "@/lib/app-storage";
 import {
   LayoutDashboard,
   Building2,
@@ -154,7 +155,6 @@ const CATEGORIES: NavCategory[] = [
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Collapsible category state, all open by default
@@ -169,6 +169,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
+    // Send any unsaved changes, then remove business data from this device.
+    // If they can't be sent (offline), the data stays here and syncs next sign-in.
+    const cleared = await clearLocalWorkspace();
+    if (!cleared && !window.confirm("Some changes haven't reached the server yet (you may be offline). They will stay on this device and sync next time you sign in here. Sign out anyway?")) {
+      setIsLoggingOut(false);
+      return;
+    }
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {
@@ -188,8 +195,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         // ignore
       }
     }
-    router.replace("/login");
-    router.refresh();
+    // Full reload so the next sign-in starts with a fresh sync
+    window.location.replace("/login");
   };
 
   return (

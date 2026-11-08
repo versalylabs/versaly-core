@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -23,7 +25,7 @@ export default function MarketingReportsPage() {
   const [campaigns] = useState<MarketingCampaign[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(CAMPAIGNS_STORAGE);
+        const stored = appStorage.getItem(CAMPAIGNS_STORAGE);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -38,7 +40,7 @@ export default function MarketingReportsPage() {
   const [spends] = useState<AdSpendEntry[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(SPEND_STORAGE);
+        const stored = appStorage.getItem(SPEND_STORAGE);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;

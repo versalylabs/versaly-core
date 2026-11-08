@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/context/theme-context";
 import { OfflineProvider } from "@/context/offline-context";
 import { PWAProvider } from "@/context/pwa-context";
+import { SyncProvider } from "@/context/sync-context";
 import { PWAInstallBanner, IOSInstallModal } from "@/components/workspace/pwa-install";
 import "./globals.css";
 
@@ -75,7 +76,7 @@ export default function RootLayout({
         <OfflineProvider>
           <PWAProvider>
             <ThemeProvider>
-              {children}
+              <SyncProvider>{children}</SyncProvider>
               <PWAInstallBanner />
               <IOSInstallModal />
             </ThemeProvider>

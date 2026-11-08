@@ -53,7 +53,7 @@ export async function proxy(request: NextRequest) {
   const session = token ? await verifySessionToken(token) : null;
 
   // Signed-in users don't need the login page
-  if (session && pathname === "/login") {
+  if (session && (pathname === "/login" || pathname === "/")) {
     return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 

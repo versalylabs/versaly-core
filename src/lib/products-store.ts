@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useEffect, useCallback } from "react";
 import {
   VERSALY_PRODUCTS,
@@ -62,9 +64,9 @@ export function getStoredProducts(): VersalyProduct[] {
     return VERSALY_PRODUCTS;
   }
   try {
-    const raw = localStorage.getItem(PRODUCTS_CATALOG_STORAGE_KEY);
+    const raw = appStorage.getItem(PRODUCTS_CATALOG_STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(PRODUCTS_CATALOG_STORAGE_KEY, JSON.stringify(VERSALY_PRODUCTS));
+      appStorage.setItem(PRODUCTS_CATALOG_STORAGE_KEY, JSON.stringify(VERSALY_PRODUCTS));
       return VERSALY_PRODUCTS;
     }
     const parsed = JSON.parse(raw);
@@ -75,7 +77,7 @@ export function getStoredProducts(): VersalyProduct[] {
         const semplo = VERSALY_PRODUCTS.find((p) => p.slug === "semplo");
         if (semplo) {
           const merged = [semplo, ...parsed];
-          localStorage.setItem(PRODUCTS_CATALOG_STORAGE_KEY, JSON.stringify(merged));
+          appStorage.setItem(PRODUCTS_CATALOG_STORAGE_KEY, JSON.stringify(merged));
           return merged;
         }
       }
@@ -93,7 +95,7 @@ export function getStoredProducts(): VersalyProduct[] {
 export function saveStoredProducts(products: VersalyProduct[]): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(PRODUCTS_CATALOG_STORAGE_KEY, JSON.stringify(products));
+    appStorage.setItem(PRODUCTS_CATALOG_STORAGE_KEY, JSON.stringify(products));
     window.dispatchEvent(new CustomEvent(PRODUCTS_UPDATED_EVENT, { detail: products }));
   } catch (err) {
     console.error("Error saving products catalog:", err);
@@ -108,9 +110,9 @@ export function getStoredCategories(): string[] {
     return DEFAULT_PRODUCT_CATEGORIES;
   }
   try {
-    const raw = localStorage.getItem(PRODUCT_CATEGORIES_STORAGE_KEY);
+    const raw = appStorage.getItem(PRODUCT_CATEGORIES_STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(PRODUCT_CATEGORIES_STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCT_CATEGORIES));
+      appStorage.setItem(PRODUCT_CATEGORIES_STORAGE_KEY, JSON.stringify(DEFAULT_PRODUCT_CATEGORIES));
       return DEFAULT_PRODUCT_CATEGORIES;
     }
     const parsed = JSON.parse(raw);
@@ -129,7 +131,7 @@ export function getStoredCategories(): string[] {
 export function saveStoredCategories(categories: string[]): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(PRODUCT_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+    appStorage.setItem(PRODUCT_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
     window.dispatchEvent(new CustomEvent(CATEGORIES_UPDATED_EVENT, { detail: categories }));
   } catch (err) {
     console.error("Error saving categories:", err);

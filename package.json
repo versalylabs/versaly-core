@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "owner:password": "node scripts/set-owner-password.mjs"
+    "owner:password": "node scripts/set-owner-password.mjs",
+    "vercel-build": "prisma generate && node scripts/migrate-deploy.mjs && next build",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

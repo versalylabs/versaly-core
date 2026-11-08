@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -24,7 +26,7 @@ export default function AttentionCenterPage() {
   const [approvals, setApprovals] = useState<ApprovalItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_APPROVALS_KEY);
+        const stored = appStorage.getItem(STORAGE_APPROVALS_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -43,7 +45,7 @@ export default function AttentionCenterPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_APPROVALS_KEY, JSON.stringify(approvals));
+      appStorage.setItem(STORAGE_APPROVALS_KEY, JSON.stringify(approvals));
     } catch {
       // ignore
     }

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -40,7 +42,7 @@ export default function MarketingDashboardPage() {
   const [campaigns] = useState<MarketingCampaign[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(CAMPAIGNS_STORAGE);
+        const stored = appStorage.getItem(CAMPAIGNS_STORAGE);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -56,7 +58,7 @@ export default function MarketingDashboardPage() {
   const [spends, setSpends] = useState<AdSpendEntry[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(SPEND_STORAGE);
+        const stored = appStorage.getItem(SPEND_STORAGE);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -72,7 +74,7 @@ export default function MarketingDashboardPage() {
   const [posts, setPosts] = useState<SocialPost[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(POSTS_STORAGE);
+        const stored = appStorage.getItem(POSTS_STORAGE);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -104,7 +106,7 @@ export default function MarketingDashboardPage() {
   // Sync to local storage
   useEffect(() => {
     try {
-      localStorage.setItem(CAMPAIGNS_STORAGE, JSON.stringify(campaigns));
+      appStorage.setItem(CAMPAIGNS_STORAGE, JSON.stringify(campaigns));
     } catch {
       // ignore
     }
@@ -112,7 +114,7 @@ export default function MarketingDashboardPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(SPEND_STORAGE, JSON.stringify(spends));
+      appStorage.setItem(SPEND_STORAGE, JSON.stringify(spends));
     } catch {
       // ignore
     }
@@ -120,7 +122,7 @@ export default function MarketingDashboardPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(POSTS_STORAGE, JSON.stringify(posts));
+      appStorage.setItem(POSTS_STORAGE, JSON.stringify(posts));
     } catch {
       // ignore
     }

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -47,7 +49,7 @@ export default function MarketingCreativesPage() {
   const [creatives, setCreatives] = useState<MarketingCreative[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = appStorage.getItem(STORAGE_KEY);
         if (stored !== null) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -84,7 +86,7 @@ export default function MarketingCreativesPage() {
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(creatives));
+      appStorage.setItem(STORAGE_KEY, JSON.stringify(creatives));
     } catch {
       // ignore
     }

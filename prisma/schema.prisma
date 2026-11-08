@@ -853,3 +853,30 @@ model CompensationRecord {
   @@index([status])
 }
 
+
+// ============================================================================
+// WORKSPACE SYNC STORE
+// Each document is one data collection from the app (invoices, leads, tasks…),
+// keyed by its client storage key. Browsers keep a local cache and sync here.
+// ============================================================================
+
+model WorkspaceDocument {
+  key       String   @id
+  value     Json
+  version   Int      @default(1)
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Previous values of each document, for recovering from mistakes or overwrites.
+model WorkspaceDocumentRevision {
+  id        String   @id @default(cuid())
+  key       String
+  value     Json
+  version   Int
+  updatedBy String?
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}

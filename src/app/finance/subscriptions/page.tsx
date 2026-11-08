@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { todayIsoDate } from "@/lib/ids";
 import {
   OperationalSubscription,
   loadOperationalSubscriptions,
@@ -18,10 +19,6 @@ import {
   Calendar,
   CreditCard,
   User,
-  Shield,
-  Layers,
-  Sparkles,
-  Server,
   DollarSign,
   TrendingUp,
   Clock,
@@ -29,12 +26,10 @@ import {
   Trash2,
   Edit2,
   X,
-  ExternalLink,
-  Filter,
 } from "lucide-react";
 
 export default function OperationalSubscriptionsPage() {
-  const [subscriptions, setSubscriptions] = useState<OperationalSubscription[]>([]);
+  const [subscriptions, setSubscriptions] = useState<OperationalSubscription[]>(() => loadOperationalSubscriptions());
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -50,22 +45,14 @@ export default function OperationalSubscriptionsPage() {
   const [currency, setCurrency] = useState<string>("USD");
   const [costKES, setCostKES] = useState<number>(2600);
   const [billingCycle, setBillingCycle] = useState<OperationalSubscription["billingCycle"]>("MONTHLY");
-  const [renewalDate, setRenewalDate] = useState("2026-10-26");
-  const [currentDate, setCurrentDate] = useState("2026-10-26");
+  const [renewalDate, setRenewalDate] = useState(() => todayIsoDate());
+  const [currentDate] = useState(() => todayIsoDate());
   const [paymentMethod, setPaymentMethod] = useState<OperationalSubscription["paymentMethod"]>("CARD");
   const [responsiblePerson, setResponsiblePerson] = useState("Chief Technology Officer");
   const [status, setStatus] = useState<OperationalSubscription["status"]>("ACTIVE");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    try {
-      const todayStr = new Date().toISOString().split("T")[0];
-      setRenewalDate(todayStr);
-      setCurrentDate(todayStr);
-    } catch {}
-
-    setSubscriptions(loadOperationalSubscriptions());
-
     const handleSync = () => {
       setSubscriptions(loadOperationalSubscriptions());
     };
@@ -577,7 +564,7 @@ export default function OperationalSubscriptionsPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Category</label>
                     <select
                       value={category}
-                      onChange={(e) => setCategory(e.target.value as any)}
+                      onChange={(e) => setCategory(e.target.value as Parameters<typeof setCategory>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="CLOUD_HOSTING">Cloud Hosting & Database</option>
@@ -591,7 +578,7 @@ export default function OperationalSubscriptionsPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Billing Cycle</label>
                     <select
                       value={billingCycle}
-                      onChange={(e) => setBillingCycle(e.target.value as any)}
+                      onChange={(e) => setBillingCycle(e.target.value as Parameters<typeof setBillingCycle>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="MONTHLY">Monthly</option>
@@ -652,7 +639,7 @@ export default function OperationalSubscriptionsPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Payment Method</label>
                     <select
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value as any)}
+                      onChange={(e) => setPaymentMethod(e.target.value as Parameters<typeof setPaymentMethod>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="CARD">Corporate Card</option>
@@ -677,7 +664,7 @@ export default function OperationalSubscriptionsPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Subscription Status</label>
                     <select
                       value={status}
-                      onChange={(e) => setStatus(e.target.value as any)}
+                      onChange={(e) => setStatus(e.target.value as Parameters<typeof setStatus>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="ACTIVE">Active</option>

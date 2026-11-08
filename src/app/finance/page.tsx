@@ -19,9 +19,6 @@ import {
   loadReservesFromStorage,
   loadBudgetsFromStorage,
   loadOperationalSubscriptions,
-  loadCompensationRecords,
-  loadCapitalContributions,
-  loadShareholderLoans,
   computeFinanceSummary,
   formatKES,
   SETUP_FEE_LAUNCH_TARGET,
@@ -34,26 +31,17 @@ import {
   TrendingDown,
   TrendingUp,
   BarChart3,
-  CreditCard,
   Plus,
   ArrowRight,
-  AlertCircle,
   CheckCircle2,
-  Clock,
   Landmark,
   PieChart,
   Calculator,
   PiggyBank,
   Banknote,
   Repeat,
-  ShieldCheck,
-  ShieldAlert,
   Flame,
-  Hourglass,
-  Layers,
   Building2,
-  DollarSign,
-  Smartphone,
   SlidersHorizontal,
   Edit2,
   Trash2,
@@ -79,8 +67,8 @@ export default function FinanceDashboardPage() {
   const [newAccInstitution, setNewAccInstitution] = useState("");
   const [newAccNumber, setNewAccNumber] = useState("");
   const [newAccBalance, setNewAccBalance] = useState<number>(50000);
-  const [newAccCurrency, setNewAccCurrency] = useState("KES");
-  const [newAccType, setNewAccType] = useState<CompanyAccount["accountType"]>("BANK_CHECKING");
+  const [newAccCurrency] = useState("KES");
+  const [newAccType] = useState<CompanyAccount["accountType"]>("BANK_CHECKING");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -237,7 +225,7 @@ export default function FinanceDashboardPage() {
               <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 mr-2" />
               <select
                 value={dateRange}
-                onChange={(e) => setDateRange(e.target.value as any)}
+                onChange={(e) => setDateRange(e.target.value as Parameters<typeof setDateRange>[0])}
                 className="bg-transparent text-slate-200 focus:outline-none text-xs cursor-pointer"
               >
                 <option value="ALL">All Time</option>

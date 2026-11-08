@@ -63,6 +63,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
     if (path === "/finance/capital") return "Capital & Shareholder Loans";
     if (path === "/finance/equity") return "Ownership & Equity Register";
     if (path === "/finance/forecast") return "Cash Flow Forecast";
+    if (path === "/settings/team") return "Team & Access";
     if (path === "/finance/reserves") return "Cash Reserves & Savings";
     if (path === "/finance/compensation") return "Compensation & Commissions";
     if (path === "/finance/revenue") return "Revenue & Client Subscriptions";

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { apiError } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
+import { logAuditEvent } from "@/lib/audit";
 
 
 /** Download every workspace collection as one JSON backup file (owner/admin only). */
@@ -25,6 +26,13 @@ export async function GET() {
       exportedBy: user.email,
       collections: Object.fromEntries(docs.map((d) => [d.key, { version: d.version, updatedAt: d.updatedAt, value: d.value }])),
     };
+
+    await logAuditEvent({
+      userId: user.id.startsWith("env-") ? null : user.id,
+      action: "BACKUP_EXPORTED",
+      entityType: "Workspace",
+      metadata: { by: user.email, collections: docs.length },
+    });
 
     const stamp = new Date().toISOString().slice(0, 10);
     return new Response(JSON.stringify(backup, null, 2), {

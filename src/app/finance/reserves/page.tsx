@@ -15,28 +15,21 @@ import {
 import {
   PiggyBank,
   ShieldCheck,
-  ShieldAlert,
   ArrowRightLeft,
   Plus,
-  AlertCircle,
   CheckCircle2,
   Lock,
   Wallet,
-  TrendingUp,
   Percent,
-  Clock,
   Edit2,
   Trash2,
   X,
   Check,
-  Scale,
   Landmark,
-  Building2,
-  CreditCard,
 } from "lucide-react";
 
 export default function CashReservesPage() {
-  const [reserves, setReserves] = useState<CashReserveFund[]>([]);
+  const [reserves, setReserves] = useState<CashReserveFund[]>(() => loadReservesFromStorage());
   const [accounts, setAccounts] = useState(loadAccountsFromStorage());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -69,13 +62,10 @@ export default function CashReservesPage() {
   const [newAccInstitution, setNewAccInstitution] = useState("");
   const [newAccNumber, setNewAccNumber] = useState("");
   const [newAccBalance, setNewAccBalance] = useState<number>(50000);
-  const [newAccCurrency, setNewAccCurrency] = useState("KES");
-  const [newAccType, setNewAccType] = useState<CompanyAccount["accountType"]>("BANK_CHECKING");
+  const [newAccCurrency] = useState("KES");
+  const [newAccType] = useState<CompanyAccount["accountType"]>("BANK_CHECKING");
 
   useEffect(() => {
-    setReserves(loadReservesFromStorage());
-    setAccounts(loadAccountsFromStorage());
-
     const handleSync = () => {
       setReserves(loadReservesFromStorage());
       setAccounts(loadAccountsFromStorage());

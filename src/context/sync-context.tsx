@@ -12,8 +12,9 @@ import {
 import { BrandLoader } from "@/components/brand/brand-loader";
 import { runWorkflows } from "@/lib/workflows";
 import { reconcileIncomingPayments } from "@/lib/reconcile";
+import { loadCurrentUser, userCan } from "@/lib/current-user";
 
-const PUBLIC_PATHS = new Set(["/login"]);
+const PUBLIC_PATHS = new Set(["/login", "/change-password"]);
 const INITIAL_PULL_TIMEOUT_MS = 8000;
 const MIN_PULL_INTERVAL_MS = 15000;
 const WORKFLOW_INTERVAL_MS = 30 * 60 * 1000;
@@ -25,8 +26,12 @@ const WORKFLOW_INTERVAL_MS = 30 * 60 * 1000;
  * skipped then, so they never run on stale data).
  */
 async function pullAndRunWorkflows(): Promise<number> {
+  await loadCurrentUser();
   const pulled = await pullFromServer();
   if (pulled < 0) return pulled;
+
+  // Invoicing, billing and payment matching change finance records: only people who may write finance run them
+  if (!userCan("finance:write")) return pulled;
     let extra = 0;
   try {
     extra += runWorkflows().changed ? 1 : 0;
@@ -39,6 +44,17 @@ async function pullAndRunWorkflows(): Promise<number> {
     console.error("Payment matching failed", error);
   }
   return pulled + extra;
+}
+
+/**
+ * Remount the page so it re-reads freshly synced data. The page's entrance animation is
+ * switched off for this one remount (it would look like the page flickered).
+ */
+function remount(setEpoch: (update: (e: number) => number) => void) {
+  const root = document.documentElement;
+  root.dataset.remount = "1";
+  setTimeout(() => delete root.dataset.remount, 1000);
+  setEpoch((e) => e + 1);
 }
 
 /** Current sync status, for showing "Saved" / "Saving…" / "Offline" in the UI. */
@@ -76,7 +92,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     });
     // A slow server answered after we showed the local copy: reload with fresh data
     void pull.then((changed) => {
-      if (!cancelled && timedOut && changed > 0) setEpoch((e) => e + 1);
+      if (!cancelled && timedOut && changed > 0) remount(setEpoch);
     });
     return () => {
       cancelled = true;
@@ -91,7 +107,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       if (Date.now() - lastPull.current < MIN_PULL_INTERVAL_MS) return;
       lastPull.current = Date.now();
       const changed = await pullAndRunWorkflows();
-      if (changed > 0) setEpoch((e) => e + 1);
+      if (changed > 0) remount(setEpoch);
     };
 
     const onVisibility = () => {

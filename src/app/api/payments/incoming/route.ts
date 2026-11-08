@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
+import { hasPermission } from "@/lib/rbac";
+import { logAuditEvent } from "@/lib/audit";
+import { clientIp } from "@/lib/rate-limit";
 
 /**
  * Incoming M-Pesa payments for the signed-in app.
@@ -19,6 +22,7 @@ export async function GET() {
     return apiError("Database unavailable", "DB_UNAVAILABLE", 503);
   }
   if (!user) return apiError("Unauthenticated", "UNAUTHORIZED", 401);
+  if (!hasPermission(user.role, "finance:read")) return apiError("You do not have access to finance", "FORBIDDEN", 403);
 
   try {
     const rows = await db.incomingPayment.findMany({
@@ -57,7 +61,7 @@ export async function POST(req: NextRequest) {
     return apiError("Database unavailable", "DB_UNAVAILABLE", 503);
   }
   if (!user) return apiError("Unauthenticated", "UNAUTHORIZED", 401);
-  if (user.role === "READ_ONLY") return apiError("Read-only accounts cannot change data", "FORBIDDEN", 403);
+  if (!hasPermission(user.role, "finance:write")) return apiError("Only owners and admins can match payments", "FORBIDDEN", 403);
 
   const parsed = markSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return apiError("Validation failed", "INVALID_INPUT", 400);
@@ -71,6 +75,17 @@ export async function POST(req: NextRequest) {
         appliedAt: new Date(),
       },
     });
+    if (result.count) {
+      await logAuditEvent({
+        userId: user.id.startsWith("env-") ? null : user.id,
+        action: parsed.data.status === "APPLIED" ? "PAYMENT_MATCHED" : "PAYMENT_IGNORED",
+        entityType: "IncomingPayment",
+        entityId: parsed.data.transId,
+        metadata: { invoiceId: parsed.data.invoiceId ?? null, by: user.email },
+        ipAddress: clientIp(req.headers),
+        userAgent: req.headers.get("user-agent") || "unknown",
+      });
+    }
     return apiSuccess({ updated: result.count });
   } catch (error) {
     logger.error("Marking incoming payment failed", {}, error);

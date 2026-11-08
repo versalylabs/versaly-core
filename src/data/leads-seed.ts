@@ -41,6 +41,8 @@ export interface ActiveDealItem {
   nextActionDate: string;
   lostReason?: string;
   onboardingProjectCreated?: boolean;
+  /** false = won by someone without finance access; an owner/admin's app creates the invoice and subscription. */
+  billingProvisioned?: boolean;
 }
 
 export const INITIAL_RAW_LEADS: RawLeadItem[] = [];

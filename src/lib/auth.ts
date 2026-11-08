@@ -87,6 +87,7 @@ export async function getCurrentUser() {
         status: true,
         avatarUrl: true,
         jobTitle: true,
+        mustChangePassword: true,
         createdAt: true,
       },
     });

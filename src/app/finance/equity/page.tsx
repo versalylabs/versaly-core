@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { todayIsoDate } from "@/lib/ids";
 import {
   EquityScenario,
   Shareholding,
@@ -22,19 +23,18 @@ import {
   Award,
   Calendar,
   Lock,
-  ArrowRight,
-  TrendingDown,
-  Info,
   CheckCircle2,
   Trash2,
   Edit2,
   X,
-  FileCheck2,
 } from "lucide-react";
 
 export default function EquityRegisterPage() {
-  const [scenarios, setScenarios] = useState<EquityScenario[]>([]);
-  const [activeScenarioId, setActiveScenarioId] = useState<string>("eq-proposed-seed");
+  const [scenarios, setScenarios] = useState<EquityScenario[]>(() => loadEquityScenarios());
+  const [activeScenarioId, setActiveScenarioId] = useState<string>(() => {
+    const list = loadEquityScenarios();
+    return list.some((s) => s.id === "eq-proposed-seed") ? "eq-proposed-seed" : (list[0]?.id ?? "eq-proposed-seed");
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Dilution Calculator state
@@ -53,7 +53,7 @@ export default function EquityRegisterPage() {
   const [shareClass, setShareClass] = useState<"ORDINARY_A" | "ORDINARY_B" | "PREFERRED">("ORDINARY_A");
   const [vestingMonths, setVestingMonths] = useState<number>(48);
   const [cliffMonths, setCliffMonths] = useState<number>(12);
-  const [vestingStartDate, setVestingStartDate] = useState("2026-10-26");
+  const [vestingStartDate, setVestingStartDate] = useState(() => todayIsoDate());
   const [votingRights, setVotingRights] = useState(true);
   const [isLegallyBinding, setIsLegallyBinding] = useState(false);
   const [notes, setNotes] = useState("");
@@ -65,16 +65,6 @@ export default function EquityRegisterPage() {
   const [newScenarioNotes, setNewScenarioNotes] = useState("");
 
   useEffect(() => {
-    try {
-      setVestingStartDate(new Date().toISOString().split("T")[0]);
-    } catch {}
-
-    const loaded = loadEquityScenarios();
-    setScenarios(loaded);
-    if (loaded.length > 0 && !loaded.some((s) => s.id === activeScenarioId)) {
-      setActiveScenarioId(loaded[0].id);
-    }
-
     const handleSync = () => {
       setScenarios(loadEquityScenarios());
     };
@@ -85,7 +75,7 @@ export default function EquityRegisterPage() {
       window.removeEventListener("versaly_equity_updated", handleSync);
       window.removeEventListener("storage", handleSync);
     };
-  }, [activeScenarioId]);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -791,7 +781,7 @@ export default function EquityRegisterPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Share Class</label>
                     <select
                       value={shareClass}
-                      onChange={(e) => setShareClass(e.target.value as any)}
+                      onChange={(e) => setShareClass(e.target.value as Parameters<typeof setShareClass>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="ORDINARY_A">Ordinary Class A (Voting)</option>

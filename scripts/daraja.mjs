@@ -137,16 +137,36 @@ try {
 
 if (command === "register") {
   const { confirmation, validation } = loadUrls();
-  const { status, json } = await post("/mpesa/c2b/v2/registerurl", token, {
-    ShortCode: shortCode,
-    ResponseType: "Completed", // if our validation URL can't be reached, still complete the customer's payment
-    ConfirmationURL: confirmation,
-    ValidationURL: validation,
-  });
-  console.log(`\nSafaricom answered (HTTP ${status}):`);
-  console.log(JSON.stringify(json, null, 2));
-  const ok = status === 200 && /success/i.test(JSON.stringify(json));
+
+  if (envName === "sandbox" && shortCode === "174379") {
+    console.log("\n⚠ 174379 is Safaricom's sandbox shortcode for STK Push, not for C2B payments. If this fails, use the C2B test shortcode instead:");
+    console.log('  Daraja → My Apps → your app → Simulate (or APIs → C2B) shows the C2B test shortcode. It usually starts with 600.');
+  }
+
+  // Try the newer API first; if Safaricom's sandbox has a server error, try the older one, which is often steadier.
+  const attempts = ["v2", "v1"];
+  let ok = false;
+  for (const version of attempts) {
+    const { status, json } = await post(`/mpesa/c2b/${version}/registerurl`, token, {
+      ShortCode: shortCode,
+      ResponseType: "Completed", // if our validation URL can't be reached, still complete the customer's payment
+      ConfirmationURL: confirmation,
+      ValidationURL: validation,
+    });
+    console.log(`\nSafaricom (${version}) answered HTTP ${status}:`);
+    console.log(JSON.stringify(json, null, 2));
+    ok = status === 200 && /success/i.test(JSON.stringify(json));
+    if (ok || status < 500) break;
+    console.log(`\n${version} returned a server error; trying the next API version…`);
+  }
+
   console.log(ok ? "\n✔ URLs registered." : "\n✘ Not registered. Read Safaricom's message above.");
+  if (!ok) {
+    console.log("\nWhat to try:");
+    console.log("  • Use the C2B test shortcode (starts with 600) from the Simulate page, not 174379.");
+    console.log("  • Error 500.003.1001 is often Safaricom's sandbox being down. Wait a few minutes and run this again.");
+    console.log("  • Make sure the Daraja app has the C2B product ticked (My Apps → your app).");
+  }
   await finish(ok ? 0 : 1);
 }
 

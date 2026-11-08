@@ -175,3 +175,17 @@ export function collectionState(
   if (daysToDue <= DUE_SOON_DAYS) return { stage: "due_soon", daysToDue };
   return { stage: "upcoming", daysToDue };
 }
+
+// ---------------------------------------------------------------------------
+// Invoice numbers
+// ---------------------------------------------------------------------------
+
+/** The next invoice number for the year, continuing after the highest used so far (INV-2026-1001, 1002, …). */
+export function nextInvoiceNumber(existing: { invoiceNumber: string }[], year: number): string {
+  let max = 1000;
+  for (const inv of existing) {
+    const m = /^INV-(\d{4})-(\d+)$/.exec(inv.invoiceNumber);
+    if (m && Number(m[1]) === year) max = Math.max(max, Number(m[2]));
+  }
+  return `INV-${year}-${max + 1}`;
+}

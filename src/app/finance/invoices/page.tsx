@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -12,65 +12,51 @@ import {
 } from "@/lib/finance-store";
 import { useProductsCatalog } from "@/lib/products-store";
 import { InvoiceSendPanel } from "@/components/finance/invoice-send-panel";
+import { currentYear, isoDaysFromNow, newId, nowMs, randomCode, todayIsoDate } from "@/lib/ids";
+import { nextInvoiceNumber } from "@/lib/money";
 import { CollectionsPanel } from "@/components/finance/collections-panel";
 import { UnmatchedPaymentsPanel } from "@/components/finance/unmatched-payments-panel";
 import {
   Receipt,
   Plus,
   Search,
-  Filter,
   CheckCircle2,
-  AlertCircle,
-  Clock,
   Printer,
   X,
   Trash2,
-  Send,
-  Eye,
-  MessageCircle,
-  ArrowRight,
-  Download,
-  DollarSign,
   QrCode,
   CreditCard,
-  Building2,
 } from "lucide-react";
 
 export default function InvoicesPage() {
   const { products: catalogProducts } = useProductsCatalog();
-  const [invoices, setInvoices] = useState<FinanceInvoice[]>([]);
+  const [invoices, setInvoices] = useState<FinanceInvoice[]>(() => loadInvoicesFromStorage());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [selectedInvoice, setSelectedInvoice] = useState<FinanceInvoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<FinanceInvoice | null>(() => loadInvoicesFromStorage()[0] ?? null);
 
   // Create Modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("+254 ");
-  const [productSlug, setProductSlug] = useState<string>("semplo");
-  const [productName, setProductName] = useState("Semplo");
-  const [issueDate, setIssueDate] = useState("2026-10-20");
+  const [productSlug, setProductSlug] = useState<string>(() => (catalogProducts.some((p) => p.slug === "semplo") ? "semplo" : (catalogProducts[0]?.slug ?? "semplo")));
+  const [productName, setProductName] = useState(() => (catalogProducts.find((p) => p.slug === "semplo") ?? catalogProducts[0])?.name ?? "Semplo");
+  const [issueDate, setIssueDate] = useState(() => todayIsoDate());
 
-  useEffect(() => {
-    if (catalogProducts.length > 0 && !catalogProducts.some((p) => p.slug === productSlug)) {
-      setProductSlug(catalogProducts[0].slug);
-      setProductName(catalogProducts[0].name);
-    }
-  }, [catalogProducts, productSlug]);
   const [dueDate, setDueDate] = useState("");
   const [invoiceStatus, setInvoiceStatus] = useState<FinanceInvoice["status"]>("SENT");
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([
     { description: "System Setup & Database Configuration", quantity: 1, unitPrice: 35000, amountKES: 35000 },
   ]);
-  const [notes, setNotes] = useState("Payment via M-Pesa Paybill 247247 or Direct Bank Transfer.");
+  const [notes] = useState("Payment via M-Pesa Paybill 247247 or Direct Bank Transfer.");
 
   // Record Payment Modal
   const [showPayModal, setShowPayModal] = useState(false);
   const [payAmount, setPayAmount] = useState<number>(0);
   const [payRef, setPayRef] = useState("");
   const [payChannel, setPayChannel] = useState<PaymentRecord["channel"]>("MPESA_PAYBILL");
-  const [payNotes, setPayNotes] = useState("");
+  const [payNotes] = useState("");
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -78,12 +64,6 @@ export default function InvoicesPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
-
-  useEffect(() => {
-    const list = loadInvoicesFromStorage();
-    setInvoices(list);
-    if (list.length > 0) setSelectedInvoice(list[0]);
-  }, []);
 
   const syncInvoices = (updated: FinanceInvoice[]) => {
     setInvoices(updated);
@@ -104,7 +84,7 @@ export default function InvoicesPage() {
     ]);
   };
 
-  const updateLineItem = (idx: number, field: keyof InvoiceLineItem, val: any) => {
+  const updateLineItem = (idx: number, field: keyof InvoiceLineItem, val: string | number) => {
     setLineItems((prev) => {
       const copy = [...prev];
       const item = { ...copy[idx], [field]: val };
@@ -128,8 +108,8 @@ export default function InvoicesPage() {
     if (!clientName.trim() || lineItems.length === 0) return;
 
     const newInv: FinanceInvoice = {
-      id: `inv-${Date.now()}`,
-      invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: newId("inv"),
+      invoiceNumber: nextInvoiceNumber(invoices, currentYear()),
       clientName: clientName.trim(),
       clientEmail: clientEmail.trim() || undefined,
       clientPhone: clientPhone.trim() || undefined,
@@ -141,18 +121,18 @@ export default function InvoicesPage() {
       totalKES,
       amountPaidKES: invoiceStatus === "PAID" ? totalKES : 0,
       balanceKES: invoiceStatus === "PAID" ? 0 : totalKES,
-      issueDate: issueDate || new Date().toISOString().split("T")[0],
-      dueDate: dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+      issueDate: issueDate || todayIsoDate(),
+      dueDate: dueDate || isoDaysFromNow(7),
       paidAt: invoiceStatus === "PAID" ? "Today" : undefined,
       notes: notes.trim() || undefined,
-      kraEtimsCode: `ETIMS-KRA-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      kraEtimsCode: `ETIMS-KRA-${randomCode(8)}`,
       lineItems,
       payments:
         invoiceStatus === "PAID"
           ? [
               {
-                id: `pay-${Date.now()}`,
-                referenceNumber: `MP-${Date.now().toString().slice(-6)}`,
+                id: newId("pay"),
+                referenceNumber: `MP-${nowMs().toString().slice(-6)}`,
                 channel: "MPESA_PAYBILL",
                 amountKES: totalKES,
                 payerName: clientName.trim(),
@@ -729,7 +709,7 @@ export default function InvoicesPage() {
                   <label className="block text-slate-300 font-semibold mb-1">Initial Status</label>
                   <select
                     value={invoiceStatus}
-                    onChange={(e) => setInvoiceStatus(e.target.value as any)}
+                    onChange={(e) => setInvoiceStatus(e.target.value as Parameters<typeof setInvoiceStatus>[0])}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
                   >
                     <option value="SENT">SENT (Awaiting Payment)</option>
@@ -873,7 +853,7 @@ export default function InvoicesPage() {
                 <label className="block text-slate-300 font-semibold mb-1">Payment Method</label>
                 <select
                   value={payChannel}
-                  onChange={(e) => setPayChannel(e.target.value as any)}
+                  onChange={(e) => setPayChannel(e.target.value as Parameters<typeof setPayChannel>[0])}
                   className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="MPESA_PAYBILL">M-Pesa Paybill</option>

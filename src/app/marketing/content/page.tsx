@@ -2,7 +2,7 @@
 
 
 import { appStorage } from "@/lib/app-storage";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -21,7 +21,6 @@ import {
   Copy,
   CheckCircle2,
   Circle,
-  Check,
   BarChart2,
 } from "lucide-react";
 import {
@@ -52,15 +51,6 @@ const CATEGORIES: ContentCategory[] = [
   "Launch Announcement",
   "Behind The Scenes",
   "eTIMS Compliance Tip",
-];
-
-const PRODUCTS: MarketingProduct[] = [
-  "Vehisoft",
-  "Adversoft",
-  "Versandry",
-  "LipaTim",
-  "Melio RMS",
-  "Versaly Core / Brand",
 ];
 
 const STREAK_STORAGE_KEY = "versaly_marketing_streak_days_v2";
@@ -128,7 +118,7 @@ export default function MarketingContentPage() {
   });
 
   // Week days & dynamic interactive streak tracker
-  const [weekDays, setWeekDays] = useState<WeekDayItem[]>([]);
+  const [weekDays] = useState<WeekDayItem[]>(() => getCurrentWeekDays());
   const [tickedDates, setTickedDates] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -141,10 +131,6 @@ export default function MarketingContentPage() {
     }
     return {};
   });
-
-  useEffect(() => {
-    setWeekDays(getCurrentWeekDays());
-  }, []);
 
   const toggleDayTicked = (dateStr: string) => {
     setTickedDates((prev) => {
@@ -159,17 +145,20 @@ export default function MarketingContentPage() {
     });
   };
 
-  const isDayPosted = (d: WeekDayItem) => {
-    if (tickedDates[d.dateStr] !== undefined) {
-      return tickedDates[d.dateStr];
-    }
-    return posts.some((p) => p.date === d.dateStr && p.status === "Published");
-  };
+  const isDayPosted = useCallback(
+    (d: WeekDayItem) => {
+      if (tickedDates[d.dateStr] !== undefined) {
+        return tickedDates[d.dateStr];
+      }
+      return posts.some((p) => p.date === d.dateStr && p.status === "Published");
+    },
+    [tickedDates, posts]
+  );
 
   const completedDaysCount = useMemo(() => {
     if (!weekDays.length) return 0;
     return weekDays.filter((d) => isDayPosted(d)).length;
-  }, [weekDays, tickedDates, posts]);
+  }, [weekDays, isDayPosted]);
 
   const todayItem = useMemo(() => {
     return weekDays.find((d) => d.isToday) || null;
@@ -178,7 +167,7 @@ export default function MarketingContentPage() {
   const isTodayPosted = useMemo(() => {
     if (!todayItem) return false;
     return isDayPosted(todayItem);
-  }, [todayItem, tickedDates, posts]);
+  }, [todayItem, isDayPosted]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<string>("ALL");
@@ -841,7 +830,7 @@ export default function MarketingContentPage() {
                   </label>
                   <select
                     value={formProduct}
-                    onChange={(e) => setFormProduct(e.target.value as any)}
+                    onChange={(e) => setFormProduct(e.target.value as Parameters<typeof setFormProduct>[0])}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-sky-500"
                   >
                     {productOptions.map((p) => (

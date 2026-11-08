@@ -14,6 +14,8 @@ export interface SessionPayload {
   email: string;
   role: UserRole;
   name: string;
+  /** True until a new team member sets their own password. */
+  mcp?: boolean;
 }
 
 // Only used for local development. Production refuses to run without a real secret.
@@ -51,6 +53,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       email: payload.email,
       role: payload.role as UserRole,
       name: payload.name as string,
+      mcp: payload.mcp === true,
     };
   } catch {
     return null;

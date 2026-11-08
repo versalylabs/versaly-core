@@ -150,8 +150,6 @@ export function useProductsCatalog() {
   }, []);
 
   useEffect(() => {
-    reloadProducts();
-
     const handleUpdate = (e?: Event) => {
       if (e && (e as CustomEvent).detail && Array.isArray((e as CustomEvent).detail)) {
         setProductsState((e as CustomEvent).detail);
@@ -201,8 +199,6 @@ export function useProductCategories() {
   }, []);
 
   useEffect(() => {
-    reloadCategories();
-
     const handleUpdate = (e?: Event) => {
       if (e && (e as CustomEvent).detail && Array.isArray((e as CustomEvent).detail)) {
         setCategoriesState((e as CustomEvent).detail);

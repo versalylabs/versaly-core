@@ -526,7 +526,7 @@ export default function MarketingCreativesPage() {
                   </label>
                   <select
                     value={formProduct}
-                    onChange={(e) => setFormProduct(e.target.value as any)}
+                    onChange={(e) => setFormProduct(e.target.value as Parameters<typeof setFormProduct>[0])}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-violet-500"
                   >
                     {productOptions.map((p) => (

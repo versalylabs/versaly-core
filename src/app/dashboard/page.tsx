@@ -5,6 +5,15 @@ import { appStorage } from "@/lib/app-storage";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { useCurrentUser } from "@/lib/current-user";
+import {
+  DASHBOARD_QUEUE_KEY,
+  OutreachItem,
+  FridayScorecard,
+  SCORECARD_ROWS,
+  INITIAL_QUEUE,
+  computeIntelligenceBriefing,
+} from "@/lib/dashboard-data";
 import {
   PhoneCall,
   AlertTriangle,
@@ -27,7 +36,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import {
-  INITIAL_MONEY_METRICS,
   INITIAL_SALES_ACTIVITY_METRICS,
   INITIAL_PIPELINE_METRICS,
   INITIAL_CLIENT_DELIVERY_METRICS,
@@ -42,144 +50,15 @@ import {
   MRR_LAUNCH_TARGET,
 } from "@/lib/finance-store";
 import { useProductsCatalog, getProductColor } from "@/lib/products-store";
-import { INITIAL_CALENDAR_EVENTS } from "@/data/calendar-seed";
-import { WEEKLY_RHYTHM_TEMPLATES } from "@/data/tasks-data";
 
-const DASHBOARD_QUEUE_KEY = "versaly_dashboard_outreach_queue_v2";
-
-interface OutreachItem {
-  id: string;
-  business: string;
-  contact: string;
-  phone?: string;
-  channel: string;
-  product: string;
-  status: string;
-  script: string;
-  loggedAt?: string;
-  logNotes?: string;
-  logOutcome?: string;
-  nextAction?: string;
-  nextActionDate?: string;
-  dealStage?: string;
-  isOptedOut?: boolean;
-}
-
-type FridayScorecardMetricKey =
-  | "contactsMade"
-  | "checksDelivered"
-  | "demosHeld"
-  | "clientsSigned"
-  | "clientsLive"
-  | "problemsReported"
-  | "referralsReceived";
-
-interface FridayScorecard {
-  contactsMade: Record<string, string>;
-  checksDelivered: Record<string, string>;
-  demosHeld: Record<string, string>;
-  clientsSigned: Record<string, string>;
-  clientsLive: Record<string, string>;
-  problemsReported: Record<string, string>;
-  referralsReceived: Record<string, string>;
-  leadsStuckNotes: string;
-  oneChangeTest: string;
-  clientNeedsAttention: string;
-}
-
-const SCORECARD_ROWS: { key: FridayScorecardMetricKey; label: string }[] = [
-  { key: "contactsMade", label: "1. Contacts made this week" },
-  { key: "checksDelivered", label: "2. Free checks or maps delivered" },
-  { key: "demosHeld", label: "3. Demos held" },
-  { key: "clientsSigned", label: "4. Clients signed" },
-  { key: "clientsLive", label: "5. Clients gone live" },
-  { key: "problemsReported", label: "6. Problems or bugs reported" },
-  { key: "referralsReceived", label: "7. Referrals received" },
-];
-
-const INITIAL_QUEUE: OutreachItem[] = [];
-
-// ── Intelligence Briefing helper (runs outside React, reads localStorage) ──
-function computeIntelligenceBriefing() {
-  if (typeof window === "undefined") {
-    return { activeTasks: 0, upcomingEvents: 0, activeProjects: 0, openDeals: 0, overdueInvoices: 0, uncontactedLeads: 0 };
-  }
-
-  // Active (incomplete) tasks
-  let activeTasks = 0;
-  try {
-    const raw = appStorage.getItem("versaly_daily_tasks");
-    if (raw) {
-      const tasks = JSON.parse(raw) as Array<{ completed?: boolean }>;
-      activeTasks = tasks.filter((t) => !t.completed).length;
-    } else {
-      activeTasks = WEEKLY_RHYTHM_TEMPLATES[1]?.tasks?.length || 0;
-    }
-  } catch { /* ignore */ }
-
-  // Upcoming events in next 7 days
-  let upcomingEvents = 0;
-  try {
-    const raw = appStorage.getItem("versaly_business_calendar_v2");
-    const sourceEvents = raw ? (JSON.parse(raw) as Array<{ date?: string }>) : INITIAL_CALENDAR_EVENTS;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const next7 = new Date(today);
-    next7.setDate(next7.getDate() + 7);
-    upcomingEvents = sourceEvents.filter((e) => {
-      if (!e.date) return false;
-      const d = new Date(e.date);
-      return d >= today && d <= next7;
-    }).length;
-  } catch { /* ignore */ }
-
-  // Active projects
-  let activeProjects = 0;
-  try {
-    const raw = appStorage.getItem("versaly_projects_list_v2");
-    if (raw) {
-      const projects = JSON.parse(raw) as Array<{ status?: string }>;
-      activeProjects = projects.filter((p) => p.status === "ACTIVE" || (p.status !== "COMPLETED" && p.status !== "CANCELLED")).length;
-    }
-  } catch { /* ignore */ }
-
-  // Open deals (not WON or LOST)
-  let openDeals = 0;
-  try {
-    const raw = appStorage.getItem("versaly_active_deals_v2");
-    if (raw) {
-      const deals = JSON.parse(raw) as Array<{ stage?: string }>;
-      openDeals = deals.filter((d) => d.stage !== "WON" && d.stage !== "LOST").length;
-    }
-  } catch { /* ignore */ }
-
-  // Overdue invoices
-  let overdueInvoices = 0;
-  try {
-    const raw = appStorage.getItem("versaly_finance_invoices_v2");
-    if (raw) {
-      const invoices = JSON.parse(raw) as Array<{ status?: string }>;
-      overdueInvoices = invoices.filter((i) => i.status === "OVERDUE").length;
-    }
-  } catch { /* ignore */ }
-
-  // Uncontacted leads
-  let uncontactedLeads = 0;
-  try {
-    const raw = appStorage.getItem("versaly_raw_leads_v2");
-    if (raw) {
-      const leads = JSON.parse(raw) as Array<{ status?: string }>;
-      uncontactedLeads = leads.filter((l) => l.status === "UNCONTACTED").length;
-    }
-  } catch { /* ignore */ }
-
-  return { activeTasks, upcomingEvents, activeProjects, openDeals, overdueInvoices, uncontactedLeads };
-}
 
 
 export default function DashboardPage() {
   const { products: catalogProducts } = useProductsCatalog();
   const [activeSection, setActiveSection] = useState<"ALL" | "MONEY" | "SALES" | "PIPELINE" | "DELIVERY" | "PRODUCTS">("ALL");
+  // Finance figures are only for roles that may read finance (the server withholds the data from everyone else too)
+  const me = useCurrentUser();
+  const canSeeFinance = !me || me.permissions.includes("finance:read");
   const [isFridayReview, setIsFridayReview] = useState(false);
   const [selectedProductFilter, setSelectedProductFilter] = useState<string>("ALL");
 
@@ -283,10 +162,6 @@ export default function DashboardPage() {
   );
 
   useEffect(() => {
-    setFinInvoices(loadInvoicesFromStorage());
-    setFinExpenses(loadExpensesFromStorage());
-    setFinSubscriptions(loadSubscriptionsFromStorage());
-
     const handleSync = () => {
       setFinInvoices(loadInvoicesFromStorage());
       setFinExpenses(loadExpensesFromStorage());
@@ -874,6 +749,7 @@ export default function DashboardPage() {
           >
             All Executive Sections
           </button>
+          {canSeeFinance && (
           <button
             onClick={() => setActiveSection("MONEY")}
             className={`px-3.5 py-1.5 rounded-xl font-semibold transition whitespace-nowrap border flex items-center gap-1.5 ${
@@ -885,6 +761,7 @@ export default function DashboardPage() {
             <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
             <span>1. Money & Cash</span>
           </button>
+          )}
           <button
             onClick={() => setActiveSection("SALES")}
             className={`px-3.5 py-1.5 rounded-xl font-semibold transition whitespace-nowrap border flex items-center gap-1.5 ${
@@ -934,7 +811,7 @@ export default function DashboardPage() {
         {/* ========================================================================= */}
         {/* SECTION 1: MONEY METRICS (At the top)                                     */}
         {/* ========================================================================= */}
-        {(activeSection === "ALL" || activeSection === "MONEY") && (
+        {canSeeFinance && (activeSection === "ALL" || activeSection === "MONEY") && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

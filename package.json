@@ -14,7 +14,9 @@
     "brand:photo": "node scripts/apply-background-photo.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "daraja": "node scripts/daraja.mjs"
+    "daraja": "node scripts/daraja.mjs",
+    "email:setup": "node scripts/setup-email.mjs",
+    "test:e2e": "node scripts/e2e-roles.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

@@ -56,6 +56,12 @@ export default function LoginPage() {
         );
       }
 
+      // A new team member with a temporary password must choose their own first
+      if (data.data?.mustChangePassword) {
+        window.location.replace("/change-password");
+        return;
+      }
+
       // Return to the page the user originally asked for (same-origin paths only)
       const next = new URLSearchParams(window.location.search).get("next");
       const destination =

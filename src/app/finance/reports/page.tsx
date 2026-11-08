@@ -1,34 +1,18 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
+import { useState, useMemo } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { todayIsoDate } from "@/lib/ids";
 import {
   BarChart3,
   TrendingUp,
-  TrendingDown,
   DollarSign,
   Printer,
-  ShieldCheck,
-  Cpu,
-  Truck,
-  Megaphone,
-  Briefcase,
-  Layers,
   PieChart,
-  Sparkles,
-  Server,
-  ArrowRight,
   Download,
-  Calendar,
-  Landmark,
   Scale,
   CheckCircle2,
-  AlertCircle,
   Clock,
-  Building2,
-  FileText,
-  FileCheck2,
 } from "lucide-react";
 import {
   FinanceInvoice,
@@ -46,34 +30,19 @@ import {
 } from "@/lib/finance-store";
 
 export default function FinancialReportsPage() {
-  const [invoices, setInvoices] = useState<FinanceInvoice[]>([]);
-  const [expenses, setExpenses] = useState<FinanceExpense[]>([]);
-  const [subscriptions, setSubscriptions] = useState<ClientSubscription[]>([]);
-  const [accounts, setAccounts] = useState(loadAccountsFromStorage());
-  const [contributions, setContributions] = useState(loadCapitalContributions());
-  const [loans, setLoans] = useState(loadShareholderLoans());
-  const [reserves, setReserves] = useState(loadReservesFromStorage());
+  const [invoices] = useState<FinanceInvoice[]>(() => loadInvoicesFromStorage());
+  const [expenses] = useState<FinanceExpense[]>(() => loadExpensesFromStorage());
+  const [subscriptions] = useState<ClientSubscription[]>(() => loadSubscriptionsFromStorage());
+  const [accounts] = useState(loadAccountsFromStorage());
+  const [contributions] = useState(loadCapitalContributions());
+  const [loans] = useState(loadShareholderLoans());
+  const [reserves] = useState(loadReservesFromStorage());
 
   const [activeReportTab, setActiveReportTab] = useState<
     "PROFIT_LOSS" | "BALANCE_SHEET" | "CASH_FLOW" | "PRODUCT_ECONOMICS" | "RECEIVABLES_AGING"
   >("PROFIT_LOSS");
-  const [selectedPeriod, setSelectedPeriod] = useState<"MTD" | "QTD" | "YTD" | "ALL_TIME">("ALL_TIME");
-  const [reportDate, setReportDate] = useState("");
-  const [todayDate, setTodayDate] = useState("2026-10-26");
-
-  useEffect(() => {
-    setInvoices(loadInvoicesFromStorage());
-    setExpenses(loadExpensesFromStorage());
-    setSubscriptions(loadSubscriptionsFromStorage());
-    setAccounts(loadAccountsFromStorage());
-    setContributions(loadCapitalContributions());
-    setLoans(loadShareholderLoans());
-    setReserves(loadReservesFromStorage());
-    try {
-      setReportDate(new Date().toLocaleDateString());
-      setTodayDate(new Date().toISOString().split("T")[0]);
-    } catch {}
-  }, []);
+  const [reportDate] = useState(() => new Date().toLocaleDateString());
+  const [todayDate] = useState(() => todayIsoDate());
 
   const summary = useMemo(() => {
     return computeFinanceSummary(invoices, expenses, subscriptions);
@@ -202,7 +171,7 @@ export default function FinancialReportsPage() {
       overdue_60_plus,
       unpaidInvoices,
     };
-  }, [invoices, summary.totalOutstanding]);
+  }, [invoices, summary.totalOutstanding, todayDate]);
 
   // Product Suite Economics
   const productMargins = useMemo(() => {
@@ -264,7 +233,7 @@ export default function FinancialReportsPage() {
   const handleExportActiveCSV = () => {
     let headers: string[] = [];
     let rows: (string | number)[][] = [];
-    let filename = `versaly-${activeReportTab.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`;
+    const filename = `versaly-${activeReportTab.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`;
 
     if (activeReportTab === "PROFIT_LOSS") {
       headers = ["Line Item", "Classification", "Amount (KES)"];

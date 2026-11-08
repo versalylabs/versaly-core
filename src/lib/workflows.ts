@@ -13,7 +13,7 @@
  */
 
 import { appStorage } from "@/lib/app-storage";
-import { addMonthsIso, calcInvoiceTotals, cycleMonths, isoDay } from "@/lib/money";
+import { addMonthsIso, calcInvoiceTotals, cycleMonths, isoDay, nextInvoiceNumber } from "@/lib/money";
 import type { ActiveDealItem } from "@/data/leads-seed";
 import type {
   ClientItem,
@@ -31,6 +31,7 @@ import {
 
 export const CLIENTS_STORAGE_KEY = "versaly_clients_list_v2";
 export const PROJECTS_STORAGE_KEY = "versaly_projects_list_v2";
+const DEALS_STORAGE_KEY = "versaly_active_deals_v2";
 
 const DEFAULT_LEAD_ARCHITECT = "Ted";
 const GO_LIVE_TARGET_DAYS = 21;
@@ -71,16 +72,6 @@ function readList<T>(key: string): T[] {
 
 function writeList<T>(key: string, list: T[]) {
   appStorage.setItem(key, JSON.stringify(list));
-}
-
-/** Next invoice number for the year, continuing after the highest used so far. */
-function nextInvoiceNumber(existing: FinanceInvoice[], year: number): string {
-  let max = 1000;
-  for (const inv of existing) {
-    const m = /^INV-(\d{4})-(\d+)$/.exec(inv.invoiceNumber);
-    if (m && Number(m[1]) === year) max = Math.max(max, Number(m[2]));
-  }
-  return `INV-${year}-${max + 1}`;
 }
 
 function buildInvoice(args: {
@@ -138,11 +129,19 @@ export interface DealConversionResult {
   invoiceId?: string;
   invoiceNumber?: string;
   subscriptionId?: string;
+  /** False when the invoice and subscription were left for someone with finance access to create. */
+  billing: boolean;
   /** What was newly created (false = it already existed and was left untouched). */
   created: { client: boolean; project: boolean; invoice: boolean; subscription: boolean };
 }
 
-export function convertWonDeal(deal: ActiveDealItem, today = new Date()): DealConversionResult {
+export function convertWonDeal(
+  deal: ActiveDealItem,
+  today = new Date(),
+  /** billing: false creates only the client and project (for people without finance access). */
+  options: { billing?: boolean } = {}
+): DealConversionResult {
+  const billing = options.billing !== false;
   const todayIso = isoDay(today);
   const clientId = `cli-${deal.id}`;
   const projectId = `proj-${deal.id}`;
@@ -207,7 +206,7 @@ export function convertWonDeal(deal: ActiveDealItem, today = new Date()): DealCo
   // Setup-fee invoice (draft, for you to review and send)
   let invoiceNumber: string | undefined;
   let hasInvoice = false;
-  if (deal.setupFeeKES > 0) {
+  if (billing && deal.setupFeeKES > 0) {
     const invoices = loadInvoicesFromStorage();
     const existing = invoices.find((i) => i.id === invoiceId);
     if (existing) {
@@ -240,7 +239,7 @@ export function convertWonDeal(deal: ActiveDealItem, today = new Date()): DealCo
 
   // Subscription (trial until the onboarding project is completed)
   let hasSubscription = false;
-  if (deal.monthlyFeeKES > 0) {
+  if (billing && deal.monthlyFeeKES > 0) {
     const subs = loadSubscriptionsFromStorage();
     if (!subs.some((s) => s.id === subscriptionId)) {
       const sub: ClientSubscription = {
@@ -266,6 +265,7 @@ export function convertWonDeal(deal: ActiveDealItem, today = new Date()): DealCo
   }
 
   return {
+    billing,
     clientId,
     projectId,
     invoiceId: hasInvoice ? invoiceId : undefined,
@@ -402,14 +402,26 @@ function syncClientOnboardingProgress(): number {
   return changed;
 }
 
+/** Deals won by someone without finance access get their invoice and subscription once an owner or admin opens the app. */
+function provisionPendingBilling(): number {
+  const deals = readList<ActiveDealItem>(DEALS_STORAGE_KEY);
+  const pending = deals.filter((d) => d.stage === "WON" && d.billingProvisioned === false);
+  if (!pending.length) return 0;
+  for (const deal of pending) convertWonDeal(deal);
+  const pendingIds = new Set(pending.map((d) => d.id));
+  writeList(DEALS_STORAGE_KEY, deals.map((d) => (pendingIds.has(d.id) ? { ...d, billingProvisioned: true } : d)));
+  return pending.length;
+}
+
 export function runWorkflows(today = new Date()): WorkflowRunResult {
   const todayIso = isoDay(today);
+  const billingProvisioned = provisionPendingBilling();
   const subscriptionsActivated = activateCompletedOnboardings(todayIso);
   const invoicesGenerated = generateRecurringInvoices(todayIso);
   const invoicesMarkedOverdue = markOverdueInvoices(todayIso);
   const clientsSynced = syncClientOnboardingProgress();
   return {
-    changed: subscriptionsActivated + invoicesGenerated + invoicesMarkedOverdue + clientsSynced > 0,
+    changed: billingProvisioned + subscriptionsActivated + invoicesGenerated + invoicesMarkedOverdue + clientsSynced > 0,
     invoicesGenerated,
     invoicesMarkedOverdue,
     subscriptionsActivated,

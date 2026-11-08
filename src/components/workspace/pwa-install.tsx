@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import Image from "next/image";
 import {
   Download,
@@ -210,7 +209,7 @@ export function PWAInstallBanner() {
  * Install Button for the Left Navigation Sidebar
  */
 export function SidebarInstallButton() {
-  const { isInstalled, isInstallable, promptToInstall, platform } = usePWA();
+  const { isInstalled, promptToInstall, platform } = usePWA();
 
   if (isInstalled) {
     return (

@@ -1,46 +1,32 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
   FinanceInvoice,
-  PaymentRecord,
   loadInvoicesFromStorage,
-  saveInvoicesToStorage,
   computeFinanceSummary,
 } from "@/lib/finance-store";
 import {
   ArrowDownLeft,
   CheckCircle2,
   AlertCircle,
-  Search,
   MessageCircle,
-  ExternalLink,
-  CreditCard,
   Smartphone,
-  Building2,
-  Calendar,
-  DollarSign,
-  Plus,
   X,
   Send,
   Copy,
 } from "lucide-react";
 
 export default function PaymentsReceivablesPage() {
-  const [invoices, setInvoices] = useState<FinanceInvoice[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [invoices] = useState<FinanceInvoice[]>(() => loadInvoicesFromStorage());
+  const [searchQuery] = useState("");
   const [channelFilter, setChannelFilter] = useState<string>("ALL");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Quick WhatsApp reminder modal
   const [reminderClient, setReminderClient] = useState<FinanceInvoice | null>(null);
   const [copiedText, setCopiedText] = useState(false);
-
-  useEffect(() => {
-    setInvoices(loadInvoicesFromStorage());
-  }, []);
 
   const summary = computeFinanceSummary(invoices, []);
 
@@ -61,11 +47,6 @@ export default function PaymentsReceivablesPage() {
     return invoices.filter((i) => i.balanceKES > 0);
   }, [invoices]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
   const getReminderScript = (inv: FinanceInvoice) => {
     return `Hello ${inv.clientName}, trust you're well. This is a gentle reminder regarding Versaly invoice ${inv.invoiceNumber} for ${inv.productName} with an outstanding balance of KES ${inv.balanceKES.toLocaleString()}, due on ${inv.dueDate}. Please remit via M-Pesa Paybill 247247, Account: ${inv.invoiceNumber}. Let us know if you need any assistance!`;
   };
@@ -79,14 +60,6 @@ export default function PaymentsReceivablesPage() {
   return (
     <WorkspaceLayout>
       <div className="space-y-6 pb-12">
-        {/* Toast */}
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 p-3.5 rounded-xl bg-slate-900 border border-emerald-500/40 text-emerald-300 text-xs shadow-2xl flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
-
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { isoDaysFromNow, newId, todayIsoDate } from "@/lib/ids";
 import {
   CapitalContribution,
   ShareholderLoan,
@@ -10,7 +11,6 @@ import {
   saveCapitalContributions,
   loadShareholderLoans,
   saveShareholderLoans,
-  loadAccountsFromStorage,
   formatKES,
   CapitalType,
 } from "@/lib/finance-store";
@@ -21,25 +21,16 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
-  DollarSign,
-  Calendar,
-  Percent,
-  Clock,
-  ArrowRight,
-  TrendingUp,
-  ShieldCheck,
-  Building2,
   X,
   CreditCard,
   Edit2,
   Trash2,
-  Receipt,
   Scale,
 } from "lucide-react";
 
 export default function CapitalFinancingPage() {
-  const [contributions, setContributions] = useState<CapitalContribution[]>([]);
-  const [loans, setLoans] = useState<ShareholderLoan[]>([]);
+  const [contributions, setContributions] = useState<CapitalContribution[]>(() => loadCapitalContributions());
+  const [loans, setLoans] = useState<ShareholderLoan[]>(() => loadShareholderLoans());
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [activeTab, setActiveTab] = useState<"CONTRIBUTIONS" | "LOANS">("CONTRIBUTIONS");
@@ -50,38 +41,21 @@ export default function CapitalFinancingPage() {
   const [editingContribution, setEditingContribution] = useState<CapitalContribution | null>(null);
   const [contributorName, setContributorName] = useState("");
   const [contributionAmount, setContributionAmount] = useState<number>(50000);
-  const [contributionDate, setContributionDate] = useState("2026-10-26");
+  const [contributionDate, setContributionDate] = useState(() => todayIsoDate());
   const [contributionType, setContributionType] = useState<CapitalType>("EQUITY_CAPITAL");
   const [contributionStatus, setContributionStatus] = useState<"RECEIVED" | "PENDING">("RECEIVED");
   const [supportingDoc, setSupportingDoc] = useState("");
   const [contributionNotes, setContributionNotes] = useState("");
 
   // New Shareholder Loan Modal
-  const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
-  const [loanLender, setLoanLender] = useState("");
-  const [loanPrincipal, setLoanPrincipal] = useState<number>(100000);
-  const [loanInterestPct, setLoanInterestPct] = useState<number>(6.0);
-  const [loanStartDate, setLoanStartDate] = useState("2026-10-26");
-  const [loanTermMonths, setLoanTermMonths] = useState<number>(12);
-  const [loanNotes, setLoanNotes] = useState("");
 
   // Loan Repayment Modal
   const [repayingLoan, setRepayingLoan] = useState<ShareholderLoan | null>(null);
   const [repayAmount, setRepayAmount] = useState<number>(15000);
-  const [repayDate, setRepayDate] = useState("2026-10-26");
+  const [repayDate, setRepayDate] = useState(() => todayIsoDate());
   const [repayRef, setRepayRef] = useState("");
 
   useEffect(() => {
-    try {
-      const todayStr = new Date().toISOString().split("T")[0];
-      setContributionDate(todayStr);
-      setLoanStartDate(todayStr);
-      setRepayDate(todayStr);
-    } catch {}
-
-    setContributions(loadCapitalContributions());
-    setLoans(loadShareholderLoans());
-
     const handleSync = () => {
       setContributions(loadCapitalContributions());
       setLoans(loadShareholderLoans());
@@ -169,7 +143,7 @@ export default function CapitalFinancingPage() {
       showToast("✓ Capital contribution updated successfully!");
     } else {
       const newContribution: CapitalContribution = {
-        id: `cap-${Date.now()}`,
+        id: newId("cap"),
         contributorName: contributorName.trim(),
         amountKES: Number(contributionAmount),
         contributionDate,
@@ -185,7 +159,7 @@ export default function CapitalFinancingPage() {
           (Number(contributionAmount) * (1 + 0.06)) / 12
         );
         const newLoan: ShareholderLoan = {
-          id: `loan-${Date.now()}`,
+          id: newId("loan"),
           contributionId: newContribution.id,
           lenderName: contributorName.trim(),
           principalAmountKES: Number(contributionAmount),
@@ -195,7 +169,7 @@ export default function CapitalFinancingPage() {
           amountRepaidKES: 0,
           remainingBalanceKES: Number(contributionAmount),
           monthlyInstallmentKES: monthlyEst,
-          nextPaymentDate: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+          nextPaymentDate: isoDaysFromNow(30),
           status: "ACTIVE",
           notes: "Generated from shareholder loan contribution record",
         };

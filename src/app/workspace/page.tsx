@@ -18,13 +18,9 @@ import {
   Trash2,
   X,
   AlertCircle,
-  Sparkles,
   MessageSquare,
   Phone,
   Mail,
-  Calendar,
-  Check,
-  Layers,
 } from "lucide-react";
 
 // Data types
@@ -1216,7 +1212,7 @@ export default function MyWorkspacePage() {
                   </label>
                   <select
                     value={projStatusVariant}
-                    onChange={(e) => setProjStatusVariant(e.target.value as any)}
+                    onChange={(e) => setProjStatusVariant(e.target.value as Parameters<typeof setProjStatusVariant>[0])}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                   >
                     <option value="success">Green (Success / On Track)</option>
@@ -1327,7 +1323,7 @@ export default function MyWorkspacePage() {
                   </label>
                   <select
                     value={fuChannel}
-                    onChange={(e) => setFuChannel(e.target.value as any)}
+                    onChange={(e) => setFuChannel(e.target.value as Parameters<typeof setFuChannel>[0])}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                   >
                     <option value="WhatsApp">WhatsApp</option>
@@ -1423,7 +1419,7 @@ export default function MyWorkspacePage() {
                   </label>
                   <select
                     value={appType}
-                    onChange={(e) => setAppType(e.target.value as any)}
+                    onChange={(e) => setAppType(e.target.value as Parameters<typeof setAppType>[0])}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                   >
                     <option value="Proposal">Proposal</option>
@@ -1440,7 +1436,7 @@ export default function MyWorkspacePage() {
                   </label>
                   <select
                     value={appStatus}
-                    onChange={(e) => setAppStatus(e.target.value as any)}
+                    onChange={(e) => setAppStatus(e.target.value as Parameters<typeof setAppStatus>[0])}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500"
                   >
                     <option value="Pending">Pending</option>
@@ -1498,7 +1494,7 @@ export default function MyWorkspacePage() {
             </div>
 
             <p className="text-xs text-slate-300 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-              Are you sure you want to remove <span className="font-bold text-white">"{deleteTarget.title}"</span> from your workspace?
+              Are you sure you want to remove <span className="font-bold text-white">&ldquo;{deleteTarget.title}&rdquo;</span> from your workspace?
             </p>
 
             <div className="flex items-center justify-end gap-2 pt-1">

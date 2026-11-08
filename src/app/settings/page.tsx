@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import { Shield, Building, Wallet } from "lucide-react";
 import { usePaymentSettings } from "@/lib/payment-settings";
@@ -9,32 +10,6 @@ import type { PaymentSettings } from "@/lib/invoice-messages";
 
 export default function SettingsPage() {
 
-  const teamMembers = [
-    {
-      id: "u-1",
-      name: "Ted Khalwale",
-      email: "khalwaleted@gmail.com",
-      role: "OWNER",
-      status: "ACTIVE",
-      title: "Founder & Lead Architect",
-    },
-    {
-      id: "u-2",
-      name: "David Otieno",
-      email: "david@versaly.co",
-      role: "MANAGER",
-      status: "ACTIVE",
-      title: "Field Implementations Lead",
-    },
-    {
-      id: "u-3",
-      name: "Mercy Chebet",
-      email: "mercy@versaly.co",
-      role: "STAFF",
-      status: "ACTIVE",
-      title: "Client Success Specialist",
-    },
-  ];
 
   return (
     <WorkspaceLayout>
@@ -103,50 +78,22 @@ export default function SettingsPage() {
           <PaymentDetailsCard />
           <WeeklyReviewCard />
 
-          {/* Team Members & Role Assignment */}
-          <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Shield className="h-5 w-5 text-emerald-400" />
-                <h2 className="text-sm font-bold text-white">Team Directory & RBAC Roles</h2>
+          {/* Team & access now lives on its own page */}
+          <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <Shield className="h-5 w-5 text-emerald-400" />
+              <div>
+                <h2 className="text-sm font-bold text-white">Team &amp; Access</h2>
+                <p className="text-xs text-slate-400">Add people, set what each can see, suspend access, and review the audit log.</p>
               </div>
-              <button className="text-xs font-semibold text-indigo-400 hover:text-indigo-300">
-                + Invite Member
-              </button>
             </div>
-
-            <div className="space-y-3">
-              {teamMembers.map((member) => (
-                <div
-                  key={member.id}
-                  className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center font-bold text-white text-xs">
-                      {member.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-200">{member.name}</div>
-                      <div className="text-[11px] text-slate-400">{member.email} • {member.title}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        member.role === "OWNER"
-                          ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                          : member.role === "MANAGER"
-                          ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                          : "bg-slate-800 text-slate-400"
-                      }`}
-                    >
-                      {member.role}
-                    </span>
-                    <span className="text-[10px] text-emerald-400 font-medium">{member.status}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="flex gap-2">
+              <Link href="/settings/team" className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">
+                Manage team
+              </Link>
+              <Link href="/settings/audit" className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition">
+                Audit log
+              </Link>
             </div>
           </div>
         </div>

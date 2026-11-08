@@ -78,6 +78,7 @@ model User {
   avatarUrl    String?
   jobTitle     String?
   phone        String?
+  mustChangePassword Boolean @default(false)
 
   lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())

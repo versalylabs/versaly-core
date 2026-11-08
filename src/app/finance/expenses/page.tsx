@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { todayIsoDate } from "@/lib/ids";
 import {
   FinanceExpense,
   loadExpensesFromStorage,
@@ -12,25 +13,14 @@ import {
   TrendingDown,
   Plus,
   Search,
-  Filter,
   CheckCircle2,
-  AlertCircle,
   Pencil,
   Trash2,
   X,
-  CreditCard,
-  Building2,
-  DollarSign,
-  Cloud,
-  Cpu,
-  Truck,
-  Megaphone,
-  Scale,
-  Briefcase,
 } from "lucide-react";
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState<FinanceExpense[]>([]);
+  const [expenses, setExpenses] = useState<FinanceExpense[]>(() => loadExpensesFromStorage());
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -45,14 +35,10 @@ export default function ExpensesPage() {
   const [formDesc, setFormDesc] = useState("");
   const [formAmount, setFormAmount] = useState<number>(0);
   const [formVendor, setFormVendor] = useState("");
-  const [formDate, setFormDate] = useState("2026-10-20");
+  const [formDate, setFormDate] = useState(() => todayIsoDate());
   const [formMethod, setFormMethod] = useState<FinanceExpense["paymentMethod"]>("MPESA");
   const [formStatus, setFormStatus] = useState<FinanceExpense["status"]>("PAID");
   const [formProduct, setFormProduct] = useState("");
-
-  useEffect(() => {
-    setExpenses(loadExpensesFromStorage());
-  }, []);
 
   const syncExpenses = (updated: FinanceExpense[]) => {
     setExpenses(updated);
@@ -406,7 +392,7 @@ export default function ExpensesPage() {
                   <label className="block text-slate-300 font-semibold mb-1">Category</label>
                   <select
                     value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value as any)}
+                    onChange={(e) => setFormCategory(e.target.value as Parameters<typeof setFormCategory>[0])}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-rose-500"
                   >
                     <option value="INFRASTRUCTURE_CLOUD">Cloud Infrastructure</option>
@@ -448,7 +434,7 @@ export default function ExpensesPage() {
                   <label className="block text-slate-300 font-semibold mb-1">Payment Method</label>
                   <select
                     value={formMethod}
-                    onChange={(e) => setFormMethod(e.target.value as any)}
+                    onChange={(e) => setFormMethod(e.target.value as Parameters<typeof setFormMethod>[0])}
                     className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-rose-500"
                   >
                     <option value="MPESA">M-Pesa</option>

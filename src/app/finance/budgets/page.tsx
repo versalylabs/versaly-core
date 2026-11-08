@@ -15,27 +15,23 @@ import {
   Plus,
   AlertTriangle,
   CheckCircle2,
-  Calendar,
-  Building2,
-  PieChart,
   TrendingDown,
   TrendingUp,
   Download,
   Edit2,
   Trash2,
   X,
-  FileText,
   AlertCircle,
-  HelpCircle,
-  Clock,
   Briefcase,
   DollarSign,
-  Layers,
 } from "lucide-react";
 
 export default function BudgetsPage() {
-  const [budgets, setBudgets] = useState<BudgetPlan[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState<string>("budget-90day-startup");
+  const [budgets, setBudgets] = useState<BudgetPlan[]>(() => loadBudgetsFromStorage());
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(() => {
+    const plans = loadBudgetsFromStorage();
+    return plans.some((b) => b.id === "budget-90day-startup") ? "budget-90day-startup" : (plans[0]?.id ?? "budget-90day-startup");
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Edit item modal
@@ -52,16 +48,10 @@ export default function BudgetsPage() {
   const [newPlanName, setNewPlanName] = useState("");
   const [newPlanPeriod, setNewPlanPeriod] = useState<BudgetPlan["period"]>("MONTHLY");
   const [newPlanYear, setNewPlanYear] = useState<number>(2026);
-  const [newPlanQuarter, setNewPlanQuarter] = useState<number>(1);
+  const [newPlanQuarter] = useState<number>(1);
   const [newPlanNotes, setNewPlanNotes] = useState("");
 
   useEffect(() => {
-    const loaded = loadBudgetsFromStorage();
-    setBudgets(loaded);
-    if (loaded.length > 0 && !loaded.some((b) => b.id === selectedPlanId)) {
-      setSelectedPlanId(loaded[0].id);
-    }
-
     const handleSync = () => {
       setBudgets(loadBudgetsFromStorage());
     };
@@ -72,7 +62,7 @@ export default function BudgetsPage() {
       window.removeEventListener("versaly_budgets_updated", handleSync);
       window.removeEventListener("storage", handleSync);
     };
-  }, [selectedPlanId]);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -617,7 +607,7 @@ export default function BudgetsPage() {
                   <label className="text-xs font-medium text-slate-300 block mb-1">Department</label>
                   <select
                     value={itemDepartment}
-                    onChange={(e) => setItemDepartment(e.target.value as any)}
+                    onChange={(e) => setItemDepartment(e.target.value as Parameters<typeof setItemDepartment>[0])}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                   >
                     <option value="Executive">Executive</option>
@@ -697,7 +687,7 @@ export default function BudgetsPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Period</label>
                     <select
                       value={newPlanPeriod}
-                      onChange={(e) => setNewPlanPeriod(e.target.value as any)}
+                      onChange={(e) => setNewPlanPeriod(e.target.value as Parameters<typeof setNewPlanPeriod>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="MONTHLY">Monthly</option>

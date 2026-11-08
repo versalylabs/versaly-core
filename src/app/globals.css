@@ -321,6 +321,11 @@ main {
   animation: glass-rise 0.35s ease-out both;
 }
 
+/* A sync-triggered remount isn't a page change: don't replay the entrance */
+html[data-remount] main {
+  animation: none;
+}
+
 html :is(.bg-slate-900, .bg-slate-900\/60, .bg-slate-900\/40, .bg-slate-900\/50, .bg-slate-900\/80):is(.rounded-2xl, .rounded-xl) {
   transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, transform 0.2s;
 }

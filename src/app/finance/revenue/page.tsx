@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import {
@@ -19,7 +19,6 @@ import {
   Trash2,
   Edit2,
   X,
-  CreditCard,
 } from "lucide-react";
 import {
   ClientSubscription,
@@ -31,11 +30,11 @@ import {
   SETUP_FEE_LAUNCH_TARGET,
   MRR_LAUNCH_TARGET,
 } from "@/lib/finance-store";
-import { useProductsCatalog, getProductColor } from "@/lib/products-store";
+import { useProductsCatalog } from "@/lib/products-store";
 
 export default function RevenueSubscriptionsPage() {
   const { products: catalogProducts } = useProductsCatalog();
-  const [subscriptions, setSubscriptions] = useState<ClientSubscription[]>([]);
+  const [subscriptions, setSubscriptions] = useState<ClientSubscription[]>(() => loadSubscriptionsFromStorage());
   const [searchQuery, setSearchQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -59,20 +58,16 @@ export default function RevenueSubscriptionsPage() {
     notes: "",
   });
 
-  // Load subscriptions on mount
-  useEffect(() => {
-    const subs = loadSubscriptionsFromStorage();
-    setSubscriptions(subs);
-  }, []);
-
   const syncSubscriptions = (newSubs: ClientSubscription[]) => {
     setSubscriptions(newSubs);
     saveSubscriptionsToStorage(newSubs);
   };
 
   // Cross-reference with invoices for global finance metrics
+  // Reloaded whenever the subscriptions change, so the cross-reference stays current
   const invoices = useMemo(() => {
     return typeof window !== "undefined" ? loadInvoicesFromStorage() : [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional re-read trigger
   }, [subscriptions]);
 
   const expenses = useMemo(() => {
@@ -196,9 +191,9 @@ export default function RevenueSubscriptionsPage() {
   };
 
   const handleToggleStatus = (sub: ClientSubscription) => {
-    const nextStatus = sub.status === "ACTIVE" ? "PAST_DUE" : sub.status === "PAST_DUE" ? "CANCELLED" : "ACTIVE";
+    const nextStatus: ClientSubscription["status"] = sub.status === "ACTIVE" ? "PAST_DUE" : sub.status === "PAST_DUE" ? "CANCELLED" : "ACTIVE";
     const updated = subscriptions.map((s) =>
-      s.id === sub.id ? { ...s, status: nextStatus as any } : s
+      s.id === sub.id ? { ...s, status: nextStatus } : s
     );
     syncSubscriptions(updated);
   };
@@ -660,7 +655,7 @@ export default function RevenueSubscriptionsPage() {
                         const found = catalogProducts.find((p) => p.slug === slug);
                         setFormData({
                           ...formData,
-                          productSlug: slug as any,
+                          productSlug: slug as typeof formData.productSlug,
                           productName: found ? found.name : slug,
                           monthlyFeeKES: found ? found.monthlyFee : formData.monthlyFeeKES,
                         });
@@ -714,7 +709,7 @@ export default function RevenueSubscriptionsPage() {
                     <select
                       value={formData.billingCycle}
                       onChange={(e) =>
-                        setFormData({ ...formData, billingCycle: e.target.value as any })
+                        setFormData({ ...formData, billingCycle: e.target.value as typeof formData.billingCycle })
                       }
                       className="w-full px-3.5 py-2 text-sm rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none text-white cursor-pointer"
                     >

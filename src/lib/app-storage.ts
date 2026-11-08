@@ -218,7 +218,10 @@ export async function pushToServer(options: { keepalive?: boolean } = {}): Promi
 
       const data = await res.json();
       const saved: { key: string; version: number }[] = data?.data?.saved ?? [];
+      const rejected: string[] = data?.data?.rejected ?? [];
       writeMeta((m) => {
+        // This account isn't allowed to change these; drop them from the queue instead of retrying forever
+        for (const key of rejected) delete m.dirty[key];
         for (const { key, version } of saved) {
           const sent = changes.find((c) => c.key === key)?.value ?? null;
           // Only clear the flag if the value wasn't changed again while sending
@@ -275,6 +278,7 @@ export async function pullFromServer(isRetry = false): Promise<number> {
   let documents: ServerDocument[];
   let serverTime: string;
   let workspaceId: string;
+  let deniedKeys: string[] = [];
   try {
     const res = await fetch(`/api/sync${since ? `?since=${encodeURIComponent(since)}` : ""}`, {
       cache: "no-store",
@@ -292,6 +296,7 @@ export async function pullFromServer(isRetry = false): Promise<number> {
     documents = data.data.documents;
     serverTime = data.data.serverTime;
     workspaceId = data.data.workspaceId;
+    deniedKeys = data.data.deniedKeys ?? [];
   } catch {
     setState({ status: navigator.onLine ? "error" : "offline" });
     retryPendingLater();
@@ -347,6 +352,12 @@ export async function pullFromServer(isRetry = false): Promise<number> {
   }
 
   writeMeta((m) => {
+    // Data this account isn't allowed to see is removed from this device (e.g. after a role change)
+    for (const key of deniedKeys) {
+      window.localStorage.removeItem(key);
+      delete m.versions[key];
+      delete m.dirty[key];
+    }
     for (const doc of documents) {
       if (m.dirty[doc.key]) continue; // local edit waiting to be sent wins
       if (m.versions[doc.key] === doc.version && window.localStorage.getItem(doc.key) === doc.value) continue;

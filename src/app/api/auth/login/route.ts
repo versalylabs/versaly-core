@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       await setSessionCookie(token);
 
       return apiSuccess({
+        mustChangePassword: false,
         user: {
           id: owner.id,
           name: owner.name,
@@ -74,12 +75,33 @@ export async function POST(req: NextRequest) {
       return apiError(INVALID_CREDENTIALS, "UNAUTHORIZED", 401);
     }
 
-    if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
+    const passwordOk = Boolean(user?.passwordHash && (await verifyPassword(password, user.passwordHash)));
+    if (!user || !passwordOk) {
+      // Record failed attempts against real accounts (not random addresses) so the owner can spot guessing
+      if (user) {
+        await logAuditEvent({
+          userId: user.id,
+          action: "LOGIN_FAILED",
+          entityType: "User",
+          entityId: user.id,
+          ipAddress: ip,
+          userAgent,
+        });
+      }
       return apiError(INVALID_CREDENTIALS, "UNAUTHORIZED", 401);
     }
 
     if (user.status !== "ACTIVE") {
-      return apiError("Account is not active. Please contact an administrator.", "FORBIDDEN", 403);
+      await logAuditEvent({
+        userId: user.id,
+        action: "LOGIN_BLOCKED",
+        entityType: "User",
+        entityId: user.id,
+        metadata: { status: user.status },
+        ipAddress: ip,
+        userAgent,
+      });
+      return apiError("This account is not active. Please contact the owner.", "FORBIDDEN", 403);
     }
 
     await db.user.update({
@@ -92,6 +114,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       role: user.role,
       name: user.name,
+      mcp: user.mustChangePassword,
     });
     await setSessionCookie(token);
 
@@ -105,6 +128,7 @@ export async function POST(req: NextRequest) {
     });
 
     return apiSuccess({
+      mustChangePassword: user.mustChangePassword,
       user: {
         id: user.id,
         name: user.name,

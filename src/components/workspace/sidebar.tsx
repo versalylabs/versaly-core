@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clearLocalWorkspace } from "@/lib/app-storage";
 import { BrandMark } from "@/components/brand/brand-mark";
+import { useCurrentUser, userCanViewPage } from "@/lib/current-user";
 import {
   LayoutDashboard,
   Building2,
@@ -14,13 +15,11 @@ import {
   FolderGit2,
   CheckSquare,
   FileText,
-  CreditCard,
   BookOpen,
   Settings,
   ShieldCheck,
   ChevronRight,
   ChevronDown,
-  Layers,
   Sparkles,
   FileCheck2,
   StickyNote,
@@ -151,6 +150,7 @@ const CATEGORIES: NavCategory[] = [
       { title: "Workspace Settings", href: "/settings", icon: Settings },
       { title: "Automations & Rules", href: "/settings/automations", icon: Sparkles },
       { title: "Integrations & Health", href: "/settings/integrations", icon: Cpu },
+      { title: "Team & Access", href: "/settings/team", icon: Users },
       { title: "Audit Log & Events", href: "/settings/audit", icon: ShieldCheck },
     ],
   },
@@ -158,6 +158,7 @@ const CATEGORIES: NavCategory[] = [
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const me = useCurrentUser();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Collapsible category state, all open by default
@@ -252,7 +253,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
         {/* Scrollable Navigation Area */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 text-xs scrollbar-thin scrollbar-thumb-slate-800">
-          {CATEGORIES.map((category) => {
+          {CATEGORIES.map((fullCategory) => {
+            const category = { ...fullCategory, items: fullCategory.items.filter((item) => !me || userCanViewPage(item.href)) };
+            if (!category.items.length) return null;
             const isCollapsed = collapsedCategories[category.name];
             const hasActiveChild = category.items.some(
               (item) => pathname === item.href || (item.href !== "/dashboard" && item.href !== "/settings" && pathname.startsWith(item.href))
@@ -317,16 +320,22 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           {/* PWA Install Button */}
           <SidebarInstallButton />
 
+          <Link href="/change-password" onClick={onClose} className="block text-center text-[11px] text-slate-500 hover:text-slate-300 transition">
+            Change my password
+          </Link>
+
           <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/80 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-[11px] font-bold text-white shadow-sm shrink-0">
-                V
+                {(me?.name || me?.email || "V").charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-slate-200 truncate">versalylabs@gmail.com</div>
+                <div className="text-xs font-semibold text-slate-200 truncate">{me?.email || "Signing in…"}</div>
                 <div className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  <span>Role: OWNER</span>
+                  <span>
+                    {me ? `Role: ${me.role.replace("_", " ")}` : "Checking access"}
+                  </span>
                 </div>
               </div>
             </div>

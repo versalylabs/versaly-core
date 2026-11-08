@@ -26,6 +26,7 @@ import {
 import { renderTemplate } from "@/lib/templates";
 import { useProductsCatalog } from "@/lib/products-store";
 import { convertWonDeal } from "@/lib/workflows";
+import { userCan } from "@/lib/current-user";
 
 const DEALS_STORAGE_KEY = "versaly_active_deals_v2";
 const RAW_LEADS_STORAGE_KEY = "versaly_raw_leads_v2";
@@ -108,16 +109,9 @@ export default function LeadsPage() {
   const [newBizName, setNewBizName] = useState("");
   const [newContactName, setNewContactName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newProduct, setNewProduct] = useState("");
+  const [newProduct, setNewProduct] = useState(() => products[0]?.slug ?? "");
   const [newSource, setNewSource] = useState<RawLeadItem["source"]>("Walk-in Route");
   const [newNotes, setNewNotes] = useState("");
-
-  // Default product selection when products load
-  useEffect(() => {
-    if (products.length > 0 && !newProduct) {
-      setNewProduct(products[0].slug);
-    }
-  }, [products, newProduct]);
 
   // Promote raw lead to active deal
   function handlePromoteToDeal(lead: RawLeadItem) {
@@ -149,10 +143,12 @@ export default function LeadsPage() {
   // Update deal stage
   function handleUpdateStage(dealId: string, newStage: DealStageType) {
     const target = deals.find((d) => d.id === dealId);
+    let billingDone = true;
 
     // A newly won deal creates the client, onboarding project, setup invoice and subscription
     if (newStage === "WON" && target && target.stage !== "WON") {
-      const result = convertWonDeal({ ...target, stage: "WON" });
+      const result = convertWonDeal({ ...target, stage: "WON" }, new Date(), { billing: userCan("finance:write") });
+      billingDone = result.billing;
       const made: string[] = [];
       if (result.created.client) made.push("client record");
       if (result.created.project) made.push("8-step onboarding project");
@@ -170,6 +166,9 @@ export default function LeadsPage() {
           : `Deal won! ${target.businessName} already had its client, project and billing set up.`,
         links,
       });
+      if (!result.billing) {
+        setWonNotice((n) => (n ? { ...n, message: n.message + " The invoice and subscription will be created when an owner or admin next opens the app." } : n));
+      }
       setTimeout(() => setWonNotice(null), 15000);
     }
 
@@ -179,6 +178,7 @@ export default function LeadsPage() {
         const updated = { ...d, stage: newStage };
         if (newStage === "WON") {
           updated.onboardingProjectCreated = true;
+          if (target && target.stage !== "WON") updated.billingProvisioned = billingDone;
           updated.winProbability = 100;
         }
         return updated;

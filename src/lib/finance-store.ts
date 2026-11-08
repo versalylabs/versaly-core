@@ -2,7 +2,6 @@
 
 
 import { appStorage } from "@/lib/app-storage";
-import { useState, useEffect } from "react";
 
 // ============================================================================
 // 1. INVOICES, CLIENT PAYMENTS & RECEIVABLES
@@ -1148,7 +1147,6 @@ export function computeFinanceSummary(
   const subsList = subscriptions ?? (typeof window !== "undefined" ? loadSubscriptionsFromStorage() : INITIAL_SUBSCRIPTIONS);
   const activeSubs = subsList.filter((s) => s.status === "ACTIVE");
   const contractedMRR = activeSubs.reduce((sum, s) => sum + (s.monthlyFeeKES || 0), 0);
-  const contractedARR = contractedMRR * 12;
 
   // Monthly vendor SaaS commitment
   const monthlyVendorBurn = vendorSubs

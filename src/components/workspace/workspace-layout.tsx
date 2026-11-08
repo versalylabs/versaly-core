@@ -5,6 +5,7 @@ import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { CommandPalette } from "./command-palette";
 import { OfflineBanner } from "./offline-banner";
+import { DeniedNotice } from "./denied-notice";
 
 export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -27,6 +28,7 @@ export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
         />
 
         <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+          <DeniedNotice />
           {children}
         </main>
       </div>

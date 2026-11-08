@@ -54,6 +54,7 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
       navigator.standalone === true ||
       document.referrer.includes("android-app://");
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads browser state that does not exist on the server
     setIsInstalled(isStandalone);
 
     // Detect platform

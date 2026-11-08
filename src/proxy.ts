@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
+import { canViewPage } from "@/lib/access";
 
 /**
  * Runs before every page and API request:
@@ -14,6 +15,10 @@ const PUBLIC_PAGES = new Set(["/login"]);
 const PUBLIC_APIS = new Set(["/api/auth/login", "/api/auth/logout", "/api/health"]);
 // Safaricom callbacks and Vercel Cron can't sign in; each route checks its own secret
 const PUBLIC_API_PREFIXES = ["/api/payments/c2b/", "/api/cron/"];
+
+// A new team member must choose their own password before using anything else
+const PASSWORD_PAGE = "/change-password";
+const PASSWORD_APIS = new Set(["/api/auth/password", "/api/auth/logout", "/api/auth/me"]);
 
 function applySecurityHeaders(response: NextResponse) {
   const isDev = process.env.NODE_ENV !== "production";
@@ -79,6 +84,30 @@ export async function proxy(request: NextRequest) {
     // Drop a stale or forged cookie so the browser stops sending it
     if (token) response.cookies.delete(SESSION_COOKIE_NAME);
     return applySecurityHeaders(response);
+  }
+
+  if (session) {
+    // Temporary password: nothing but the change-password page until it is changed
+    if (session.mcp) {
+      if (isApi && !PASSWORD_APIS.has(pathname) && !isPublic) {
+        return applySecurityHeaders(
+          NextResponse.json(
+            { success: false, error: { code: "PASSWORD_CHANGE_REQUIRED", message: "Choose a new password first" } },
+            { status: 403 }
+          )
+        );
+      }
+      if (!isApi && pathname !== PASSWORD_PAGE) {
+        return applySecurityHeaders(NextResponse.redirect(new URL(PASSWORD_PAGE, request.url)));
+      }
+    }
+
+    // Pages a role may not use send the person back to the dashboard (the data itself is protected by the API too)
+    if (!isApi && !canViewPage(session.role, pathname)) {
+      const home = new URL("/dashboard", request.url);
+      home.searchParams.set("denied", pathname);
+      return applySecurityHeaders(NextResponse.redirect(home));
+    }
   }
 
   return applySecurityHeaders(NextResponse.next());

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import { VersalyProduct } from "@/data/products-catalog";
 import { useProductsCatalog, useProductCategories } from "@/lib/products-store";
@@ -18,11 +18,9 @@ import {
   Trash2,
   X,
   Sparkles,
-  Tag,
   Tags,
   Check,
   Edit3,
-  AlertTriangle,
 } from "lucide-react";
 
 export default function ProductsPage() {

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
 import { isSyncedKey, MAX_SYNC_VALUE_BYTES } from "@/lib/sync-keys";
+import { canWriteKey } from "@/lib/access";
 
 
 /**
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError("Validation failed", "INVALID_INPUT", 400);
 
   const rows = parsed.data.changes
-    .filter((c) => isSyncedKey(c.key) && Buffer.byteLength(c.value, "utf8") <= MAX_SYNC_VALUE_BYTES)
+    .filter((c) => isSyncedKey(c.key) && canWriteKey(user.role, c.key) && Buffer.byteLength(c.value, "utf8") <= MAX_SYNC_VALUE_BYTES)
     .map((c) => {
       let value: Prisma.InputJsonValue;
       try {

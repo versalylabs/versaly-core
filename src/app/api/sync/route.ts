@@ -6,6 +6,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
 import { isSyncedKey, MAX_SYNC_VALUE_BYTES } from "@/lib/sync-keys";
+import { canReadKey, canWriteKey } from "@/lib/access";
+import { logAuditEvent } from "@/lib/audit";
+import { clientIp } from "@/lib/rate-limit";
 
 /**
  * Workspace sync endpoint.
@@ -76,10 +79,16 @@ export async function GET(req: NextRequest) {
       orderBy: { key: "asc" },
     });
 
+    // Collections this role may not read are never sent. The browser is told which ones to
+    // remove from its local copy too (e.g. after someone's access is reduced).
+    const allKeys = await db.workspaceDocument.findMany({ select: { key: true } });
+    const deniedKeys = allKeys.map((k) => k.key).filter((k) => !canReadKey(user.role, k));
+
     return apiSuccess({
       serverTime: new Date().toISOString(),
       workspaceId: workspace.id,
-      documents: docs.map((d) => ({
+      deniedKeys,
+      documents: docs.filter((d) => canReadKey(user.role, d.key)).map((d) => ({
         key: d.key,
         value: fromStoredJson(d.value),
         version: d.version,
@@ -100,9 +109,6 @@ export async function POST(req: NextRequest) {
     return apiError("Database unavailable", "DB_UNAVAILABLE", 503);
   }
   if (!user) return apiError("Unauthenticated", "UNAUTHORIZED", 401);
-  if (user.role === "READ_ONLY") {
-    return apiError("Read-only accounts cannot change data", "FORBIDDEN", 403);
-  }
 
   const body = await req.json().catch(() => null);
   const parsed = postSchema.safeParse(body);
@@ -119,11 +125,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Changes to collections this role may not edit are refused individually; the rest still save.
+  const rejected = parsed.data.changes.filter((c) => !canWriteKey(user.role, c.key)).map((c) => c.key);
+  const allowed = parsed.data.changes.filter((c) => canWriteKey(user.role, c.key));
+  if (!allowed.length) {
+    return apiSuccess({ saved: [], rejected });
+  }
+
   try {
     const results = await db.$transaction(async (tx) => {
       const out: { key: string; version: number; updatedAt: string }[] = [];
 
-      for (const { key, value } of parsed.data.changes) {
+      for (const { key, value } of allowed) {
         const stored: Prisma.InputJsonValue = value === null ? { deleted: true } : toStoredJson(value);
         const existing = await tx.workspaceDocument.findUnique({ where: { key } });
 
@@ -168,9 +181,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return apiSuccess({ saved: results });
+    const changedKeys = results.map((r) => r.key);
+    await logAuditEvent({
+      userId: user.id.startsWith("env-") ? null : user.id,
+      action: "DATA_SAVED",
+      entityType: "Workspace",
+      metadata: { by: user.email, role: user.role, collections: changedKeys },
+      ipAddress: clientIp(req.headers),
+      userAgent: req.headers.get("user-agent") || "unknown",
+    });
+
+    return apiSuccess({ saved: results, rejected });
   } catch (error) {
-    logger.error("Sync write failed", { keys: parsed.data.changes.map((c) => c.key) }, error);
+    logger.error("Sync write failed", { keys: allowed.map((c) => c.key) }, error);
     return apiError("Database unavailable", "DB_UNAVAILABLE", 503);
   }
 }

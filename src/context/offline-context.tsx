@@ -31,6 +31,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   // Initialize online status on client
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reads browser state that does not exist on the server
       setIsOnline(navigator.onLine);
 
       // Check if user previously toggled simulated offline mode

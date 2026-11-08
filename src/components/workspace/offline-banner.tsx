@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useOffline } from "@/context/offline-context";
 import { useSyncState } from "@/context/sync-context";
 import type { SyncState } from "@/lib/app-storage";
@@ -31,6 +31,7 @@ export function OfflineBanner() {
   // Detect when connection transitions from offline to online
   useEffect(() => {
     if (previousOffline && !effectiveOffline) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the connection coming back
       setShowReconnectedToast(true);
       const timer = setTimeout(() => setShowReconnectedToast(false), 4000);
       return () => clearTimeout(timer);
@@ -41,6 +42,7 @@ export function OfflineBanner() {
   // Reset dismissed state when transitioning into offline
   useEffect(() => {
     if (effectiveOffline) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- a new offline episode shows the banner again
       setDismissed(false);
     }
   }, [effectiveOffline]);

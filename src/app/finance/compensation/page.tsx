@@ -3,42 +3,34 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { todayIsoDate } from "@/lib/ids";
 import {
   CompensationRecord,
   CompensationCategory,
   loadCompensationRecords,
   saveCompensationRecords,
   formatKES,
-  loadAccountsFromStorage,
-  loadFinanceRole,
 } from "@/lib/finance-store";
 import {
   Banknote,
   Plus,
   Search,
   CheckCircle2,
-  AlertCircle,
   ShieldCheck,
   ShieldAlert,
   User,
-  Briefcase,
-  DollarSign,
-  Calendar,
-  FileCheck2,
   Clock,
-  ArrowRight,
   TrendingUp,
   Download,
   Trash2,
   Edit2,
   X,
   CreditCard,
-  Building2,
   Lock,
 } from "lucide-react";
 
 export default function CompensationPage() {
-  const [records, setRecords] = useState<CompensationRecord[]>([]);
+  const [records, setRecords] = useState<CompensationRecord[]>(() => loadCompensationRecords());
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -51,7 +43,7 @@ export default function CompensationPage() {
   const [roleTitle, setRoleTitle] = useState("");
   const [compType, setCompType] = useState<CompensationCategory>("SALARY");
   const [amountKES, setAmountKES] = useState<number>(50000);
-  const [paymentDate, setPaymentDate] = useState("2026-10-26");
+  const [paymentDate, setPaymentDate] = useState(() => todayIsoDate());
   const [paymentMethod, setPaymentMethod] = useState<CompensationRecord["paymentMethod"]>("MPESA_B2C");
   const [status, setStatus] = useState<CompensationRecord["status"]>("PENDING_APPROVAL");
   const [periodCovered, setPeriodCovered] = useState("October 2026");
@@ -65,12 +57,6 @@ export default function CompensationPage() {
   const [salesRepName, setSalesRepName] = useState("Sales Lead");
 
   useEffect(() => {
-    try {
-      setPaymentDate(new Date().toISOString().split("T")[0]);
-    } catch {}
-
-    setRecords(loadCompensationRecords());
-
     const handleSync = () => {
       setRecords(loadCompensationRecords());
     };
@@ -685,7 +671,7 @@ export default function CompensationPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Disbursement Category</label>
                     <select
                       value={compType}
-                      onChange={(e) => setCompType(e.target.value as any)}
+                      onChange={(e) => setCompType(e.target.value as Parameters<typeof setCompType>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="SALARY">Founder / Staff Salary</option>
@@ -724,7 +710,7 @@ export default function CompensationPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Payment Method</label>
                     <select
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value as any)}
+                      onChange={(e) => setPaymentMethod(e.target.value as Parameters<typeof setPaymentMethod>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="MPESA_B2C">M-Pesa B2C</option>
@@ -736,7 +722,7 @@ export default function CompensationPage() {
                     <label className="text-xs font-medium text-slate-300 block mb-1">Approval Status</label>
                     <select
                       value={status}
-                      onChange={(e) => setStatus(e.target.value as any)}
+                      onChange={(e) => setStatus(e.target.value as Parameters<typeof setStatus>[0])}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                     >
                       <option value="PENDING_APPROVAL">Pending Approval</option>

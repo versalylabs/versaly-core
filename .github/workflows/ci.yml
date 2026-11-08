@@ -8,8 +8,31 @@ on:
 
 jobs:
   verify:
-    name: Lint, Typecheck & Build
+    name: Lint, Test, Build & Security checks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # A real, empty Postgres so migrations and the role tests run for real
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: versaly_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d versaly_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/versaly_ci?schema=public
+      AUTH_SECRET: ci_pipeline_secret_key_testing_min_32_characters_long
+      MPESA_CALLBACK_SECRET: ci_mpesa_callback_secret_for_tests_only_123456
+      NEXT_TELEMETRY_DISABLED: "1"
 
     steps:
       - name: Checkout repository
@@ -19,7 +42,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -30,15 +53,35 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Run tests
-        run: npm test
+      - name: Apply database migrations (from scratch)
+        run: npx prisma migrate deploy
+
+      - name: Typecheck
+        run: npx tsc --noEmit
 
       - name: Run linter
         run: npm run lint
 
-      - name: Run build check
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build
         run: npm run build
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/versaly_test?schema=public"
-          AUTH_SECRET: "ci_pipeline_secret_key_testing_min_32_characters_long"
-          NODE_ENV: "production"
+          NODE_ENV: production
+
+      - name: Start the app for the end-to-end tests
+        run: |
+          npm start > app.log 2>&1 &
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:3000/api/health > /dev/null && exit 0
+            sleep 2
+          done
+          echo "The app did not start:"; cat app.log; exit 1
+
+      - name: End-to-end role and security tests
+        run: npm run test:e2e
+
+      - name: Show app log if something failed
+        if: failure()
+        run: cat app.log || true

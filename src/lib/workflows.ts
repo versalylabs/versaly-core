@@ -13,6 +13,7 @@
  */
 
 import { appStorage } from "@/lib/app-storage";
+import { addMonthsIso, calcInvoiceTotals, cycleMonths, isoDay } from "@/lib/money";
 import type { ActiveDealItem } from "@/data/leads-seed";
 import type {
   ClientItem,
@@ -31,7 +32,6 @@ import {
 export const CLIENTS_STORAGE_KEY = "versaly_clients_list_v2";
 export const PROJECTS_STORAGE_KEY = "versaly_projects_list_v2";
 
-const VAT_RATE = 0.16;
 const DEFAULT_LEAD_ARCHITECT = "Ted";
 const GO_LIVE_TARGET_DAYS = 21;
 const PAYMENT_TERMS_DAYS = 7;
@@ -52,26 +52,10 @@ export const ONBOARDING_STEPS = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-const isoDay = (d: Date) => d.toISOString().split("T")[0];
-
 function addDays(d: Date, days: number): Date {
   const copy = new Date(d);
   copy.setUTCDate(copy.getUTCDate() + days);
   return copy;
-}
-
-function addMonths(isoDate: string, months: number): string {
-  const d = new Date(`${isoDate}T00:00:00Z`);
-  const day = d.getUTCDate();
-  d.setUTCDate(1);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  const lastDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
-  d.setUTCDate(Math.min(day, lastDay));
-  return isoDay(d);
-}
-
-function cycleMonths(cycle: ClientSubscription["billingCycle"]): number {
-  return cycle === "ANNUAL" ? 12 : cycle === "QUARTERLY" ? 3 : 1;
 }
 
 function readList<T>(key: string): T[] {
@@ -116,9 +100,7 @@ function buildInvoice(args: {
   incomeType: NonNullable<FinanceInvoice["incomeType"]>;
   dealId?: string;
 }): FinanceInvoice {
-  const subtotalKES = Math.round(args.amountKES);
-  const taxKES = Math.round(subtotalKES * VAT_RATE);
-  const totalKES = subtotalKES + taxKES;
+  const { subtotalKES, taxKES, totalKES } = calcInvoiceTotals(args.amountKES);
   return {
     id: args.id,
     invoiceNumber: args.number,
@@ -183,7 +165,7 @@ export function convertWonDeal(deal: ActiveDealItem, today = new Date()): DealCo
       productName: deal.productName,
       monthlyMRR: deal.monthlyFeeKES,
       status: "ONBOARDING",
-      renewalDate: addMonths(todayIso, 1),
+      renewalDate: addMonthsIso(todayIso, 1),
       currentOnboardingStep: 1,
       onboardingProgressPct: 0,
       signedContractDoc: "Pending",
@@ -272,7 +254,7 @@ export function convertWonDeal(deal: ActiveDealItem, today = new Date()): DealCo
         billingCycle: "MONTHLY",
         status: "TRIAL",
         startDate: todayIso,
-        nextBillingDate: addMonths(todayIso, 1),
+        nextBillingDate: addMonthsIso(todayIso, 1),
         contactPerson: deal.contactName,
         phone: deal.contactPhone,
         notes: "Auto-created when the deal was won. Becomes active when onboarding is completed.",
@@ -344,7 +326,7 @@ function generateRecurringInvoices(todayIso: string): number {
         );
         known.add(id);
       }
-      next = addMonths(next, cycleMonths(sub.billingCycle));
+      next = addMonthsIso(next, cycleMonths(sub.billingCycle));
       guard++;
     }
     return { ...sub, nextBillingDate: next };
@@ -384,7 +366,7 @@ function activateCompletedOnboardings(todayIso: string): number {
     const project = finished.find((p) => sub.id === `sub-${p.id.slice("proj-".length)}`);
     if (project && sub.status === "TRIAL") {
       activated++;
-      return { ...sub, status: "ACTIVE" as const, nextBillingDate: addMonths(todayIso, cycleMonths(sub.billingCycle)) };
+      return { ...sub, status: "ACTIVE" as const, nextBillingDate: addMonthsIso(todayIso, cycleMonths(sub.billingCycle)) };
     }
     return sub;
   });

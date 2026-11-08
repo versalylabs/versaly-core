@@ -11,7 +11,9 @@
     "vercel-build": "prisma generate && node scripts/migrate-deploy.mjs && next build",
     "db:migrate": "prisma migrate dev",
     "brand:assets": "node scripts/generate-brand-assets.mjs",
-    "brand:photo": "node scripts/apply-background-photo.mjs"
+    "brand:photo": "node scripts/apply-background-photo.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -36,6 +38,7 @@
     "eslint-config-next": "16.4.2",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.1.0"
   }
 }

@@ -11,6 +11,7 @@ import {
 } from "@/lib/app-storage";
 import { BrandLoader } from "@/components/brand/brand-loader";
 import { runWorkflows } from "@/lib/workflows";
+import { reconcileIncomingPayments } from "@/lib/reconcile";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 const INITIAL_PULL_TIMEOUT_MS = 8000;
@@ -26,12 +27,18 @@ const WORKFLOW_INTERVAL_MS = 30 * 60 * 1000;
 async function pullAndRunWorkflows(): Promise<number> {
   const pulled = await pullFromServer();
   if (pulled < 0) return pulled;
+    let extra = 0;
   try {
-    return pulled + (runWorkflows().changed ? 1 : 0);
+    extra += runWorkflows().changed ? 1 : 0;
   } catch (error) {
     console.error("Workflow run failed", error);
-    return pulled;
   }
+  try {
+    extra += (await reconcileIncomingPayments()) > 0 ? 1 : 0;
+  } catch (error) {
+    console.error("Payment matching failed", error);
+  }
+  return pulled + extra;
 }
 
 /** Current sync status, for showing "Saved" / "Saving…" / "Offline" in the UI. */

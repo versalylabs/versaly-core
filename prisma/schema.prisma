@@ -880,3 +880,27 @@ model WorkspaceDocumentRevision {
 
   @@index([key, createdAt])
 }
+
+// ============================================================================
+// INCOMING M-PESA PAYMENTS (Daraja C2B confirmations)
+// Every Paybill/Till payment Safaricom reports is stored here exactly once
+// (transId is unique), then matched to an invoice by the app.
+// ============================================================================
+
+model IncomingPayment {
+  id               String    @id @default(cuid())
+  transId          String    @unique
+  transTime        String?
+  amount           Float
+  billRef          String?
+  msisdn           String?
+  payerName        String?
+  businessShortCode String?
+  status           String    @default("UNAPPLIED") // UNAPPLIED | APPLIED | IGNORED
+  appliedInvoiceId String?
+  appliedAt        DateTime?
+  raw              Json?
+  createdAt        DateTime  @default(now())
+
+  @@index([status, createdAt])
+}

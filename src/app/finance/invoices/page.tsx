@@ -11,6 +11,9 @@ import {
   saveInvoicesToStorage,
 } from "@/lib/finance-store";
 import { useProductsCatalog } from "@/lib/products-store";
+import { InvoiceSendPanel } from "@/components/finance/invoice-send-panel";
+import { CollectionsPanel } from "@/components/finance/collections-panel";
+import { UnmatchedPaymentsPanel } from "@/components/finance/unmatched-payments-panel";
 import {
   Receipt,
   Plus,
@@ -85,6 +88,12 @@ export default function InvoicesPage() {
   const syncInvoices = (updated: FinanceInvoice[]) => {
     setInvoices(updated);
     saveInvoicesToStorage(updated);
+  };
+
+  // An invoice was sent or chased: save it and keep the detail view in step
+  const handleInvoiceChanged = (changed: FinanceInvoice) => {
+    syncInvoices(invoices.map((i) => (i.id === changed.id ? changed : i)));
+    setSelectedInvoice((cur) => (cur && cur.id === changed.id ? changed : cur));
   };
 
   // Add line item in create modal
@@ -337,6 +346,11 @@ export default function InvoicesPage() {
           </div>
         </div>
 
+        <div className="print:hidden">
+          <UnmatchedPaymentsPanel invoices={invoices} onApplied={handleInvoiceChanged} />
+          <CollectionsPanel invoices={invoices} onChange={handleInvoiceChanged} onSelect={setSelectedInvoice} />
+        </div>
+
         {/* Master-Detail Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Invoices List (5 cols) */}
@@ -479,6 +493,10 @@ export default function InvoicesPage() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
+                </div>
+
+                <div className="print:hidden">
+                  <InvoiceSendPanel invoice={selectedInvoice} onChange={handleInvoiceChanged} />
                 </div>
 
                 {/* Printable Invoice Header */}

@@ -12,6 +12,8 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
 const PUBLIC_PAGES = new Set(["/login"]);
 const PUBLIC_APIS = new Set(["/api/auth/login", "/api/auth/logout", "/api/health"]);
+// Safaricom Daraja callbacks can't sign in; they are protected by a secret token in the URL
+const PUBLIC_API_PREFIXES = ["/api/payments/c2b/"];
 
 function applySecurityHeaders(response: NextResponse) {
   const isDev = process.env.NODE_ENV !== "production";
@@ -57,7 +59,9 @@ export async function proxy(request: NextRequest) {
     return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 
-  const isPublic = isApi ? PUBLIC_APIS.has(pathname) : PUBLIC_PAGES.has(pathname);
+  const isPublic = isApi
+    ? PUBLIC_APIS.has(pathname) || PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p))
+    : PUBLIC_PAGES.has(pathname);
 
   if (!session && !isPublic) {
     if (isApi) {

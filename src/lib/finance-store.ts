@@ -32,6 +32,10 @@ export interface FinanceInvoice {
   /** Links back to the client record (and the deal it came from), when known. */
   clientId?: string;
   dealId?: string;
+  /** When the invoice was first sent to the client, and how often it has been chased since. */
+  sentAt?: string;
+  lastRemindedAt?: string;
+  reminderCount?: number;
   invoiceNumber: string;
   clientName: string;
   clientEmail?: string;

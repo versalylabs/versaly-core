@@ -13,7 +13,8 @@
     "brand:assets": "node scripts/generate-brand-assets.mjs",
     "brand:photo": "node scripts/apply-background-photo.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "daraja": "node scripts/daraja.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

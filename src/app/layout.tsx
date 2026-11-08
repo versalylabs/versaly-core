@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/context/theme-context";
 import { OfflineProvider } from "@/context/offline-context";
 import { PWAProvider } from "@/context/pwa-context";
 import { SyncProvider } from "@/context/sync-context";
@@ -18,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
+  themeColor: "#080a14",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -57,7 +56,7 @@ export const metadata: Metadata = {
   other: {
     "mobile-web-app-capable": "yes",
     "application-name": "Versaly Core",
-    "msapplication-TileColor": "#020617",
+    "msapplication-TileColor": "#080a14",
     "msapplication-TileImage": "/icons/icon-192.png",
   },
 };
@@ -72,14 +71,12 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
+      <body className="min-h-full flex flex-col text-slate-100">
         <OfflineProvider>
           <PWAProvider>
-            <ThemeProvider>
               <SyncProvider>{children}</SyncProvider>
               <PWAInstallBanner />
               <IOSInstallModal />
-            </ThemeProvider>
           </PWAProvider>
         </OfflineProvider>
       </body>

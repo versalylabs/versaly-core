@@ -9,6 +9,7 @@ import {
   subscribeSync,
   type SyncState,
 } from "@/lib/app-storage";
+import { BrandLoader } from "@/components/brand/brand-loader";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 const INITIAL_PULL_TIMEOUT_MS = 8000;
@@ -93,12 +94,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-          <span className="text-xs font-semibold text-slate-400">Syncing your workspace…</span>
-        </div>
-      </div>
+      <BrandLoader label="Syncing your workspace…" sublabel="Loading the latest from your devices" />
     );
   }
 

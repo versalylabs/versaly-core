@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clearLocalWorkspace } from "@/lib/app-storage";
+import { BrandMark } from "@/components/brand/brand-mark";
 import {
   LayoutDashboard,
   Building2,
@@ -210,7 +211,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed lg:sticky top-0 z-50 lg:z-auto h-screen w-64 border-r border-slate-800/80 bg-slate-950/95 lg:bg-slate-950/90 backdrop-blur-md flex flex-col shrink-0 transition-transform duration-300 ease-in-out selection:bg-indigo-500 selection:text-white ${
+        className={`glass-nav glass-nav-side fixed lg:sticky top-0 z-50 lg:z-auto h-screen w-64 border-r flex flex-col shrink-0 transition-transform duration-300 ease-in-out selection:bg-indigo-500 selection:text-white ${
           isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -221,9 +222,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             onClick={onClose}
             className="flex items-center gap-3 group"
           >
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <Layers className="h-4 w-4 text-white" />
-            </div>
+            <BrandMark size={34} className="rounded-[10px] shadow-lg shadow-indigo-900/50 group-hover:scale-105 transition-transform" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight text-white group-hover:text-indigo-300 transition-colors">

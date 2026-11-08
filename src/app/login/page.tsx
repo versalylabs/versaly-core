@@ -4,22 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Layers,
   Lock,
   Mail,
   ArrowRight,
   AlertCircle,
-  Sun,
-  Moon,
   Eye,
   EyeOff,
   Sparkles,
 } from "lucide-react";
-import { useTheme } from "@/context/theme-context";
+import { BrandMark } from "@/components/brand/brand-mark";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -75,18 +71,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white relative overflow-hidden">
-      {/* Dynamic Ambient Background Accents */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[850px] h-[420px] bg-gradient-to-b from-indigo-600/20 via-violet-600/10 to-transparent blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-900/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-violet-900/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex flex-col justify-between text-slate-100 selection:bg-indigo-500 selection:text-white relative overflow-hidden">
 
       {/* Top Header */}
       <header className="p-6 flex items-center justify-between max-w-6xl w-full mx-auto relative z-10">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-            <Layers className="h-5 w-5 text-white" />
-          </div>
+          <BrandMark size={38} className="rounded-xl shadow-lg shadow-indigo-900/50 group-hover:scale-105 transition-transform" />
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-base tracking-tight text-white group-hover:text-indigo-300 transition-colors">
               Versaly Core
@@ -97,26 +87,18 @@ export default function LoginPage() {
           </div>
         </Link>
 
-        <button
-          onClick={toggleTheme}
-          className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white transition shadow-sm backdrop-blur"
-          title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4 text-amber-400" />
-          ) : (
-            <Moon className="h-4 w-4 text-indigo-400" />
-          )}
-        </button>
       </header>
 
       {/* Main Login Form Container */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 relative z-10">
         <div className="w-full max-w-md space-y-6">
           {/* Card Box */}
-          <div className="p-7 sm:p-9 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl backdrop-blur-2xl space-y-6">
+          <div className="liquid-glass liquid-glass-glow p-7 sm:p-9 rounded-3xl space-y-6">
             <div className="text-center space-y-2">
+              <div className="relative mx-auto mb-3 h-[72px] w-[72px]">
+                <div className="brand-loader-halo" style={{ animationDuration: "9s", opacity: 0.45 }} />
+                <BrandMark size={72} className="relative rounded-[20px] shadow-2xl shadow-indigo-950/60" />
+              </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] font-semibold mb-1">
                 <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
                 <span>Operating System Authentication</span>
@@ -203,7 +185,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{isLoading ? "Authenticating Operations Hub..." : "Sign In to Versaly Core"}</span>
                   <ArrowRight className="h-4 w-4" />
@@ -216,7 +198,7 @@ export default function LoginPage() {
       </main>
 
       {/* Footer */}
-      <footer className="p-6 text-center text-xs text-slate-600 relative z-10">
+      <footer className="p-6 text-center text-xs text-slate-500 relative z-10">
         © 2026 Versaly Operations Ltd.
       </footer>
     </div>

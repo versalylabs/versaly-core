@@ -1,150 +1,280 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Versaly Core — "Aurora Glass" design system
+   A fixed aurora backdrop with frosted, light-refracting glass surfaces.
+   The app's existing slate utility classes are restyled below, so every page
+   picks up the look without per-page changes.
+   ========================================================================== */
+
 :root {
-  --background: #020617;
+  --background: #05060f;
   --foreground: #f8fafc;
+
+  --glass-tint: rgba(16, 19, 34, 0.5);
+  --glass-tint-strong: rgba(10, 12, 24, 0.68);
+  --glass-well: rgba(4, 5, 12, 0.42);
+  --glass-chip: rgba(255, 255, 255, 0.075);
+  --glass-chip-hover: rgba(255, 255, 255, 0.14);
+  --glass-edge: rgba(255, 255, 255, 0.09);
+  --glass-edge-strong: rgba(255, 255, 255, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 10px 40px -8px rgba(2, 3, 20, 0.55);
+  --glass-blur: blur(22px) saturate(170%);
+  --accent-glow: 0 0 0 1px rgba(129, 140, 248, 0.4);
 }
 
-html.light {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-}
-
-/* Light Mode Overrides for Versaly Core Workspace */
-html.light body {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-}
-
-html.light .bg-slate-950 {
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
-}
-
-html.light .bg-slate-950\/95,
-html.light .bg-slate-950\/80,
-html.light .bg-slate-950\/70,
-html.light .bg-slate-950\/60,
-html.light .bg-slate-950\/40 {
-  background-color: rgba(241, 245, 249, 0.95) !important;
-}
-
-html.light .bg-slate-900,
-html.light .bg-slate-900\/90,
-html.light .bg-slate-900\/80,
-html.light .bg-slate-900\/70,
-html.light .bg-slate-900\/60,
-html.light .bg-slate-900\/40 {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-}
-
-html.light .border-slate-800,
-html.light .border-slate-800\/90,
-html.light .border-slate-800\/80,
-html.light .border-slate-800\/70,
-html.light .border-slate-800\/60 {
-  border-color: #e2e8f0 !important;
-}
-
-html.light .border-slate-900 {
-  border-color: #cbd5e1 !important;
-}
-
-html.light .border-slate-700,
-html.light .border-slate-700\/80,
-html.light .border-slate-700\/60 {
-  border-color: #cbd5e1 !important;
-}
-
-html.light .text-white {
-  color: #0f172a !important;
-}
-
-html.light .text-slate-100,
-html.light .text-slate-200 {
-  color: #1e293b !important;
-}
-
-html.light .text-slate-300 {
-  color: #334155 !important;
-}
-
-html.light .text-slate-400 {
-  color: #64748b !important;
-}
-
-html.light .text-slate-500 {
-  color: #64748b !important;
-}
-
-html.light .bg-slate-800,
-html.light .bg-slate-800\/80,
-html.light .bg-slate-800\/60,
-html.light .bg-slate-800\/40 {
-  background-color: #f1f5f9 !important;
-  color: #334155 !important;
-}
-
-html.light input,
-html.light select,
-html.light textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-html.light input:focus,
-html.light select:focus,
-html.light textarea:focus {
-  border-color: #6366f1 !important;
-}
-
-/* Gradient banner softening in light mode */
-html.light .from-slate-900 {
-  --tw-gradient-from: #e0e7ff var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(224 231 255 / 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+html {
+  background: var(--background);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  background: transparent;
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Liquid Glass Effects */
+/* --------------------------------------------------------------------------
+   Aurora backdrop (fixed, so it never scrolls and works on mobile)
+   -------------------------------------------------------------------------- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(130% 90% at 50% 20%, rgba(4, 5, 16, 0) 55%, rgba(4, 5, 16, 0.35) 100%),
+    linear-gradient(rgba(4, 5, 12, 0.1), rgba(4, 5, 12, 0.1)),
+    url("/backgrounds/aurora-dark.jpg") center / cover no-repeat;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Glass surfaces
+   -------------------------------------------------------------------------- */
+
+/* Page wrappers that previously painted a solid background */
+html body.bg-slate-950,
+html .min-h-screen.bg-slate-950 {
+  background-color: transparent;
+}
+
+/* Main panels / cards → frosted glass */
+html :is(
+  .bg-slate-900,
+  .bg-slate-900\/95,
+  .bg-slate-900\/90,
+  .bg-slate-900\/80,
+  .bg-slate-900\/70,
+  .bg-slate-900\/60,
+  .bg-slate-900\/50,
+  .bg-slate-900\/40
+):not([class*="bg-gradient"]) {
+  background-color: var(--glass-tint);
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.015) 42%, rgba(255, 255, 255, 0.04));
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 4px 20px -6px rgba(2, 3, 20, 0.45);
+}
+
+/* Large cards get deeper shadow and a stronger specular edge */
+html :is(
+  .bg-slate-900,
+  .bg-slate-900\/90,
+  .bg-slate-900\/80,
+  .bg-slate-900\/70,
+  .bg-slate-900\/60,
+  .bg-slate-900\/50,
+  .bg-slate-900\/40
+):is(.rounded-2xl, .rounded-3xl):not([class*="bg-gradient"]) {
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.04),
+    var(--glass-shadow);
+}
+
+/* Gradient hero banners built from slate stops */
+html .from-slate-900,
+html .from-slate-950 {
+  --tw-gradient-from: rgba(28, 32, 58, 0.55);
+}
+html .via-slate-900,
+html .via-slate-900\/90,
+html .via-slate-900\/80 {
+  --tw-gradient-via: rgba(20, 23, 42, 0.5);
+}
+html .to-slate-900,
+html .to-slate-900\/50,
+html .to-slate-950,
+html .to-slate-950\/40 {
+  --tw-gradient-to: rgba(10, 12, 26, 0.45);
+}
+html [class*="bg-gradient-to"]:is([class*="from-slate-9"], [class*="via-slate-9"], [class*="to-slate-9"]) {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.24), var(--glass-shadow);
+}
+
+/* Inset wells (inputs, nested rows, code areas) → darker, no blur */
+html :is(
+  .bg-slate-950,
+  .bg-slate-950\/95,
+  .bg-slate-950\/90,
+  .bg-slate-950\/80,
+  .bg-slate-950\/70,
+  .bg-slate-950\/60,
+  .bg-slate-950\/50,
+  .bg-slate-950\/40
+) {
+  background-color: var(--glass-well);
+  box-shadow: inset 0 1px 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+/* Chips, tabs, small buttons */
+html :is(
+  .bg-slate-800,
+  .bg-slate-800\/90,
+  .bg-slate-800\/80,
+  .bg-slate-800\/70,
+  .bg-slate-800\/60,
+  .bg-slate-800\/50,
+  .bg-slate-800\/40
+) {
+  background-color: var(--glass-chip);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+html :is(
+  .hover\:bg-slate-800:hover,
+  .hover\:bg-slate-700:hover,
+  .hover\:bg-slate-800\/60:hover,
+  .hover\:bg-slate-900:hover,
+  .hover\:bg-slate-900\/60:hover
+) {
+  background-color: var(--glass-chip-hover);
+}
+
+/* Hairline edges */
+html :is(
+  .border-slate-900,
+  .border-slate-800,
+  .border-slate-800\/90,
+  .border-slate-800\/80,
+  .border-slate-800\/70,
+  .border-slate-800\/60,
+  .border-slate-800\/50
+) {
+  border-color: var(--glass-edge);
+}
+html :is(.border-slate-700, .border-slate-700\/80, .border-slate-700\/60, .border-slate-600) {
+  border-color: var(--glass-edge-strong);
+}
+html :is(.hover\:border-slate-700:hover, .hover\:border-slate-600:hover) {
+  border-color: rgba(165, 180, 252, 0.45);
+}
+html :is(.divide-slate-800 > :not(:last-child), .divide-slate-800\/60 > :not(:last-child), .divide-slate-800\/80 > :not(:last-child)) {
+  border-color: var(--glass-edge);
+}
+
+/* Secondary text stays legible over the backdrop */
+html .text-slate-400 {
+  color: #b4bdd6;
+}
+html .text-slate-500 {
+  color: #98a3c0;
+}
+html .text-slate-600 {
+  color: #7e8aa9;
+}
+
+/* Form controls */
+html :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+  background-color: var(--glass-well);
+  border-color: var(--glass-edge);
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+html :is(input, select, textarea):focus {
+  border-color: rgba(165, 180, 252, 0.7);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
+  outline: none;
+}
+html select option {
+  background: #10131f;
+  color: #f8fafc;
+}
+
+/* Primary buttons → lit glass gems */
+html .bg-indigo-600,
+html .bg-indigo-500 {
+  background-image: linear-gradient(180deg, #5f67e8 0%, #4a52cf 100%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.2),
+    0 4px 14px -6px rgba(79, 91, 213, 0.6);
+}
+html :is(.hover\:bg-indigo-500:hover, .hover\:bg-indigo-600:hover) {
+  filter: brightness(1.08);
+}
+html :is(.bg-emerald-600, .bg-emerald-500) {
+  background-image: linear-gradient(180deg, #2fb98a 0%, #0f9a6e 100%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    0 4px 14px -6px rgba(16, 185, 129, 0.45);
+}
+html :is(.bg-rose-600, .bg-rose-500) {
+  background-image: linear-gradient(180deg, #ee5a74 0%, #d31f49 100%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    0 4px 14px -6px rgba(244, 63, 94, 0.45);
+}
+
+/* --------------------------------------------------------------------------
+   Structural glass: sidebar + header + overlays + dropdowns
+   -------------------------------------------------------------------------- */
+.glass-nav {
+  background-color: var(--glass-tint-strong) !important;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.015)) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  border-color: var(--glass-edge) !important;
+  box-shadow: inset 0 -1px 0 0 rgba(255, 255, 255, 0.06), 0 10px 40px -12px rgba(2, 3, 20, 0.6) !important;
+}
+
+.glass-nav-side {
+  box-shadow: inset -1px 0 0 0 rgba(255, 255, 255, 0.07), 20px 0 60px -24px rgba(2, 3, 20, 0.6) !important;
+}
+
+html .bg-black\/70,
+html .bg-black\/80 {
+  background-color: rgba(3, 4, 16, 0.6);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* Floating menus / popovers / modals use the stronger tint for legibility */
+html :is(.shadow-2xl, .shadow-xl).bg-slate-900:not([class*="bg-gradient"]) {
+  background-color: rgba(10, 12, 24, 0.82);
+}
+
+/* --------------------------------------------------------------------------
+   Existing helper classes (used across ~40 pages), upgraded
+   -------------------------------------------------------------------------- */
 .liquid-glass {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* Custom Sleek Scrollbars */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
-}
-
-/* Hide scrollbar for clean tab bars while keeping scroll functionality */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  position: relative;
+  background-color: var(--glass-tint);
+  background-image: linear-gradient(155deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.015) 45%, rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(26px) saturate(185%);
+  backdrop-filter: blur(26px) saturate(185%);
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.04),
+    var(--glass-shadow);
 }
 
 .liquid-glass-glow {
@@ -159,9 +289,9 @@ body {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(165, 180, 252, 0.1) 0%, transparent 60%);
   pointer-events: none;
-  animation: liquid-pulse 8s ease-in-out infinite alternate;
+  animation: liquid-pulse 9s ease-in-out infinite alternate;
 }
 
 @keyframes liquid-pulse {
@@ -173,11 +303,127 @@ body {
   }
 }
 
-html.light .liquid-glass {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07), inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+/* --------------------------------------------------------------------------
+   Motion: gentle entrance, smooth hover
+   -------------------------------------------------------------------------- */
+@keyframes glass-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+main {
+  animation: glass-rise 0.35s ease-out both;
+}
+
+html :is(.bg-slate-900, .bg-slate-900\/60, .bg-slate-900\/40, .bg-slate-900\/50, .bg-slate-900\/80):is(.rounded-2xl, .rounded-xl) {
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main,
+  .liquid-glass-glow::before,
+  .brand-loader * {
+    animation: none !important;
+  }
+}
+
+/* Slower devices / battery saver: keep the look, drop the heavy blur */
+@media (prefers-reduced-transparency: reduce) {
+  html :is([class*="bg-slate-900"], .liquid-glass, .glass-nav) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background-color: rgba(12, 14, 26, 0.94) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Branded loading screen
+   -------------------------------------------------------------------------- */
+.brand-loader-card {
+  background-color: rgba(14, 17, 30, 0.55);
+  background-image: linear-gradient(155deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 50%, rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--glass-edge-strong);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.32), 0 24px 70px -16px rgba(2, 3, 24, 0.75);
+}
+
+.brand-loader-halo {
+  position: absolute;
+  inset: -14px;
+  border-radius: 34px;
+  background: conic-gradient(from 0deg, rgba(165, 180, 252, 0.1), #6f7bf0, rgba(165, 180, 252, 0.1), #3d46a8, rgba(165, 180, 252, 0.1));
+  filter: blur(14px);
+  opacity: 0.45;
+  animation: halo-spin 3.2s linear infinite;
+}
+
+@keyframes halo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.brand-loader-bar {
+  position: relative;
+  height: 4px;
+  width: 168px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.brand-loader-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, #a5b4fc, transparent);
+  animation: loader-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes loader-slide {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbars
+   -------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(165, 180, 252, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(165, 180, 252, 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

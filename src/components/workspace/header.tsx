@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Plus, Bell, Menu, Sun, Moon, Clock } from "lucide-react";
+import { Search, Plus, Bell, Menu, Clock } from "lucide-react";
 import { NotificationCenter } from "./notification-center";
-import { useTheme } from "@/context/theme-context";
 import { OfflineStatusPill } from "./offline-banner";
 import { HeaderInstallButton } from "./pwa-install";
 
@@ -16,7 +15,6 @@ interface HeaderProps {
 
 export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
 
@@ -79,7 +77,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
   }
 
   return (
-    <header className="h-16 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 overflow-hidden">
+    <header className="glass-nav h-16 border-b sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 overflow-hidden">
       {/* Left Area: Mobile Menu Toggle + Breadcrumb & Path */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
         {onOpenMobileNav && (
@@ -147,20 +145,6 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
         </button>
 
         <div className="h-4 w-px bg-slate-800 shrink-0 hidden sm:block" />
-
-        {/* Light/Dark Theme Switcher */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-100 transition shrink-0 cursor-pointer"
-          title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4 text-amber-400" />
-          ) : (
-            <Moon className="h-4 w-4 text-indigo-400" />
-          )}
-        </button>
 
         <div className="relative shrink-0">
           <button

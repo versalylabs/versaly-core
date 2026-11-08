@@ -9,7 +9,9 @@
     "lint": "eslint",
     "owner:password": "node scripts/set-owner-password.mjs",
     "vercel-build": "prisma generate && node scripts/migrate-deploy.mjs && next build",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "brand:assets": "node scripts/generate-brand-assets.mjs",
+    "brand:photo": "node scripts/apply-background-photo.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

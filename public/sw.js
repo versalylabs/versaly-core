@@ -1,5 +1,5 @@
 // Versaly Core Offline Service Worker
-const CACHE_NAME = "versaly-core-offline-v2";
+const CACHE_NAME = "versaly-core-offline-v4";
 
 // Only public assets are pre-cached. Signed-in pages are cached as you visit them,
 // so a signed-out device never fetches (or stores) protected pages.
@@ -112,19 +112,21 @@ self.addEventListener("fetch", (event) => {
                 <title>Versaly Core — Offline Mode</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
-                  body { background: #020617; color: #e2e8f0; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; text-align: center; }
-                  .card { background: #0f172a; border: 1px solid #312e81; border-radius: 16px; padding: 32px; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
-                  h1 { font-size: 20px; margin-bottom: 8px; color: #fff; }
-                  p { font-size: 14px; color: #94a3b8; line-height: 1.6; }
-                  .badge { display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(99, 102, 241, 0.15); color: #818cf8; font-size: 12px; font-weight: 600; margin-bottom: 16px; border: 1px solid rgba(99, 102, 241, 0.3); }
-                  a { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #4f46e5; color: #fff; text-decoration: none; border-radius: 10px; font-size: 13px; font-weight: 600; }
+                  body { background: radial-gradient(60% 50% at 85% 10%, rgba(79,91,213,.35), transparent 70%), linear-gradient(160deg, #0c1224, #05060b); color: #e2e8f0; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; text-align: center; }
+                  .card { background: linear-gradient(155deg, rgba(255,255,255,.1), rgba(255,255,255,.02)), rgba(14,17,30,.6); backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%); border: 1px solid rgba(255,255,255,.2); border-radius: 24px; padding: 34px; max-width: 440px; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 24px 70px -16px rgba(2,3,24,.75); }
+                  .logo { width: 72px; height: 72px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 12px 30px rgba(20,5,74,.5); }
+                  h1 { font-size: 20px; margin: 0 0 8px; color: #fff; }
+                  p { font-size: 14px; color: #b4bdd6; line-height: 1.6; margin: 0; }
+                  .badge { display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(251,191,36,.12); color: #fcd34d; font-size: 12px; font-weight: 600; margin-bottom: 16px; border: 1px solid rgba(251,191,36,.3); }
+                  a { display: inline-block; margin-top: 20px; padding: 10px 22px; background: linear-gradient(180deg, #5f67e8, #4a52cf); color: #fff; text-decoration: none; border-radius: 12px; font-size: 13px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,.28); }
                 </style>
               </head>
               <body>
                 <div class="card">
+                  <img class="logo" src="/icons/icon-192.png" alt="Versaly" />
                   <div class="badge">⚡ Offline Mode Active</div>
                   <h1>Versaly Core is Running Offline</h1>
-                  <p>You are disconnected from the internet. All your locally saved tasks, leads, calendar events, and client data are preserved on this device.</p>
+                  <p>You are disconnected from the internet. Your data is kept on this device and any changes you make will sync automatically when you are back online.</p>
                   <a href="/dashboard">Open Dashboard</a>
                 </div>
               </body>

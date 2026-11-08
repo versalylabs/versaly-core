@@ -11,7 +11,7 @@ export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex text-slate-100 selection:bg-indigo-500 selection:text-white">
       {/* Responsive Sidebar (Desktop sticky, Mobile drawer) */}
       <Sidebar
         isOpen={isMobileNavOpen}

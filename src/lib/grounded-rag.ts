@@ -1,8 +1,8 @@
 import { VERSALY_PRODUCTS } from "@/data/products-catalog";
-import { INITIAL_ACTIVE_DEALS } from "@/data/leads-seed";
-import { INITIAL_PROJECTS } from "@/data/clients-projects-seed";
 import { KNOWLEDGE_ARTICLES, ARCHITECTURAL_DECISIONS } from "@/data/knowledge-seed";
-import { INVOICES_SEED } from "@/data/finance-seed";
+import { buildForecast, computeSnapshot, emptyWorkspaceData, type WorkspaceData } from "@/lib/insights";
+import { collectionState, isoDay } from "@/lib/money";
+import { formatKES } from "@/lib/invoice-messages";
 
 export interface GroundedCitation {
   sourceType: "PRODUCT" | "DEAL" | "LEAD" | "CLIENT" | "PROJECT" | "SOP" | "ADR" | "INVOICE";
@@ -26,13 +26,96 @@ export interface AssistantAnswer {
  */
 export function queryInternalKnowledge(
   userQuery: string,
-  userRole: "OWNER" | "ADMIN" | "MANAGER" | "STAFF" = "ADMIN"
+  userRole: "OWNER" | "ADMIN" | "MANAGER" | "STAFF" = "ADMIN",
+  /** Your real records (invoices, deals, projects…). Pass loadWorkspaceData() in the app. */
+  data: WorkspaceData = emptyWorkspaceData(),
+  todayIso: string = isoDay(new Date())
 ): AssistantAnswer {
   // Pre-retrieval role check
   const isAuthorizedForFinancials = ["OWNER", "ADMIN", "MANAGER"].includes(userRole);
   const q = userQuery.toLowerCase().trim();
   const citations: GroundedCitation[] = [];
   const keyFacts: string[] = [];
+
+  // 0a. Query: cash, runway and forecast
+  if (
+    q.includes("forecast") ||
+    q.includes("runway") ||
+    q.includes("cash flow") ||
+    q.includes("cashflow") ||
+    q.includes("cash position") ||
+    q.includes("how much cash") ||
+    q.includes("run out")
+  ) {
+    if (!isAuthorizedForFinancials) {
+      return {
+        summary: "Financial records are restricted to Management & Owner roles.",
+        directAnswer: "Pre-retrieval authorization blocked access to financial records for your role.",
+        keyFacts: ["Role authorization: ACCESS_DENIED"],
+        citations: [],
+        confidenceScore: 1.0,
+      };
+    }
+    const forecast = buildForecast(data, todayIso, 8);
+    const low = forecast.weeks.reduce((l, w) => (w.cashKES < l.cashKES ? w : l), forecast.weeks[0]);
+    keyFacts.push(
+      `Cash today: ${formatKES(forecast.startCashKES)}`,
+      `Expected in over 8 weeks: ${formatKES(forecast.totals.inflowConfirmedKES)} (invoices and subscriptions)`,
+      `Known out: ${formatKES(forecast.totals.outflowKES)} (vendor bills and scheduled expenses)`,
+      `Lowest projected cash: ${formatKES(low.cashKES)} in the week of ${low.start}`
+    );
+    citations.push({
+      sourceType: "INVOICE",
+      title: "Cash Flow Forecast",
+      linkUrl: "/finance/forecast",
+      snippet: `8-week outlook from ${forecast.weeks[0].start}. Weighted pipeline adds ${formatKES(forecast.totals.inflowPipelineKES)}.`,
+    });
+    return {
+      summary: forecast.goesNegative
+        ? `Projected cash drops below zero in the week of ${low.start} unless something changes.`
+        : `Cash stays positive over the next 8 weeks, with a low point of ${formatKES(low.cashKES)}.`,
+      directAnswer:
+        `Based on your invoices, subscriptions and scheduled costs:\n\n` +
+        `• **Cash today:** ${formatKES(forecast.startCashKES)}\n` +
+        `• **Expected in (8 weeks):** ${formatKES(forecast.totals.inflowConfirmedKES)}\n` +
+        `• **Known out:** ${formatKES(forecast.totals.outflowKES)}\n` +
+        `• **Lowest point:** ${formatKES(low.cashKES)} (week of ${low.start})\n\n` +
+        `This only counts costs you have scheduled, so salaries and tax are not included unless entered.`,
+      keyFacts,
+      recommendation: forecast.goesNegative
+        ? "Chase the overdue invoices first, and consider moving a scheduled payment past the low point."
+        : "Keep invoices flowing: send draft invoices and chase overdue ones from Finance → Invoices.",
+      citations,
+      confidenceScore: 0.9,
+    };
+  }
+
+  // 0b. Query: recurring revenue
+  if (q.includes("mrr") || q.includes("recurring") || q.includes("subscriber")) {
+    if (!isAuthorizedForFinancials) {
+      return {
+        summary: "Financial records are restricted to Management & Owner roles.",
+        directAnswer: "Pre-retrieval authorization blocked access to financial records for your role.",
+        keyFacts: ["Role authorization: ACCESS_DENIED"],
+        citations: [],
+        confidenceScore: 1.0,
+      };
+    }
+    const snap = computeSnapshot(data, todayIso);
+    keyFacts.push(`Live MRR: ${formatKES(snap.mrrKES)}`, `Trial MRR (starts when onboarding completes): ${formatKES(snap.trialMrrKES)}`);
+    citations.push({ sourceType: "CLIENT", title: "Client Revenue & MRR", linkUrl: "/finance/revenue", snippet: `Live ${formatKES(snap.mrrKES)} per month; ${formatKES(snap.trialMrrKES)} more once trials go live.` });
+    return {
+      summary: `Monthly recurring revenue is ${formatKES(snap.mrrKES)} from active subscriptions.`,
+      directAnswer:
+        `• **Live MRR:** ${formatKES(snap.mrrKES)}\n` +
+        `• **Waiting on go-live:** ${formatKES(snap.trialMrrKES)}/mo (trial subscriptions)\n` +
+        `• **Potential from open deals:** ${formatKES(snap.pipeline.potentialMrrKES)}/mo`,
+      keyFacts,
+      recommendation: snap.trialMrrKES > 0 ? "Complete the onboarding projects to switch the trial subscriptions to live billing." : undefined,
+      citations,
+      confidenceScore: 0.95,
+    };
+  }
 
   // 1. Query: Overdue Invoices / Cashflow / Money
   if (
@@ -53,25 +136,42 @@ export function queryInternalKnowledge(
       };
     }
 
-    const overdueInvoices = INVOICES_SEED.filter((inv) => inv.status === "OVERDUE");
+    const overdueInvoices = data.invoices.filter(
+      (inv) => (inv.status === "SENT" || inv.status === "OVERDUE") && inv.balanceKES > 0 && collectionState(inv, todayIso).stage === "overdue"
+    );
     const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + inv.balanceKES, 0);
+    const snap = computeSnapshot(data, todayIso);
 
     overdueInvoices.forEach((inv) => {
       citations.push({
         sourceType: "INVOICE",
         title: `${inv.invoiceNumber} - ${inv.clientName}`,
-        linkUrl: `/finance`,
-        snippet: `Overdue balance of KES ${inv.balanceKES.toLocaleString()} for ${inv.productName} due on ${inv.dueDate}.`,
+        linkUrl: `/finance/invoices`,
+        snippet: `Overdue balance of ${formatKES(inv.balanceKES)}, due on ${inv.dueDate}.`,
       });
-      keyFacts.push(`${inv.clientName} (${inv.productName}): KES ${inv.balanceKES.toLocaleString()} overdue since ${inv.dueDate}`);
+      keyFacts.push(`${inv.clientName}: ${formatKES(inv.balanceKES)} overdue since ${inv.dueDate}`);
     });
+    if (snap.unsentDrafts.count > 0) keyFacts.push(`${snap.unsentDrafts.count} draft invoice(s) worth ${formatKES(snap.unsentDrafts.totalKES)} not sent yet`);
+
+    if (!overdueInvoices.length) {
+      return {
+        summary: "No invoices are overdue right now.",
+        directAnswer:
+          `Nothing is past due. ${formatKES(snap.receivables.openKES)} is outstanding across ${snap.receivables.openCount} sent invoice(s).` +
+          (snap.unsentDrafts.count ? `\n\nYou also have ${snap.unsentDrafts.count} draft invoice(s) (${formatKES(snap.unsentDrafts.totalKES)}) that haven't been sent yet.` : ""),
+        keyFacts,
+        recommendation: snap.unsentDrafts.count ? "Send the draft invoices from Finance → Invoices so the clock starts on payment." : undefined,
+        citations,
+        confidenceScore: 0.95,
+      };
+    }
 
     return {
-      summary: `There are currently ${overdueInvoices.length} overdue invoices totaling KES ${totalOverdue.toLocaleString()} requiring immediate action.`,
+      summary: `There are currently ${overdueInvoices.length} overdue invoices totaling ${formatKES(totalOverdue)} requiring immediate action.`,
       directAnswer: `As of today, ${overdueInvoices.length} client accounts have outstanding balances past their due dates:\n\n` +
-        overdueInvoices.map(inv => `• **${inv.clientName}**: KES ${inv.balanceKES.toLocaleString()} (${inv.productName}) - Due on ${inv.dueDate}`).join("\n"),
+        overdueInvoices.map((inv) => `• **${inv.clientName}**: ${formatKES(inv.balanceKES)} - Due on ${inv.dueDate}`).join("\n"),
       keyFacts,
-      recommendation: "Send automated WhatsApp payment reminders with M-Pesa Paybill number 894020 from the Finance Hub.",
+      recommendation: "Send payment reminders from the Needs follow-up list in Finance → Invoices.",
       citations,
       confidenceScore: 0.98,
     };
@@ -85,7 +185,7 @@ export function queryInternalKnowledge(
     q.includes("obstacle") ||
     q.includes("delay")
   ) {
-    const blockedProjects = INITIAL_PROJECTS.filter((p) => p.hasBlocker);
+    const blockedProjects = data.projects.filter((p) => p.status !== "COMPLETED" && (p.hasBlocker || p.status === "BLOCKED"));
 
     blockedProjects.forEach((proj) => {
       citations.push({
@@ -205,7 +305,7 @@ export function queryInternalKnowledge(
     q.includes("proposal") ||
     q.includes("closing")
   ) {
-    const activeDeals = INITIAL_ACTIVE_DEALS;
+    const activeDeals = data.deals.filter((d) => d.stage !== "WON" && d.stage !== "LOST");
     const proposalDeals = activeDeals.filter(d => d.stage === "PROPOSAL_SENT" || d.stage === "DEMO_BOOKED");
 
     activeDeals.slice(0, 3).forEach((deal) => {

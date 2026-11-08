@@ -7,6 +7,7 @@ import {
   queryInternalKnowledge,
   AssistantAnswer,
 } from "@/lib/grounded-rag";
+import { loadWorkspaceData } from "@/lib/workspace-data";
 import {
   Sparkles,
   Search,
@@ -20,7 +21,7 @@ export default function AssistantPage() {
   const [inputQuery, setInputQuery] = useState("");
   const [currentQuery, setCurrentQuery] = useState("Which invoices are overdue and what projects have blockers?");
   const [result, setResult] = useState<AssistantAnswer>(() =>
-    queryInternalKnowledge("Which invoices are overdue and what projects have blockers?")
+    queryInternalKnowledge("Which invoices are overdue and what projects have blockers?", "ADMIN", loadWorkspaceData())
   );
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,7 +39,7 @@ export default function AssistantPage() {
     setIsLoading(true);
     setCurrentQuery(queryToRun);
     setTimeout(() => {
-      const answer = queryInternalKnowledge(queryToRun);
+      const answer = queryInternalKnowledge(queryToRun, "ADMIN", loadWorkspaceData());
       setResult(answer);
       setIsLoading(false);
     }, 300);

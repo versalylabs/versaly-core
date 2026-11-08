@@ -4,6 +4,7 @@ import { useState } from "react";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import { Shield, Building, Wallet } from "lucide-react";
 import { usePaymentSettings } from "@/lib/payment-settings";
+import { WeeklyReviewCard } from "@/components/settings/weekly-review-card";
 import type { PaymentSettings } from "@/lib/invoice-messages";
 
 export default function SettingsPage() {
@@ -100,6 +101,7 @@ export default function SettingsPage() {
 
           {/* Payment details used in invoice messages */}
           <PaymentDetailsCard />
+          <WeeklyReviewCard />
 
           {/* Team Members & Role Assignment */}
           <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4">

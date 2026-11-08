@@ -42,6 +42,7 @@ import {
   LogOut,
   Wallet,
   Receipt,
+  LineChart,
   ArrowDownLeft,
   TrendingDown,
   Landmark,
@@ -122,6 +123,7 @@ const CATEGORIES: NavCategory[] = [
     items: [
       { title: "Finance Dashboard", href: "/finance", icon: Wallet },
       { title: "Invoices", href: "/finance/invoices", icon: Receipt },
+      { title: "Cash Flow Forecast", href: "/finance/forecast", icon: LineChart },
       { title: "Payments & Income", href: "/finance/payments", icon: ArrowDownLeft },
       { title: "Expenses & Payables", href: "/finance/expenses", icon: TrendingDown },
       { title: "Budgets & 90-Day Plan", href: "/finance/budgets", icon: Calculator },

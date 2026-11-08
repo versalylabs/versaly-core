@@ -12,8 +12,8 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
 const PUBLIC_PAGES = new Set(["/login"]);
 const PUBLIC_APIS = new Set(["/api/auth/login", "/api/auth/logout", "/api/health"]);
-// Safaricom Daraja callbacks can't sign in; they are protected by a secret token in the URL
-const PUBLIC_API_PREFIXES = ["/api/payments/c2b/"];
+// Safaricom callbacks and Vercel Cron can't sign in; each route checks its own secret
+const PUBLIC_API_PREFIXES = ["/api/payments/c2b/", "/api/cron/"];
 
 function applySecurityHeaders(response: NextResponse) {
   const isDev = process.env.NODE_ENV !== "production";

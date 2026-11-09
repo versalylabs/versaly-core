@@ -33,6 +33,7 @@ import {
   MarketingProduct,
 } from "@/data/marketing-seed";
 
+import { todayIsoDate } from "@/lib/ids";
 const CAMPAIGNS_STORAGE = "versaly_marketing_campaigns_v2";
 const SPEND_STORAGE = "versaly_marketing_spend_v2";
 const POSTS_STORAGE = "versaly_marketing_posts_v2";
@@ -185,7 +186,7 @@ export default function MarketingDashboardPage() {
     const newEntry: AdSpendEntry = {
       id: `spd-${Date.now()}`,
       campaignName: `${spendChannel} - ${spendProduct} Allocation`,
-      date: new Date().toISOString().split("T")[0],
+      date: todayIsoDate(),
       channel: spendChannel,
       product: spendProduct,
       amount: parsedAmount,
@@ -210,7 +211,7 @@ export default function MarketingDashboardPage() {
     const newPost: SocialPost = {
       id: `post-${Date.now()}`,
       title: postTitle.trim(),
-      date: new Date().toISOString().split("T")[0],
+      date: todayIsoDate(),
       timeSlot: "09:00 AM",
       channels: postChannels.length > 0 ? postChannels : ["LinkedIn"],
       product: postProduct,

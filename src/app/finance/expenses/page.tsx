@@ -68,7 +68,7 @@ export default function ExpensesPage() {
     setFormDesc("");
     setFormAmount(0);
     setFormVendor("");
-    setFormDate(new Date().toISOString().split("T")[0]);
+    setFormDate(todayIsoDate());
     setFormMethod("MPESA");
     setFormStatus("PAID");
     setFormProduct("");
@@ -100,7 +100,7 @@ export default function ExpensesPage() {
         description: formDesc.trim(),
         amountKES: Number(formAmount) || 0,
         vendor: formVendor.trim() || "Vendor",
-        expenseDate: formDate || new Date().toISOString().split("T")[0],
+        expenseDate: formDate || todayIsoDate(),
         paymentMethod: formMethod,
         status: formStatus,
         productSlug: formProduct.trim() || undefined,

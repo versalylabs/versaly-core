@@ -5,7 +5,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { auditUserId, requirePermission } from "@/lib/team-auth";
-import { isoDay } from "@/lib/money";
+import { nairobiDay } from "@/lib/money";
 import { loadWorkspaceDataFromDb } from "@/lib/workspace-data-server";
 import { buildAssistantContext, clean } from "@/lib/assistant-context";
 import {
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     return apiError("Database unavailable", "DB_UNAVAILABLE", 503);
   }
 
-  const todayIso = isoDay(new Date());
+  const todayIso = nairobiDay();
   const context = buildAssistantContext(loaded.data, user.role, todayIso);
   const model = assistantModel();
   const params = buildParams({

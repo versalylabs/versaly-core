@@ -142,7 +142,7 @@ export default function EquityRegisterPage() {
     setShareClass("ORDINARY_A");
     setVestingMonths(48);
     setCliffMonths(12);
-    setVestingStartDate(new Date().toISOString().split("T")[0]);
+    setVestingStartDate(todayIsoDate());
     setVotingRights(true);
     setIsLegallyBinding(false);
     setNotes("");
@@ -158,7 +158,7 @@ export default function EquityRegisterPage() {
     setShareClass(sh.shareClass);
     setVestingMonths(sh.vestingMonths || 48);
     setCliffMonths(sh.cliffMonths || 12);
-    setVestingStartDate(sh.vestingStartDate || new Date().toISOString().split("T")[0]);
+    setVestingStartDate(sh.vestingStartDate || todayIsoDate());
     setVotingRights(sh.votingRights !== false);
     setIsLegallyBinding(sh.isLegallyBinding);
     setNotes(sh.notes || "");

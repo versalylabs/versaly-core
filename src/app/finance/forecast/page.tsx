@@ -6,7 +6,7 @@ import { ArrowDownRight, ArrowUpRight, Info, Landmark, TrendingDown, TrendingUp,
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
 import { buildForecast, type ForecastWeek, type FlowKind } from "@/lib/insights";
 import { formatKES } from "@/lib/invoice-messages";
-import { isoDay } from "@/lib/money";
+import { nairobiDay } from "@/lib/money";
 import { loadWorkspaceData } from "@/lib/workspace-data";
 
 const KIND_LABEL: Record<FlowKind, string> = {
@@ -32,7 +32,7 @@ export default function CashForecastPage() {
   const [data] = useState(() => loadWorkspaceData());
   const [includePipeline, setIncludePipeline] = useState(false);
   const [selected, setSelected] = useState(0);
-  const [today] = useState(() => isoDay(new Date()));
+  const [today] = useState(() => nairobiDay());
 
   const forecast = useMemo(() => buildForecast(data, today, 8), [data, today]);
   const cashOf = (w: ForecastWeek) => (includePipeline ? w.cashWithPipelineKES : w.cashKES);

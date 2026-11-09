@@ -28,6 +28,7 @@ import {
 } from "@/data/marketing-seed";
 import { useProductsCatalog } from "@/lib/products-store";
 
+import { todayIsoDate } from "@/lib/ids";
 const STORAGE_KEY = "versaly_marketing_creatives_v2";
 
 const TYPES: CreativeType[] = [
@@ -172,7 +173,7 @@ export default function MarketingCreativesPage() {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-      createdDate: new Date().toISOString().split("T")[0],
+      createdDate: todayIsoDate(),
       notes: formNotes.trim() || undefined,
     };
 

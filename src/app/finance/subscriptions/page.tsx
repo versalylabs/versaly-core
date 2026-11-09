@@ -131,7 +131,7 @@ export default function OperationalSubscriptionsPage() {
     setCurrency("USD");
     setCostKES(2600);
     setBillingCycle("MONTHLY");
-    setRenewalDate(new Date().toISOString().split("T")[0]);
+    setRenewalDate(todayIsoDate());
     setPaymentMethod("CARD");
     setResponsiblePerson("Chief Technology Officer");
     setStatus("ACTIVE");
@@ -244,7 +244,7 @@ export default function OperationalSubscriptionsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `versaly-subscriptions-${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `versaly-subscriptions-${todayIsoDate()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

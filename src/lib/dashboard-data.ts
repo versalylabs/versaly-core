@@ -10,6 +10,7 @@ import { appStorage } from "@/lib/app-storage";
 import { INITIAL_CALENDAR_EVENTS } from "@/data/calendar-seed";
 import { WEEKLY_RHYTHM_TEMPLATES } from "@/data/tasks-data";
 
+import { todayIsoDate } from "@/lib/ids";
 export const DASHBOARD_QUEUE_KEY = "versaly_dashboard_outreach_queue_v2";
 
 export interface OutreachItem {
@@ -123,8 +124,11 @@ export function computeIntelligenceBriefing() {
   try {
     const raw = appStorage.getItem("versaly_finance_invoices_v2");
     if (raw) {
-      const invoices = JSON.parse(raw) as Array<{ status?: string }>;
-      overdueInvoices = invoices.filter((i) => i.status === "OVERDUE").length;
+      const invoices = JSON.parse(raw) as Array<{ status?: string; balanceKES?: number; dueDate?: string }>;
+      const today = todayIsoDate();
+      overdueInvoices = invoices.filter(
+        (i) => (i.status === "SENT" || i.status === "OVERDUE") && (i.balanceKES ?? 0) > 0 && Boolean(i.dueDate) && String(i.dueDate) < today
+      ).length;
     }
   } catch { /* ignore */ }
 

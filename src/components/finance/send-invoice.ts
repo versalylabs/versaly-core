@@ -1,7 +1,7 @@
 "use client";
 
 import { appStorage } from "@/lib/app-storage";
-import { collectionState, isoDay } from "@/lib/money";
+import { collectionState, nairobiDay } from "@/lib/money";
 import {
   buildInvoiceMessage,
   mailtoUrl,
@@ -26,7 +26,7 @@ function contactNameFor(inv: FinanceInvoice): string | undefined {
 }
 
 /** Which wording fits this invoice right now. */
-export function messageKindFor(inv: FinanceInvoice, todayIso = isoDay(new Date())): MessageKind {
+export function messageKindFor(inv: FinanceInvoice, todayIso = nairobiDay()): MessageKind {
   if (inv.status === "DRAFT") return "send";
   return collectionState(inv, todayIso).stage === "overdue" ? "overdue" : "reminder";
 }
@@ -49,7 +49,7 @@ export async function sendInvoice(
   inv: FinanceInvoice,
   channel: SendChannel,
   settings: PaymentSettings,
-  todayIso = isoDay(new Date())
+  todayIso = nairobiDay()
 ): Promise<FinanceInvoice> {
   const kind = messageKindFor(inv, todayIso);
   const { subject, body } = buildInvoiceMessage(inv, settings, kind, todayIso, contactNameFor(inv));

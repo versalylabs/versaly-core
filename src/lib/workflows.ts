@@ -13,7 +13,7 @@
  */
 
 import { appStorage } from "@/lib/app-storage";
-import { addMonthsIso, calcInvoiceTotals, cycleMonths, isoDay, nextInvoiceNumber } from "@/lib/money";
+import { addMonthsIso, calcInvoiceTotals, cycleMonths, isoDay, nextInvoiceNumber, nairobiDay } from "@/lib/money";
 import type { ActiveDealItem } from "@/data/leads-seed";
 import type {
   ClientItem,
@@ -142,7 +142,7 @@ export function convertWonDeal(
   options: { billing?: boolean } = {}
 ): DealConversionResult {
   const billing = options.billing !== false;
-  const todayIso = isoDay(today);
+  const todayIso = nairobiDay(today);
   const clientId = `cli-${deal.id}`;
   const projectId = `proj-${deal.id}`;
   const invoiceId = `inv-setup-${deal.id}`;
@@ -414,7 +414,7 @@ function provisionPendingBilling(): number {
 }
 
 export function runWorkflows(today = new Date()): WorkflowRunResult {
-  const todayIso = isoDay(today);
+  const todayIso = nairobiDay(today);
   const billingProvisioned = provisionPendingBilling();
   const subscriptionsActivated = activateCompletedOnboardings(todayIso);
   const invoicesGenerated = generateRecurringInvoices(todayIso);

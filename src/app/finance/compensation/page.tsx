@@ -122,7 +122,7 @@ export default function CompensationPage() {
     setRoleTitle("");
     setCompType("SALARY");
     setAmountKES(50000);
-    setPaymentDate(new Date().toISOString().split("T")[0]);
+    setPaymentDate(todayIsoDate());
     setPaymentMethod("MPESA_B2C");
     setStatus("PENDING_APPROVAL");
     setPeriodCovered("October 2026");
@@ -199,7 +199,7 @@ export default function CompensationPage() {
             ...r,
             status: "APPROVED" as const,
             approvedBy: "Founder & CEO",
-            approvalDate: new Date().toISOString().split("T")[0],
+            approvalDate: todayIsoDate(),
           }
         : r
     );
@@ -218,7 +218,7 @@ export default function CompensationPage() {
             ...r,
             status: "PAID" as const,
             referenceNumber: ref,
-            paymentDate: new Date().toISOString().split("T")[0],
+            paymentDate: todayIsoDate(),
           }
         : r
     );
@@ -265,7 +265,7 @@ export default function CompensationPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `versaly-compensation-${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `versaly-compensation-${todayIsoDate()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

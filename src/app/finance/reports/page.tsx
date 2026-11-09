@@ -233,7 +233,7 @@ export default function FinancialReportsPage() {
   const handleExportActiveCSV = () => {
     let headers: string[] = [];
     let rows: (string | number)[][] = [];
-    const filename = `versaly-${activeReportTab.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`;
+    const filename = `versaly-${activeReportTab.toLowerCase()}-${todayIsoDate()}.csv`;
 
     if (activeReportTab === "PROFIT_LOSS") {
       headers = ["Line Item", "Classification", "Amount (KES)"];

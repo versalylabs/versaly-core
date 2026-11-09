@@ -13,7 +13,7 @@ describe("ids and dates", () => {
     expect(isoDaysFromNow(-7) < todayIsoDate()).toBe(true);
   });
   it("knows the current year", () => {
-    expect(currentYear()).toBe(new Date().getFullYear());
+    expect(currentYear()).toBe(Number(todayIsoDate().slice(0, 4)));
   });
   it("makes short upper-case codes of the requested length", () => {
     for (let i = 0; i < 50; i++) expect(randomCode(8)).toMatch(/^[A-Z0-9]{8}$/);

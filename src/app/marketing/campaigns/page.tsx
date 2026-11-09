@@ -24,6 +24,7 @@ import {
 } from "@/data/marketing-seed";
 import { useProductsCatalog } from "@/lib/products-store";
 
+import { todayIsoDate } from "@/lib/ids";
 const STORAGE_KEY = "versaly_marketing_campaigns_v2";
 
 const CHANNELS: CampaignChannel[] = [
@@ -129,7 +130,7 @@ export default function MarketingCampaignsPage() {
     setFormProduct("Vehisoft");
     setFormChannel("Meta (FB & IG)");
     setFormStatus("Active");
-    setFormStartDate(new Date().toISOString().split("T")[0]);
+    setFormStartDate(todayIsoDate());
     setFormEndDate("");
     setFormBudget("50000");
     setFormSpend("0");
@@ -178,7 +179,7 @@ export default function MarketingCampaignsPage() {
       product: formProduct,
       channel: formChannel,
       status: formStatus,
-      startDate: formStartDate || new Date().toISOString().split("T")[0],
+      startDate: formStartDate || todayIsoDate(),
       endDate: formEndDate,
       allocatedBudget: parseFloat(formBudget) || 0,
       totalSpend: parseFloat(formSpend) || 0,

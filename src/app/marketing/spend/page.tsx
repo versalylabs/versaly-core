@@ -26,6 +26,7 @@ import {
 } from "@/data/marketing-seed";
 import { useProductsCatalog } from "@/lib/products-store";
 
+import { todayIsoDate } from "@/lib/ids";
 const STORAGE_KEY = "versaly_marketing_spend_v2";
 
 const CHANNELS: SpendChannel[] = [
@@ -130,7 +131,7 @@ export default function MarketingSpendPage() {
     setModalMode("ADD");
     setEditingId(null);
     setFormCampaignName("");
-    setFormDate(new Date().toISOString().split("T")[0]);
+    setFormDate(todayIsoDate());
     setFormChannel("Meta Ads");
     setFormProduct("Vehisoft");
     setFormAmount("");
@@ -168,7 +169,7 @@ export default function MarketingSpendPage() {
     const payload: AdSpendEntry = {
       id: modalMode === "EDIT" && editingId ? editingId : `spd-${Date.now()}`,
       campaignName: formCampaignName.trim() || `${formChannel} Allocation`,
-      date: formDate || new Date().toISOString().split("T")[0],
+      date: formDate || todayIsoDate(),
       channel: formChannel,
       product: formProduct,
       amount: parsedAmount,

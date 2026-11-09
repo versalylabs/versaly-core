@@ -192,7 +192,7 @@ export default function CapitalFinancingPage() {
   const resetContributionForm = () => {
     setContributorName("");
     setContributionAmount(50000);
-    setContributionDate(new Date().toISOString().split("T")[0]);
+    setContributionDate(todayIsoDate());
     setContributionType("EQUITY_CAPITAL");
     setContributionStatus("RECEIVED");
     setSupportingDoc("");

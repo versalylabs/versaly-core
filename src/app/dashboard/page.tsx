@@ -37,7 +37,6 @@ import {
 } from "lucide-react";
 import {
   INITIAL_SALES_ACTIVITY_METRICS,
-  INITIAL_PIPELINE_METRICS,
   INITIAL_CLIENT_DELIVERY_METRICS,
   INITIAL_PRODUCT_PERFORMANCE,
 } from "@/data/dashboard-metrics";
@@ -52,6 +51,17 @@ import {
 import { useProductsCatalog, getProductColor } from "@/lib/products-store";
 
 
+
+import { longDate } from "@/lib/money";
+import { computeFunnel, computePipelineMetrics, type InsightDeal } from "@/lib/insights";
+import { KEYS } from "@/lib/storage-keys";
+import { todayIsoDate } from "@/lib/ids";
+const STAGE_STYLE: Record<string, { stage: string; color: string }> = {
+  CONTACTED: { stage: "Contacted (First Pitch)", color: "bg-slate-500" },
+  DEMO_BOOKED: { stage: "Demo Booked", color: "bg-sky-500" },
+  PROPOSAL_SENT: { stage: "Proposal Sent", color: "bg-violet-500" },
+  NEGOTIATION: { stage: "Negotiation / Close", color: "bg-emerald-500" },
+};
 
 export default function DashboardPage() {
   const { products: catalogProducts } = useProductsCatalog();
@@ -260,15 +270,32 @@ export default function DashboardPage() {
     };
   }, [financeSummary, catalogProducts]);
 
+  // The pipeline and funnel come from your real deals and leads (the same ones the briefing counts)
+  const [crm] = useState(() => {
+    if (typeof window === "undefined") return { deals: [] as InsightDeal[], leads: [] as { status?: string }[] };
+    const readList = <T,>(key: string): T[] => {
+      try {
+        const raw = appStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? (parsed as T[]) : [];
+      } catch {
+        return [];
+      }
+    };
+    return { deals: readList<InsightDeal>(KEYS.deals), leads: readList<{ status?: string }>("versaly_raw_leads_v2") };
+  });
+  const pipeline = useMemo(() => computePipelineMetrics(crm.deals), [crm]);
+  const funnel = useMemo(() => computeFunnel(crm.leads, crm.deals), [crm]);
+
   const sales = useMemo(() => {
     return {
       ...INITIAL_SALES_ACTIVITY_METRICS,
+      ...funnel,
       outreachToday: INITIAL_SALES_ACTIVITY_METRICS.outreachToday + loggedCount,
       outreachThisWeek: INITIAL_SALES_ACTIVITY_METRICS.outreachThisWeek + loggedCount,
     };
-  }, [loggedCount]);
+  }, [loggedCount, funnel]);
 
-  const pipeline = INITIAL_PIPELINE_METRICS;
   const clientDelivery = INITIAL_CLIENT_DELIVERY_METRICS;
 
   const products = useMemo(() => {
@@ -447,7 +474,7 @@ export default function DashboardPage() {
                 Command Operations
               </span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-slate-400">Launch Push • Day 19 of 28</span>
+              <span className="text-xs text-slate-400">{longDate(todayIsoDate())}</span>
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight mt-1">
               Versaly Executive Dashboard
@@ -491,7 +518,7 @@ export default function DashboardPage() {
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                   Autonomous
                 </span>
-                {intelligenceBriefing.overdueInvoices > 0 && (
+                {canSeeFinance && intelligenceBriefing.overdueInvoices > 0 && (
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse">
                     ⚠ Action Required
                   </span>
@@ -507,7 +534,9 @@ export default function DashboardPage() {
                 in delivery, and{" "}
                 <span className="font-bold text-white not-italic">{intelligenceBriefing.openDeals} open deal{intelligenceBriefing.openDeals !== 1 ? "s" : ""}</span>{" "}
                 in the pipeline.
-                {intelligenceBriefing.overdueInvoices > 0
+                {!canSeeFinance
+                  ? null
+                  : intelligenceBriefing.overdueInvoices > 0
                   ? <> <span className="font-bold text-rose-400 not-italic">{intelligenceBriefing.overdueInvoices} invoice{intelligenceBriefing.overdueInvoices !== 1 ? "s are" : " is"} overdue</span> — immediate attention required.</>
                   : " All invoices are current."
                 }
@@ -1110,7 +1139,7 @@ export default function DashboardPage() {
                   {sales.outreachThisWeek}
                   <span className="text-xs text-slate-500 font-normal"> / {sales.outreachThisWeekTarget}</span>
                 </div>
-                <div className="text-[10px] text-emerald-400 mt-1 font-medium">68.4% Pace</div>
+                <div className="text-[10px] text-emerald-400 mt-1 font-medium">{Math.round((sales.outreachThisWeek / Math.max(1, sales.outreachThisWeekTarget)) * 100)}% of target</div>
               </div>
 
               <div className="liquid-glass p-3.5 rounded-xl">
@@ -1136,8 +1165,8 @@ export default function DashboardPage() {
 
               <div className="liquid-glass p-3.5 rounded-xl">
                 <div className="text-[11px] font-medium text-slate-400">Demos Done</div>
-                <div className="text-lg font-bold text-emerald-400 mt-1">{sales.demosCompleted}</div>
-                <div className="text-[10px] text-emerald-400 mt-1 font-medium">{sales.demoCompletionRatePct}% show rate</div>
+                <div className="text-lg font-bold text-slate-400 mt-1">—</div>
+                <div className="text-[10px] text-slate-500 mt-1">Not tracked yet</div>
               </div>
 
               <div className="liquid-glass p-3.5 rounded-xl">
@@ -1284,7 +1313,7 @@ export default function DashboardPage() {
                     {/* Demos Completed */}
                     <div className="p-2 rounded-lg bg-violet-950/30 border border-violet-500/30 flex items-center justify-between">
                       <span className="text-violet-200">3. Demos Completed</span>
-                      <span className="font-mono font-bold text-violet-300">{sales.demosCompleted}</span>
+                      <span className="font-mono font-bold text-slate-500">—</span>
                     </div>
 
                     {/* Proposals Sent */}
@@ -1359,7 +1388,7 @@ export default function DashboardPage() {
                 <div className="text-xl font-bold text-white mt-1">
                   KES {(pipeline.totalPipelineValueKES / 1000).toFixed(0)}k
                 </div>
-                <div className="text-[10px] text-slate-500 mt-1">32 active deals</div>
+                <div className="text-[10px] text-slate-500 mt-1">{pipeline.openDealCount} open deal{pipeline.openDealCount === 1 ? "" : "s"} (setup + first month)</div>
               </div>
 
               <div className="liquid-glass p-4 rounded-xl border border-violet-500/30">
@@ -1371,9 +1400,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="liquid-glass p-4 rounded-xl">
-                <div className="text-[11px] font-medium text-slate-400">Deals Won This Month</div>
-                <div className="text-xl font-bold text-emerald-400 mt-1">{pipeline.dealsWonThisMonth}</div>
-                <div className="text-[10px] text-emerald-400/90 mt-1">KES {(pipeline.dealsWonValueKES / 1000).toFixed(0)}k volume</div>
+                <div className="text-[11px] font-medium text-slate-400">Deals Won</div>
+                <div className="text-xl font-bold text-emerald-400 mt-1">{pipeline.wonCount}</div>
+                <div className="text-[10px] text-emerald-400/90 mt-1">KES {(pipeline.wonValueKES / 1000).toFixed(0)}k volume</div>
               </div>
 
               <div className="liquid-glass p-4 rounded-xl">
@@ -1391,9 +1420,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="liquid-glass p-4 rounded-xl">
-                <div className="text-[11px] font-medium text-slate-400">Average Time to Close</div>
-                <div className="text-xl font-bold text-amber-300 mt-1">{pipeline.averageTimeToCloseDays} days</div>
-                <div className="text-[10px] text-slate-500 mt-1">Fast B2B velocity</div>
+                <div className="text-[11px] font-medium text-slate-400">Open Deals</div>
+                <div className="text-xl font-bold text-amber-300 mt-1">{pipeline.openDealCount}</div>
+                <div className="text-[10px] text-slate-500 mt-1">{pipeline.lostCount} lost so far</div>
               </div>
             </div>
 
@@ -1408,11 +1437,16 @@ export default function DashboardPage() {
                   <span className="text-[10px] text-slate-400">Shows where opportunities are moving</span>
                 </div>
                 <p className="text-[11px] text-slate-400 mb-4">
-                  Healthy progression: 75% of demos progress to proposals; no bottlenecks in negotiation.
+                  {pipeline.openDealCount === 0
+                    ? "No open deals yet. Add one on the Leads page and it will show up here."
+                    : `${pipeline.openDealCount} open deal${pipeline.openDealCount === 1 ? "" : "s"} worth KES ${Math.round(pipeline.totalPipelineValueKES / 1000)}k, about KES ${Math.round(pipeline.weightedPipelineValueKES / 1000)}k once weighted by how likely each is.`}
                 </p>
 
                 <div className="space-y-3">
-                  {pipeline.dealsByStage.map((s) => (
+                  {pipeline.dealsByStage.map((st) => {
+                    const s = { ...st, ...STAGE_STYLE[st.stage] };
+                    const widest = Math.max(1, ...pipeline.dealsByStage.map((x) => x.nominalValueKES));
+                    return (
                     <div key={s.stage} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                       <div className="flex items-center justify-between text-xs mb-1">
                         <div className="flex items-center gap-2">
@@ -1433,11 +1467,12 @@ export default function DashboardPage() {
                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full ${s.color} rounded-full`}
-                          style={{ width: `${(s.nominalValueKES / 200000) * 100}%` }}
+                          style={{ width: `${(s.nominalValueKES / widest) * 100}%` }}
                         />
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

@@ -1,11 +1,11 @@
 import { loadWorkspaceDataFromDb } from "@/lib/workspace-data-server";
 import { buildWeeklyDigest, type WeeklyDigest } from "@/lib/weekly-digest";
 import { emailConfigured, sendEmail } from "@/lib/email";
-import { isoDay } from "@/lib/money";
+import { nairobiDay } from "@/lib/money";
 
 export async function previewWeeklyReview(): Promise<WeeklyDigest> {
   const { data, businessName } = await loadWorkspaceDataFromDb();
-  return buildWeeklyDigest(data, isoDay(new Date()), { businessName });
+  return buildWeeklyDigest(data, nairobiDay(), { businessName });
 }
 
 export type WeeklyReviewResult =

@@ -419,3 +419,93 @@ export function buildForecast(data: WorkspaceData, todayIso: string, weeks = 8):
     goesNegative: out.some((w) => w.cashKES < 0),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Sales pipeline and funnel (the dashboard's numbers, from your real deals)
+// ---------------------------------------------------------------------------
+
+export type OpenStage = "CONTACTED" | "DEMO_BOOKED" | "PROPOSAL_SENT" | "NEGOTIATION";
+export const OPEN_STAGES: OpenStage[] = ["CONTACTED", "DEMO_BOOKED", "PROPOSAL_SENT", "NEGOTIATION"];
+
+export interface StageSummary {
+  stage: OpenStage;
+  count: number;
+  /** Average win probability of the deals in this stage (0 if none). */
+  probabilityPct: number;
+  nominalValueKES: number;
+  weightedValueKES: number;
+}
+
+export interface PipelineMetrics {
+  openDealCount: number;
+  /** What the open deals would bring in: setup fee plus the first month. */
+  totalPipelineValueKES: number;
+  weightedPipelineValueKES: number;
+  wonCount: number;
+  wonValueKES: number;
+  lostCount: number;
+  /** Won as a share of closed deals (won + lost). */
+  winRatePct: number;
+  averageDealSizeKES: number;
+  dealsByStage: StageSummary[];
+}
+
+const dealValue = (d: InsightDeal) => (d.setupFeeKES || 0) + (d.monthlyFeeKES || 0);
+
+export function computePipelineMetrics(deals: InsightDeal[]): PipelineMetrics {
+  const open = deals.filter((d) => d.stage !== "WON" && d.stage !== "LOST");
+  const won = deals.filter((d) => d.stage === "WON");
+  const lost = deals.filter((d) => d.stage === "LOST");
+  const closed = won.length + lost.length;
+
+  const dealsByStage = OPEN_STAGES.map((stage) => {
+    const inStage = open.filter((d) => d.stage === stage);
+    return {
+      stage,
+      count: inStage.length,
+      probabilityPct: inStage.length ? Math.round(inStage.reduce((s, d) => s + (d.winProbability || 0), 0) / inStage.length) : 0,
+      nominalValueKES: inStage.reduce((s, d) => s + dealValue(d), 0),
+      weightedValueKES: Math.round(inStage.reduce((s, d) => s + (dealValue(d) * (d.winProbability || 0)) / 100, 0)),
+    };
+  });
+
+  return {
+    openDealCount: open.length,
+    totalPipelineValueKES: open.reduce((s, d) => s + dealValue(d), 0),
+    weightedPipelineValueKES: dealsByStage.reduce((s, x) => s + x.weightedValueKES, 0),
+    wonCount: won.length,
+    wonValueKES: won.reduce((s, d) => s + dealValue(d), 0),
+    lostCount: lost.length,
+    winRatePct: closed ? Math.round((won.length / closed) * 100) : 0,
+    averageDealSizeKES: deals.length ? Math.round(deals.reduce((s, d) => s + dealValue(d), 0) / deals.length) : 0,
+    dealsByStage,
+  };
+}
+
+export interface FunnelCounts {
+  uncontactedPool: number;
+  /** Everything that has become a deal. */
+  leadsContacted: number;
+  /** Deals that reached a demo or went further. */
+  demosBooked: number;
+  /** Deals that reached a proposal or went further. */
+  proposalsSent: number;
+  dealsWon: number;
+  dealsLost: number;
+  /** Won deals as a share of deals created. */
+  contactedToWonConversionPct: number;
+}
+
+export function computeFunnel(leads: { status?: string }[], deals: InsightDeal[]): FunnelCounts {
+  const reached = (...stages: InsightDeal["stage"][]) => deals.filter((d) => stages.includes(d.stage)).length;
+  const won = reached("WON");
+  return {
+    uncontactedPool: leads.filter((l) => l.status === "UNCONTACTED").length,
+    leadsContacted: deals.length,
+    demosBooked: reached("DEMO_BOOKED", "PROPOSAL_SENT", "NEGOTIATION", "WON"),
+    proposalsSent: reached("PROPOSAL_SENT", "NEGOTIATION", "WON"),
+    dealsWon: won,
+    dealsLost: reached("LOST"),
+    contactedToWonConversionPct: deals.length ? Math.round((won / deals.length) * 100) : 0,
+  };
+}

@@ -2,7 +2,7 @@
 
 import { BellRing, Mail, MessageCircle } from "lucide-react";
 import type { FinanceInvoice } from "@/lib/finance-store";
-import { collectionState, isoDay, type CollectionStage } from "@/lib/money";
+import { collectionState, type CollectionStage, nairobiDay } from "@/lib/money";
 import { formatKES } from "@/lib/invoice-messages";
 import { usePaymentSettings } from "@/lib/payment-settings";
 import { channelProblem, sendInvoice, type SendChannel } from "./send-invoice";
@@ -29,7 +29,7 @@ export function CollectionsPanel({
   onSelect: (invoice: FinanceInvoice) => void;
 }) {
   const [settings] = usePaymentSettings();
-  const today = isoDay(new Date());
+  const today = nairobiDay();
 
   const due = invoices
     .map((inv) => ({ inv, state: collectionState(inv, today) }))

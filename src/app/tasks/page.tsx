@@ -121,7 +121,7 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<DailyTask | null>(null);
   const [deleteConfirmTask, setDeleteConfirmTask] = useState<DailyTask | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [todayLabel, setTodayLabel] = useState<string>("Oct 19, 2026");
+  const [todayLabel, setTodayLabel] = useState<string>("");
   const [todayDayIdx, setTodayDayIdx] = useState<number>(1);
 
   // Modal: Add / Edit Roadmap Day Card

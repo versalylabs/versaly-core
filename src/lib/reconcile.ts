@@ -3,6 +3,7 @@
 import { applyPayment, matchInvoiceByReference, type IncomingPayment } from "@/lib/money";
 import { loadInvoicesFromStorage, saveInvoicesToStorage, type FinanceInvoice } from "@/lib/finance-store";
 
+import { todayIsoDate } from "@/lib/ids";
 /** A payment Safaricom reported that hasn't been applied to an invoice yet. */
 export interface IncomingMpesa {
   transId: string;
@@ -61,7 +62,7 @@ export function toInvoicePayment(p: IncomingMpesa): IncomingPayment {
 export async function applyIncomingToInvoice(
   payment: IncomingMpesa,
   invoice: FinanceInvoice,
-  todayIso = new Date().toISOString().split("T")[0]
+  todayIso = todayIsoDate()
 ): Promise<FinanceInvoice | null> {
   const { invoice: updated, applied } = applyPayment(invoice, toInvoicePayment(payment), todayIso);
   // "Not applied" because this reference is already on the invoice still means the payment is accounted for

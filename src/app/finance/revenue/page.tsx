@@ -32,6 +32,7 @@ import {
 } from "@/lib/finance-store";
 import { useProductsCatalog } from "@/lib/products-store";
 
+import { todayIsoDate, isoDaysFromNow } from "@/lib/ids";
 export default function RevenueSubscriptionsPage() {
   const { products: catalogProducts } = useProductsCatalog();
   const [subscriptions, setSubscriptions] = useState<ClientSubscription[]>(() => loadSubscriptionsFromStorage());
@@ -136,8 +137,8 @@ export default function RevenueSubscriptionsPage() {
       monthlyFeeKES: 20000,
       billingCycle: "MONTHLY",
       status: "ACTIVE",
-      startDate: new Date().toISOString().split("T")[0],
-      nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      startDate: todayIsoDate(),
+      nextBillingDate: isoDaysFromNow(30),
       contactPerson: "",
       phone: "",
       notes: "",

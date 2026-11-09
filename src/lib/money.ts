@@ -22,7 +22,22 @@ export function calcInvoiceTotals(subtotalKES: number): InvoiceTotals {
 // Dates
 // ---------------------------------------------------------------------------
 
+/** A date as "2026-11-09" using UTC. Fine for date arithmetic; to ask "what day is it for us right now?" use nairobiDay(). */
 export const isoDay = (d: Date) => d.toISOString().split("T")[0];
+
+/** Kenya has no daylight saving: East Africa Time is always UTC+3. */
+export const NAIROBI_UTC_OFFSET_HOURS = 3;
+
+/**
+ * The calendar day in Nairobi, as "2026-11-09". Use this for "today" (due dates,
+ * overdue, reports) so the day rolls over at midnight in Kenya, not at 03:00,
+ * on any server or device whatever its timezone.
+ */
+export const nairobiDay = (d: Date = new Date()): string => isoDay(new Date(d.getTime() + NAIROBI_UTC_OFFSET_HOURS * 3_600_000));
+
+/** "Monday, 9 November 2026" for an ISO date. */
+export const longDate = (iso: string): string =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 
 export function addDaysIso(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T00:00:00Z`);

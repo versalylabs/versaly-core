@@ -16,68 +16,10 @@ import {
 } from "lucide-react";
 import { INITIAL_CALENDAR_EVENTS, CalendarEvent } from "@/data/calendar-seed";
 
+import { longDate } from "@/lib/money";
+import { buildMonthGrid, monthTitle, shiftMonth, weekdayIndex, WEEKDAY_NAMES } from "@/lib/calendar-grid";
+import { todayIsoDate } from "@/lib/ids";
 const STORAGE_KEY = "versaly_business_calendar_v2";
-
-interface CalendarDay {
-  dayNumber: number;
-  dateStr: string;
-  isCurrentMonth: boolean;
-  label?: string;
-}
-
-// Generate the 35 calendar cells for October 2026 (starts on Thursday Oct 1, precedes Sun Sep 27)
-const OCTOBER_2026_DAYS: CalendarDay[] = [
-  // Week 1 (Sep 27 - Oct 3)
-  { dayNumber: 27, dateStr: "2026-09-27", isCurrentMonth: false },
-  { dayNumber: 28, dateStr: "2026-09-28", isCurrentMonth: false },
-  { dayNumber: 29, dateStr: "2026-09-29", isCurrentMonth: false },
-  { dayNumber: 30, dateStr: "2026-09-30", isCurrentMonth: false },
-  { dayNumber: 1, dateStr: "2026-10-01", isCurrentMonth: true, label: "Oct 1" },
-  { dayNumber: 2, dateStr: "2026-10-02", isCurrentMonth: true },
-  { dayNumber: 3, dateStr: "2026-10-03", isCurrentMonth: true },
-  // Week 2 (Oct 4 - Oct 10)
-  { dayNumber: 4, dateStr: "2026-10-04", isCurrentMonth: true },
-  { dayNumber: 5, dateStr: "2026-10-05", isCurrentMonth: true },
-  { dayNumber: 6, dateStr: "2026-10-06", isCurrentMonth: true },
-  { dayNumber: 7, dateStr: "2026-10-07", isCurrentMonth: true },
-  { dayNumber: 8, dateStr: "2026-10-08", isCurrentMonth: true },
-  { dayNumber: 9, dateStr: "2026-10-09", isCurrentMonth: true },
-  { dayNumber: 10, dateStr: "2026-10-10", isCurrentMonth: true },
-  // Week 3 (Oct 11 - Oct 17)
-  { dayNumber: 11, dateStr: "2026-10-11", isCurrentMonth: true },
-  { dayNumber: 12, dateStr: "2026-10-12", isCurrentMonth: true },
-  { dayNumber: 13, dateStr: "2026-10-13", isCurrentMonth: true },
-  { dayNumber: 14, dateStr: "2026-10-14", isCurrentMonth: true },
-  { dayNumber: 15, dateStr: "2026-10-15", isCurrentMonth: true },
-  { dayNumber: 16, dateStr: "2026-10-16", isCurrentMonth: true },
-  { dayNumber: 17, dateStr: "2026-10-17", isCurrentMonth: true },
-  // Week 4 (Oct 18 - Oct 24)
-  { dayNumber: 18, dateStr: "2026-10-18", isCurrentMonth: true },
-  { dayNumber: 19, dateStr: "2026-10-19", isCurrentMonth: true }, // Today
-  { dayNumber: 20, dateStr: "2026-10-20", isCurrentMonth: true },
-  { dayNumber: 21, dateStr: "2026-10-21", isCurrentMonth: true },
-  { dayNumber: 22, dateStr: "2026-10-22", isCurrentMonth: true },
-  { dayNumber: 23, dateStr: "2026-10-23", isCurrentMonth: true },
-  { dayNumber: 24, dateStr: "2026-10-24", isCurrentMonth: true },
-  // Week 5 (Oct 25 - Oct 31)
-  { dayNumber: 25, dateStr: "2026-10-25", isCurrentMonth: true },
-  { dayNumber: 26, dateStr: "2026-10-26", isCurrentMonth: true },
-  { dayNumber: 27, dateStr: "2026-10-27", isCurrentMonth: true },
-  { dayNumber: 28, dateStr: "2026-10-28", isCurrentMonth: true },
-  { dayNumber: 29, dateStr: "2026-10-29", isCurrentMonth: true },
-  { dayNumber: 30, dateStr: "2026-10-30", isCurrentMonth: true },
-  { dayNumber: 31, dateStr: "2026-10-31", isCurrentMonth: true },
-];
-
-const WEEK_DAYS = [
-  { name: "Sunday", isToday: false },
-  { name: "Monday", isToday: true }, // Monday Oct 19 is active
-  { name: "Tuesday", isToday: false },
-  { name: "Wednesday", isToday: false },
-  { name: "Thursday", isToday: false },
-  { name: "Friday", isToday: false },
-  { name: "Saturday", isToday: false },
-];
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
@@ -98,8 +40,9 @@ export default function CalendarPage() {
   });
 
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
-  const [selectedDate, setSelectedDate] = useState<string>("2026-10-19");
+  const [selectedDate, setSelectedDate] = useState<string>(() => todayIsoDate());
   const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false);
+  const [viewMonth, setViewMonth] = useState<string>(() => todayIsoDate().slice(0, 7));
   const [briefingOpen, setBriefingOpen] = useState(true);
   const [showLinkCard, setShowLinkCard] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -107,7 +50,7 @@ export default function CalendarPage() {
   // New Event Form State
   const [formTitle, setFormTitle] = useState("");
   const [formType, setFormType] = useState<CalendarEvent["type"]>("Demo");
-  const [formDate, setFormDate] = useState("2026-10-19");
+  const [formDate, setFormDate] = useState(() => todayIsoDate());
   const [formTime, setFormTime] = useState("10:00 AM");
   const [formDuration, setFormDuration] = useState("30 min");
   const [formEntityName, setFormEntityName] = useState("");
@@ -146,8 +89,13 @@ export default function CalendarPage() {
     const onDate = filteredEvents.filter((ev) => ev.date === selectedDate);
     if (onDate.length > 0) return onDate;
     // Fallback: return upcoming events starting from today
-    return filteredEvents.filter((ev) => ev.date >= "2026-10-19").slice(0, 4);
+    const today = todayIsoDate();
+    return filteredEvents.filter((ev) => ev.date >= today).slice(0, 4);
   }, [filteredEvents, selectedDate]);
+
+  const today = todayIsoDate();
+  const monthDays = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
+  const todaysEvents = useMemo(() => events.filter((ev) => ev.date === todayIsoDate()), [events]);
 
   const handleCreateEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,7 +193,7 @@ export default function CalendarPage() {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-indigo-400" />
                 <span className="font-bold text-white text-sm">
-                  Executive Briefing: Today, Monday October 19
+                  Your day: {longDate(today)}
                 </span>
               </div>
               <button
@@ -257,39 +205,24 @@ export default function CalendarPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-3">
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                <div className="text-[10px] text-slate-500 uppercase font-bold">10:30 AM (Done)</div>
-                <div className="font-semibold text-slate-200 mt-0.5">Apex Auto Garage</div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Walk-in parts leak demo delivered to James Mwangi. Next: send setup quote.
-                </p>
+            {todaysEvents.length === 0 ? (
+              <p className="mt-3 text-slate-400">Nothing is scheduled for today. Use Schedule Event to add a demo, call or follow-up.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-3">
+                {todaysEvents.map((ev) => (
+                  <div
+                    key={ev.id}
+                    className={`p-3 rounded-xl border ${ev.status === "COMPLETED" ? "bg-slate-950/60 border-slate-800" : "bg-indigo-950/30 border-indigo-500/30"}`}
+                  >
+                    <div className={`text-[10px] uppercase font-bold ${ev.status === "COMPLETED" ? "text-slate-500" : "text-indigo-400"}`}>
+                      {ev.time} ({ev.status === "COMPLETED" ? "Done" : "Upcoming"})
+                    </div>
+                    <div className="font-semibold text-slate-200 mt-0.5">{ev.entityName}</div>
+                    <p className="text-[11px] text-slate-400 mt-1">{ev.briefing || ev.title}</p>
+                  </div>
+                ))}
               </div>
-
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                <div className="text-[10px] text-slate-500 uppercase font-bold">12:00 PM (Done)</div>
-                <div className="font-semibold text-slate-200 mt-0.5">Safari Auto Clinic</div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Parts CSV normalized with Dan Omondi. Database import scheduled.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/30">
-                <div className="text-[10px] text-indigo-400 uppercase font-bold">02:00 PM (Upcoming)</div>
-                <div className="font-semibold text-white mt-0.5">Urban Plate Bistro</div>
-                <p className="text-[11px] text-indigo-200 mt-1">
-                  Live demo with Chef Dennis: test split M-Pesa bill on rugged tablet.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30">
-                <div className="text-[10px] text-amber-400 uppercase font-bold">04:30 PM (Hardware)</div>
-                <div className="font-semibold text-amber-200 mt-0.5">Express Wash Laundry</div>
-                <p className="text-[11px] text-slate-300 mt-1">
-                  Deliver Xprinter XP-420B thermal printer &amp; test customer WhatsApp pickup alerts.
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -303,19 +236,19 @@ export default function CalendarPage() {
                 {/* Month title & Chevrons */}
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl sm:text-2xl font-serif text-white tracking-tight">
-                    October 2026
+                    {monthTitle(viewMonth)}
                   </h2>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
-                      onClick={() => setSelectedDate("2026-10-12")}
+                      onClick={() => setViewMonth((m) => shiftMonth(m, -1))}
                       className="h-7 w-7 rounded-full bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSelectedDate("2026-10-26")}
+                      onClick={() => setViewMonth((m) => shiftMonth(m, 1))}
                       className="h-7 w-7 rounded-full bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -346,7 +279,10 @@ export default function CalendarPage() {
                   </div>
 
                   <button
-                    onClick={() => setSelectedDate("2026-10-19")}
+                    onClick={() => {
+                      setSelectedDate(today);
+                      setViewMonth(today.slice(0, 7));
+                    }}
                     className="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold transition"
                   >
                     Today
@@ -356,27 +292,27 @@ export default function CalendarPage() {
 
               {/* Day Headers (Sun - Sat) */}
               <div className="grid grid-cols-7 border-b border-slate-800/80 text-center text-xs py-3 font-medium">
-                {WEEK_DAYS.map((wd) => (
+                {WEEKDAY_NAMES.map((name, index) => (
                   <div
-                    key={wd.name}
+                    key={name}
                     className={`relative py-1 ${
-                      wd.isToday ? "text-amber-400 font-bold" : "text-slate-400"
+                      index === weekdayIndex(today) ? "text-amber-400 font-bold" : "text-slate-400"
                     }`}
                   >
-                    <span>{wd.name}</span>
-                    {wd.isToday && (
+                    <span>{name}</span>
+                    {index === weekdayIndex(today) && (
                       <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-amber-400 rounded-full" />
                     )}
                   </div>
                 ))}
               </div>
 
-              {/* 35-Day Grid */}
+              {/* Month grid */}
               <div className="grid grid-cols-7 border-b border-slate-800/60 divide-x divide-y divide-slate-800/50">
-                {OCTOBER_2026_DAYS.map((day, idx) => {
+                {monthDays.map((day, idx) => {
                   const dayEvents = filteredEvents.filter((ev) => ev.date === day.dateStr);
                   const isSelected = selectedDate === day.dateStr;
-                  const isToday = day.dateStr === "2026-10-19";
+                  const isToday = day.dateStr === today;
 
                   return (
                     <div
@@ -402,10 +338,8 @@ export default function CalendarPage() {
                       <div className="flex items-center justify-between text-xs">
                         {isToday ? (
                           <span className="h-6 w-6 rounded-md bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center shadow-sm">
-                            19
+                            {day.dayNumber}
                           </span>
-                        ) : day.label ? (
-                          <span className="font-semibold text-slate-300">{day.label}</span>
                         ) : (
                           <span className={day.isCurrentMonth ? "text-slate-400 group-hover:text-slate-200" : "text-slate-600"}>
                             {day.dayNumber}
@@ -449,9 +383,7 @@ export default function CalendarPage() {
             <div className="pt-4 flex items-center justify-between text-[11px] text-slate-500">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <span>Today: Monday Oct 19, 2026</span>
-                <span>•</span>
-                <span className="text-slate-400">Day 19 of 28 Launch Push</span>
+                <span>Today: {longDate(todayIsoDate())}</span>
               </div>
               <div className="font-mono text-slate-400">
                 Selected: {selectedDate} ({filteredEvents.filter((e) => e.date === selectedDate).length} events)

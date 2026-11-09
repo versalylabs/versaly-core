@@ -15,6 +15,7 @@ import { canViewPage } from "@/lib/access";
 import { VERSALY_PRODUCTS } from "@/data/products-catalog";
 import { KNOWLEDGE_ARTICLES, ARCHITECTURAL_DECISIONS } from "@/data/knowledge-seed";
 import { clean } from "@/lib/assistant-context";
+import { longDate } from "@/lib/money";
 
 export type AssistantParams = Parameters<Anthropic["beta"]["messages"]["stream"]>[0];
 
@@ -184,7 +185,7 @@ const ROLE_NAME: Record<UserRole, string> = {
 };
 
 export function buildSystemBlocks(input: PromptInput): Anthropic.Beta.BetaTextBlockParam[] {
-  const day = new Date(`${input.todayIso}T00:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  const day = longDate(input.todayIso);
   return [
     // Same for everyone: cacheable
     { type: "text", text: `${INSTRUCTIONS}\n\n<reference>\n${buildReferenceText()}\n</reference>`, cache_control: { type: "ephemeral" } },

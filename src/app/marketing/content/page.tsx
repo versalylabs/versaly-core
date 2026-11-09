@@ -33,6 +33,8 @@ import {
 } from "@/data/marketing-seed";
 import { useProductsCatalog } from "@/lib/products-store";
 
+import { todayIsoDate } from "@/lib/ids";
+import { addDaysIso } from "@/lib/money";
 const STORAGE_KEY = "versaly_marketing_posts_v2";
 
 const CHANNELS: SocialChannel[] = [
@@ -67,30 +69,24 @@ interface WeekDayItem {
 }
 
 function getCurrentWeekDays(): WeekDayItem[] {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 is Sun, 1 is Mon...
-  const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + distanceToMonday);
+  // Worked out from the Nairobi calendar day so the week never shifts by a day
+  const today = todayIsoDate();
+  const dayOfWeek = new Date(`${today}T00:00:00Z`).getUTCDay(); // 0 is Sun, 1 is Mon...
+  const mondayIso = addDaysIso(today, dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
 
   const daysShort = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const daysFull = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   return daysShort.map((dayShort, idx) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + idx);
-    const dateStr = d.toISOString().split("T")[0];
-    const isToday = d.toDateString() === now.toDateString();
-    const isPast = d < now && !isToday;
-    const isFuture = d > now && !isToday;
+    const dateStr = addDaysIso(mondayIso, idx);
     return {
       dayShort,
       dayName: daysFull[idx],
       dateStr,
-      dayNum: d.getDate(),
-      isToday,
-      isPast,
-      isFuture,
+      dayNum: Number(dateStr.slice(8, 10)),
+      isToday: dateStr === today,
+      isPast: dateStr < today,
+      isFuture: dateStr > today,
       isSunday: idx === 6,
     };
   });
@@ -282,7 +278,7 @@ export default function MarketingContentPage() {
     setModalMode("ADD");
     setEditingId(null);
     setFormTitle("");
-    setFormDate(new Date().toISOString().split("T")[0]);
+    setFormDate(todayIsoDate());
     setFormTimeSlot("09:00 AM");
     setFormChannels(["LinkedIn", "X / Twitter"]);
     setFormProduct("Vehisoft");
@@ -327,7 +323,7 @@ export default function MarketingContentPage() {
     const payload: SocialPost = {
       id: modalMode === "EDIT" && editingId ? editingId : `post-${Date.now()}`,
       title: formTitle.trim(),
-      date: formDate || new Date().toISOString().split("T")[0],
+      date: formDate || todayIsoDate(),
       timeSlot: formTimeSlot,
       channels: formChannels.length > 0 ? formChannels : ["LinkedIn"],
       product: formProduct,

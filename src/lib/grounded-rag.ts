@@ -1,7 +1,7 @@
 import { VERSALY_PRODUCTS } from "@/data/products-catalog";
 import { KNOWLEDGE_ARTICLES, ARCHITECTURAL_DECISIONS } from "@/data/knowledge-seed";
 import { buildForecast, computeSnapshot, emptyWorkspaceData, type WorkspaceData } from "@/lib/insights";
-import { collectionState, isoDay } from "@/lib/money";
+import { collectionState, nairobiDay } from "@/lib/money";
 import { formatKES } from "@/lib/invoice-messages";
 
 export interface GroundedCitation {
@@ -29,7 +29,7 @@ export function queryInternalKnowledge(
   userRole: "OWNER" | "ADMIN" | "MANAGER" | "STAFF" | "READ_ONLY" = "ADMIN",
   /** Your real records (invoices, deals, projects…). Pass loadWorkspaceData() in the app. */
   data: WorkspaceData = emptyWorkspaceData(),
-  todayIso: string = isoDay(new Date())
+  todayIso: string = nairobiDay()
 ): AssistantAnswer {
   // Pre-retrieval role check
   const isAuthorizedForFinancials = ["OWNER", "ADMIN", "MANAGER"].includes(userRole);

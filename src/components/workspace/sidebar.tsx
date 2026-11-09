@@ -138,7 +138,7 @@ const CATEGORIES: NavCategory[] = [
   {
     name: "INTELLIGENCE",
     items: [
-      { title: "AI Grounded Assistant", href: "/assistant", icon: Sparkles },
+      { title: "Business Assistant", href: "/assistant", icon: Sparkles },
       { title: "AI Supervised Co-Pilot", href: "/assistant/copilot", icon: FileCheck2 },
       { title: "Insights & Reports", href: "/reports", icon: BarChart3 },
       { title: "Attention & Approvals", href: "/attention", icon: ShieldAlert },

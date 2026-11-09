@@ -71,6 +71,11 @@ jobs:
           NODE_ENV: production
 
       - name: Start the app for the end-to-end tests
+        env:
+          # The assistant is tested against a pretend Anthropic API that the e2e tests start themselves,
+          # so CI needs no real key and spends nothing.
+          ANTHROPIC_API_KEY: ci-pretend-key-not-real
+          ANTHROPIC_BASE_URL: http://127.0.0.1:4010
         run: |
           npm start > app.log 2>&1 &
           for i in $(seq 1 40); do
@@ -81,6 +86,8 @@ jobs:
 
       - name: End-to-end role and security tests
         run: npm run test:e2e
+        env:
+          E2E_MOCK_ANTHROPIC_PORT: "4010"
 
       - name: Show app log if something failed
         if: failure()

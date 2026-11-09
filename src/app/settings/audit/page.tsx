@@ -51,6 +51,8 @@ function describe(e: AuditEvent): string {
       return `Ignored M-Pesa payment ${e.entityId ?? ""}`;
     case "BACKUP_EXPORTED":
       return "Downloaded a full data backup";
+    case "ASSISTANT_ASKED":
+      return `Asked the assistant: “${String(m.question ?? "")}”${m.result === "error" ? " (it couldn't answer)" : ""}`;
     default:
       return e.action.replace(/_/g, " ").toLowerCase();
   }

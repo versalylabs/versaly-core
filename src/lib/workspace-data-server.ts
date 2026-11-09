@@ -1,5 +1,7 @@
+import type { UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { KEYS } from "@/lib/storage-keys";
+import { canReadKey } from "@/lib/access";
 import { PAYMENT_SETTINGS_KEY } from "@/lib/invoice-messages";
 import { emptyWorkspaceData, type WorkspaceData } from "@/lib/insights";
 
@@ -23,11 +25,17 @@ const asList = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 /**
  * Read the workspace straight from the database (for server jobs such as the
- * weekly review email). Collections you haven't saved yet are simply empty.
+ * weekly review email, and the AI assistant). Collections you haven't saved yet
+ * are simply empty.
+ *
+ * Pass `role` to read only what that role may see: collections it can't read are
+ * never even fetched from the database, so they can't leak further along.
  */
-export async function loadWorkspaceDataFromDb(): Promise<{ data: WorkspaceData; businessName?: string }> {
-  const keys = [...Object.values(KEYS), PAYMENT_SETTINGS_KEY];
-  const rows = await db.workspaceDocument.findMany({ where: { key: { in: keys } } });
+export async function loadWorkspaceDataFromDb(options: { role?: UserRole } = {}): Promise<{ data: WorkspaceData; businessName?: string }> {
+  const { role } = options;
+  const allKeys: string[] = [...Object.values(KEYS), PAYMENT_SETTINGS_KEY];
+  const keys = role ? allKeys.filter((k) => canReadKey(role, k)) : allKeys;
+  const rows = keys.length ? await db.workspaceDocument.findMany({ where: { key: { in: keys } } }) : [];
   const byKey = new Map(rows.map((r) => [r.key, unwrap(r.value)]));
 
   const data: WorkspaceData = {

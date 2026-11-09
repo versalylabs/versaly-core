@@ -69,7 +69,7 @@ export function Header({ onOpenCommandPalette, onOpenMobileNav }: HeaderProps) {
     if (path === "/finance/revenue") return "Revenue & Client Subscriptions";
     if (path === "/finance/reports") return "Financial Reports & Accounting";
     if (path === "/knowledge") return "Knowledge Base & SOPs";
-    if (path === "/assistant") return "AI Grounded Assistant";
+    if (path === "/assistant") return "Business Assistant";
     if (path === "/assistant/copilot") return "AI Supervised Co-Pilot";
     if (path === "/settings") return "Workspace Settings";
     if (path === "/settings/automations") return "Operational Automations";

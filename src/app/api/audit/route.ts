@@ -9,7 +9,7 @@ import { requirePermission } from "@/lib/team-auth";
  *   ?before=<ISO time>   continue from where the last page ended
  *   ?routine=0           hide routine entries (sign-ins and data saves)
  */
-const ROUTINE = ["DATA_SAVED", "USER_LOGGED_IN"];
+const ROUTINE = ["DATA_SAVED", "USER_LOGGED_IN", "ASSISTANT_ASKED"];
 const PAGE_SIZE = 50;
 
 export async function GET(req: NextRequest) {

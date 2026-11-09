@@ -93,7 +93,7 @@ export function CommandPalette({
       { id: "nav-docs", category: "Navigation", title: "Documents & Sales Sheets", subtitle: "1-pagers, proposals, KRA/eTIMS", href: "/documents", icon: FileText },
       { id: "nav-finance", category: "Navigation", title: "Finance & Invoices", subtitle: "M-Pesa reconciliation & MRR", href: "/finance", icon: CreditCard },
       { id: "nav-sop", category: "Navigation", title: "Knowledge Base & SOPs", subtitle: "Institutional playbooks & FAQs", href: "/knowledge", icon: BookOpen },
-      { id: "nav-assistant", category: "Navigation", title: "AI Grounded Assistant", subtitle: "Query internal knowledge, blockers, and overdue balances", href: "/assistant", icon: Sparkles, badge: "RAG" },
+      { id: "nav-assistant", category: "Navigation", title: "Business Assistant", subtitle: "Ask about cash, invoices, deals and projects", href: "/assistant", icon: Sparkles, badge: "AI" },
       { id: "nav-copilot", category: "Navigation", title: "AI Supervised Co-Pilot", subtitle: "Inspect proposed mutations, drafts, and human approvals", href: "/assistant/copilot", icon: Sparkles, badge: "Actions" },
       { id: "nav-integrations", category: "Navigation", title: "Integrations & System Health", subtitle: "M-Pesa Paybill, eTIMS, WhatsApp Cloud API & DB latency", href: "/settings/integrations", icon: Cpu },
       { id: "nav-settings", category: "Navigation", title: "Workspace Settings", subtitle: "Team, roles, company profile", href: "/settings", icon: Settings },

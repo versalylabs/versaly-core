@@ -26,7 +26,7 @@ export interface AssistantAnswer {
  */
 export function queryInternalKnowledge(
   userQuery: string,
-  userRole: "OWNER" | "ADMIN" | "MANAGER" | "STAFF" = "ADMIN",
+  userRole: "OWNER" | "ADMIN" | "MANAGER" | "STAFF" | "READ_ONLY" = "ADMIN",
   /** Your real records (invoices, deals, projects…). Pass loadWorkspaceData() in the app. */
   data: WorkspaceData = emptyWorkspaceData(),
   todayIso: string = isoDay(new Date())

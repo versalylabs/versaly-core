@@ -63,6 +63,13 @@ export interface InsightProject {
 export interface InsightClient {
   id: string;
   status: "ONBOARDING" | "ACTIVE" | "PAST_DUE";
+  // Optional details the assistant can use when they exist (never phone, email or tax PIN)
+  businessName?: string;
+  contactName?: string;
+  productName?: string;
+  monthlyMRR?: number;
+  renewalDate?: string;
+  onboardingProgressPct?: number;
 }
 
 export interface InsightAccount {

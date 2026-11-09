@@ -28,6 +28,7 @@ import { useProductsCatalog } from "@/lib/products-store";
 import { convertWonDeal } from "@/lib/workflows";
 import { userCan } from "@/lib/current-user";
 
+import { isoDaysFromNow, todayIsoDate } from "@/lib/ids";
 const DEALS_STORAGE_KEY = "versaly_active_deals_v2";
 const RAW_LEADS_STORAGE_KEY = "versaly_raw_leads_v2";
 
@@ -115,6 +116,8 @@ export default function LeadsPage() {
 
   // Promote raw lead to active deal
   function handlePromoteToDeal(lead: RawLeadItem) {
+    const product = products.find((p) => p.slug === lead.productSlug);
+    const today = todayIsoDate();
     const newDeal: ActiveDealItem = {
       id: `deal-from-${lead.id}-${lead.productSlug}`,
       businessName: lead.businessName,
@@ -125,10 +128,12 @@ export default function LeadsPage() {
       productSlug: lead.productSlug,
       productName: lead.productName,
       stage: "CONTACTED",
-      setupFeeKES: 35000,
-      monthlyFeeKES: 12500,
+      setupFeeKES: product?.setupFee ?? 35000,
+      monthlyFeeKES: product?.monthlyFee ?? 12500,
       winProbability: 30,
-      targetCloseDate: "2026-11-05",
+      targetCloseDate: isoDaysFromNow(14),
+      createdAt: today,
+      stageChangedAt: today,
       outreachChannel: lead.source,
       nextAction: "Initial consultation completed; follow up with live mobile walkthrough",
       nextActionDate: "In 2 days",
@@ -176,6 +181,14 @@ export default function LeadsPage() {
       prev.map((d) => {
         if (d.id !== dealId) return d;
         const updated = { ...d, stage: newStage };
+        if (d.stage !== newStage) {
+          const today = todayIsoDate();
+          updated.stageChangedAt = today;
+          if (newStage === "WON") updated.wonAt = d.wonAt || today;
+          else delete updated.wonAt;
+          if (newStage === "LOST") updated.lostAt = today;
+          else delete updated.lostAt;
+        }
         if (newStage === "WON") {
           updated.onboardingProjectCreated = true;
           if (target && target.stage !== "WON") updated.billingProvisioned = billingDone;
@@ -212,7 +225,7 @@ export default function LeadsPage() {
       source: newSource,
       notes: newNotes,
       status: "UNCONTACTED",
-      createdAt: "Just now",
+      createdAt: todayIsoDate(),
     };
 
     setRawLeads((prev) => [newLead, ...prev]);

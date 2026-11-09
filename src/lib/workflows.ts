@@ -169,6 +169,7 @@ export function convertWonDeal(
       onboardingProgressPct: 0,
       signedContractDoc: "Pending",
       paymentMethod: "M-Pesa Paybill",
+      createdAt: todayIso,
     };
     writeList(CLIENTS_STORAGE_KEY, [client, ...clients]);
     created.client = true;

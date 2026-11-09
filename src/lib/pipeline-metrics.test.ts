@@ -84,6 +84,8 @@ describe("computeFunnel", () => {
       leadsContacted: 6,
       demosBooked: 4, // demo booked, proposal, negotiation, won
       proposalsSent: 3, // proposal, negotiation, won
+      demosCompleted: 3,
+      demoCompletionRatePct: 75, // 3 of the 4 that were booked
       dealsWon: 1,
       dealsLost: 1,
       contactedToWonConversionPct: 17,

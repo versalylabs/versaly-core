@@ -5,7 +5,7 @@
  * of truth, and so the logic can be tested.
  */
 
-import { addDaysIso, addMonthsIso, collectionState, cycleMonths, daysBetween } from "@/lib/money";
+import { addDaysIso, addMonthsIso, collectionState, cycleMonths, daysBetween, nairobiDay } from "@/lib/money";
 import type { BillingCycle } from "@/lib/money";
 
 // ---------------------------------------------------------------------------
@@ -44,6 +44,16 @@ export interface InsightDeal {
   winProbability: number;
   targetCloseDate: string;
   nextAction?: string;
+  // Optional details the dashboard uses when they exist
+  productSlug?: string;
+  contactName?: string;
+  contactPhone?: string;
+  /** The day the deal was created, "2026-11-09" (older deals don't have one). */
+  createdAt?: string;
+  /** The day the stage last changed. */
+  stageChangedAt?: string;
+  wonAt?: string;
+  lostAt?: string;
 }
 
 export interface InsightProject {
@@ -70,6 +80,9 @@ export interface InsightClient {
   monthlyMRR?: number;
   renewalDate?: string;
   onboardingProgressPct?: number;
+  productSlug?: string;
+  /** The day the client record was created (older records don't have one). */
+  createdAt?: string;
 }
 
 export interface InsightAccount {
@@ -443,6 +456,11 @@ export interface PipelineMetrics {
   weightedPipelineValueKES: number;
   wonCount: number;
   wonValueKES: number;
+  /** Deals won this month, counted only where the win date was recorded. */
+  wonThisMonthCount: number;
+  wonThisMonthValueKES: number;
+  /** Average days from creation to win, or null when no won deal has both dates. */
+  averageDaysToClose: number | null;
   lostCount: number;
   /** Won as a share of closed deals (won + lost). */
   winRatePct: number;
@@ -452,11 +470,14 @@ export interface PipelineMetrics {
 
 const dealValue = (d: InsightDeal) => (d.setupFeeKES || 0) + (d.monthlyFeeKES || 0);
 
-export function computePipelineMetrics(deals: InsightDeal[]): PipelineMetrics {
+export function computePipelineMetrics(deals: InsightDeal[], todayIso: string = nairobiDay()): PipelineMetrics {
   const open = deals.filter((d) => d.stage !== "WON" && d.stage !== "LOST");
   const won = deals.filter((d) => d.stage === "WON");
   const lost = deals.filter((d) => d.stage === "LOST");
   const closed = won.length + lost.length;
+  const month = todayIso.slice(0, 7);
+  const wonThisMonth = won.filter((d) => isIso(d.wonAt) && d.wonAt.slice(0, 7) === month);
+  const timed = won.filter((d) => isIso(d.createdAt) && isIso(d.wonAt));
 
   const dealsByStage = OPEN_STAGES.map((stage) => {
     const inStage = open.filter((d) => d.stage === stage);
@@ -475,6 +496,11 @@ export function computePipelineMetrics(deals: InsightDeal[]): PipelineMetrics {
     weightedPipelineValueKES: dealsByStage.reduce((s, x) => s + x.weightedValueKES, 0),
     wonCount: won.length,
     wonValueKES: won.reduce((s, d) => s + dealValue(d), 0),
+    wonThisMonthCount: wonThisMonth.length,
+    wonThisMonthValueKES: wonThisMonth.reduce((s, d) => s + dealValue(d), 0),
+    averageDaysToClose: timed.length
+      ? Math.round(timed.reduce((sum, d) => sum + Math.max(0, daysBetween(String(d.createdAt).slice(0, 10), String(d.wonAt).slice(0, 10))), 0) / timed.length)
+      : null,
     lostCount: lost.length,
     winRatePct: closed ? Math.round((won.length / closed) * 100) : 0,
     averageDealSizeKES: deals.length ? Math.round(deals.reduce((s, d) => s + dealValue(d), 0) / deals.length) : 0,
@@ -490,6 +516,10 @@ export interface FunnelCounts {
   demosBooked: number;
   /** Deals that reached a proposal or went further. */
   proposalsSent: number;
+  /** A demo counts as done once the deal has moved on to a proposal or beyond. */
+  demosCompleted: number;
+  /** Demos done as a share of demos booked. */
+  demoCompletionRatePct: number;
   dealsWon: number;
   dealsLost: number;
   /** Won deals as a share of deals created. */
@@ -499,11 +529,15 @@ export interface FunnelCounts {
 export function computeFunnel(leads: { status?: string }[], deals: InsightDeal[]): FunnelCounts {
   const reached = (...stages: InsightDeal["stage"][]) => deals.filter((d) => stages.includes(d.stage)).length;
   const won = reached("WON");
+  const booked = reached("DEMO_BOOKED", "PROPOSAL_SENT", "NEGOTIATION", "WON");
+  const proposals = reached("PROPOSAL_SENT", "NEGOTIATION", "WON");
   return {
     uncontactedPool: leads.filter((l) => l.status === "UNCONTACTED").length,
     leadsContacted: deals.length,
-    demosBooked: reached("DEMO_BOOKED", "PROPOSAL_SENT", "NEGOTIATION", "WON"),
-    proposalsSent: reached("PROPOSAL_SENT", "NEGOTIATION", "WON"),
+    demosBooked: booked,
+    proposalsSent: proposals,
+    demosCompleted: proposals,
+    demoCompletionRatePct: booked ? Math.round((proposals / booked) * 100) : 0,
     dealsWon: won,
     dealsLost: reached("LOST"),
     contactedToWonConversionPct: deals.length ? Math.round((won / deals.length) * 100) : 0,

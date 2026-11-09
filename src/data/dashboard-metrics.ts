@@ -12,7 +12,7 @@ export interface ProductPerformanceItem {
   churnedClients: number;
   averageDealSize: number; // KES
   conversionRatePct: number; // Lead to Client %
-  tractionStatus: "Strong Traction" | "High ACV" | "Steady Growth" | "Watchlist";
+  tractionStatus: "No activity yet" | "Building pipeline" | "Winning";
   day45Action: string;
 }
 
@@ -156,7 +156,7 @@ export const INITIAL_PRODUCT_PERFORMANCE: ProductPerformanceItem[] = [
     churnedClients: 0,
     averageDealSize: 0,
     conversionRatePct: 0,
-    tractionStatus: "Strong Traction",
+    tractionStatus: "No activity yet",
     day45Action: "Primary launch product. Target SMEs, logistics, and healthcare clinics for statutory payroll.",
   },
   {
@@ -173,7 +173,7 @@ export const INITIAL_PRODUCT_PERFORMANCE: ProductPerformanceItem[] = [
     churnedClients: 0,
     averageDealSize: 0,
     conversionRatePct: 0,
-    tractionStatus: "Strong Traction",
+    tractionStatus: "No activity yet",
     day45Action: "Double down on Industrial Area & Karen garage direct sales.",
   },
   {
@@ -190,7 +190,7 @@ export const INITIAL_PRODUCT_PERFORMANCE: ProductPerformanceItem[] = [
     churnedClients: 0,
     averageDealSize: 0,
     conversionRatePct: 0,
-    tractionStatus: "Strong Traction",
+    tractionStatus: "No activity yet",
     day45Action: "Bundle thermal barcode printers directly into setup fee.",
   },
   {
@@ -207,7 +207,7 @@ export const INITIAL_PRODUCT_PERFORMANCE: ProductPerformanceItem[] = [
     churnedClients: 0,
     averageDealSize: 0,
     conversionRatePct: 0,
-    tractionStatus: "High ACV",
+    tractionStatus: "No activity yet",
     day45Action: "Highest ACV per account. Target top 15 billboard agencies.",
   },
   {
@@ -224,7 +224,7 @@ export const INITIAL_PRODUCT_PERFORMANCE: ProductPerformanceItem[] = [
     churnedClients: 0,
     averageDealSize: 0,
     conversionRatePct: 0,
-    tractionStatus: "Steady Growth",
+    tractionStatus: "No activity yet",
     day45Action: "Promote auto-reconciliation & M-Pesa landlord Paybill tie-in.",
   },
   {
@@ -241,7 +241,7 @@ export const INITIAL_PRODUCT_PERFORMANCE: ProductPerformanceItem[] = [
     churnedClients: 0,
     averageDealSize: 0,
     conversionRatePct: 0,
-    tractionStatus: "Watchlist",
+    tractionStatus: "No activity yet",
     day45Action: "Monitor hardware setup costs & simplify waiter tablet UX.",
   },
 ];

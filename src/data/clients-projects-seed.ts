@@ -16,6 +16,8 @@ export interface ClientItem {
   signedContractDoc: string;
   paymentMethod: string;
   taxPin?: string;
+  /** The day the client record was created, "2026-11-09". */
+  createdAt?: string;
 }
 
 export interface ProjectTaskItem {

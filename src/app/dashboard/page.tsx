@@ -37,7 +37,6 @@ import {
 } from "lucide-react";
 import {
   INITIAL_SALES_ACTIVITY_METRICS,
-  INITIAL_CLIENT_DELIVERY_METRICS,
   INITIAL_PRODUCT_PERFORMANCE,
 } from "@/data/dashboard-metrics";
 import {
@@ -53,9 +52,31 @@ import { useProductsCatalog, getProductColor } from "@/lib/products-store";
 
 
 import { longDate } from "@/lib/money";
-import { computeFunnel, computePipelineMetrics, type InsightDeal } from "@/lib/insights";
+import { computeFunnel, computePipelineMetrics, type InsightClient, type InsightDeal, type InsightProject } from "@/lib/insights";
+import {
+  OUTREACH_LOG_KEY,
+  computeCashAlerts,
+  computeDelivery,
+  computeFollowUps,
+  computeProductActivity,
+  countNewLeadsThisWeek,
+  countOutreach,
+  openSupportTickets,
+  type OutreachEntry,
+} from "@/lib/ops-metrics";
 import { KEYS } from "@/lib/storage-keys";
 import { todayIsoDate } from "@/lib/ids";
+function readStored<T>(key: string): T[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = appStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 const STAGE_STYLE: Record<string, { stage: string; color: string }> = {
   CONTACTED: { stage: "Contacted (First Pitch)", color: "bg-slate-500" },
   DEMO_BOOKED: { stage: "Demo Booked", color: "bg-sky-500" },
@@ -155,10 +176,6 @@ export default function DashboardPage() {
     } catch {
       // ignore
     }
-  }, [queue]);
-
-  const loggedCount = useMemo(() => {
-    return queue.filter((q) => q.loggedAt).length;
   }, [queue]);
 
   const [finInvoices, setFinInvoices] = useState(() =>
@@ -270,111 +287,78 @@ export default function DashboardPage() {
     };
   }, [financeSummary, catalogProducts]);
 
-  // The pipeline and funnel come from your real deals and leads (the same ones the briefing counts)
-  const [crm] = useState(() => {
-    if (typeof window === "undefined") return { deals: [] as InsightDeal[], leads: [] as { status?: string }[] };
-    const readList = <T,>(key: string): T[] => {
-      try {
-        const raw = appStorage.getItem(key);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? (parsed as T[]) : [];
-      } catch {
-        return [];
-      }
-    };
-    return { deals: readList<InsightDeal>(KEYS.deals), leads: readList<{ status?: string }>("versaly_raw_leads_v2") };
-  });
-  const pipeline = useMemo(() => computePipelineMetrics(crm.deals), [crm]);
+  // Everything below is worked out from your real records (the same ones the briefing counts)
+  const [crm] = useState(() => ({
+    deals: readStored<InsightDeal>(KEYS.deals),
+    leads: readStored<{ status?: string; createdAt?: string }>("versaly_raw_leads_v2"),
+    clients: readStored<InsightClient>(KEYS.clients),
+    projects: readStored<InsightProject>(KEYS.projects),
+    tickets: readStored<{ status?: string }>("versaly_support_tickets_list_v2"),
+  }));
+  const [outreachLog, setOutreachLog] = useState<OutreachEntry[]>(() => readStored<OutreachEntry>(OUTREACH_LOG_KEY));
+  useEffect(() => {
+    if (!outreachLog.length) return;
+    try {
+      appStorage.setItem(OUTREACH_LOG_KEY, JSON.stringify(outreachLog.slice(0, 2000)));
+    } catch {
+      // ignore
+    }
+  }, [outreachLog]);
+
+  const pipeline = useMemo(() => computePipelineMetrics(crm.deals, todayIsoDate()), [crm]);
   const funnel = useMemo(() => computeFunnel(crm.leads, crm.deals), [crm]);
+  const outreach = useMemo(() => countOutreach(outreachLog, todayIsoDate()), [outreachLog]);
 
   const sales = useMemo(() => {
     return {
       ...INITIAL_SALES_ACTIVITY_METRICS,
       ...funnel,
-      outreachToday: INITIAL_SALES_ACTIVITY_METRICS.outreachToday + loggedCount,
-      outreachThisWeek: INITIAL_SALES_ACTIVITY_METRICS.outreachThisWeek + loggedCount,
+      outreachToday: outreach.today,
+      outreachThisWeek: outreach.week,
+      newLeadsAddedWeek: countNewLeadsThisWeek(crm.leads, todayIsoDate()),
     };
-  }, [loggedCount, funnel]);
+  }, [outreach, funnel, crm]);
 
-  const clientDelivery = INITIAL_CLIENT_DELIVERY_METRICS;
+  const delivery = useMemo(() => computeDelivery(crm.clients, crm.projects, todayIsoDate()), [crm]);
+  const clientDelivery = { ...delivery, clientHealth: delivery.health, supportIssuesOpen: openSupportTickets(crm.tickets) };
 
   const products = useMemo(() => {
     return catalogProducts.map((p) => {
       const existing = INITIAL_PRODUCT_PERFORMANCE.find(
         (item) => item.slug === p.slug || item.name.toLowerCase() === p.name.toLowerCase()
       );
-      const collected =
-        financeSummary.productRevenue[p.name] || financeSummary.productRevenue[p.slug] || 0;
-      const mrr =
-        financeSummary.productMRR[p.name] ||
-        financeSummary.productMRR[p.slug] ||
-        p.monthlyFee * (p.activeClientsCount || 0);
-
-      if (existing) {
-        return {
-          ...existing,
-          category: p.category || existing.category,
-          name: p.name,
-          slug: p.slug,
-          revenueCollected: collected,
-          mrr: mrr,
-          activeClients: p.activeClientsCount || existing.activeClients,
-        };
-      }
+      const collected = financeSummary.productRevenue[p.name] || financeSummary.productRevenue[p.slug] || 0;
+      const mrr = financeSummary.productMRR[p.name] || financeSummary.productMRR[p.slug] || 0;
+      const activity = computeProductActivity({ slug: p.slug, name: p.name }, crm.deals, crm.clients);
 
       return {
         id: p.id,
         name: p.name,
         slug: p.slug,
-        category: p.category,
-        leadsContacted: 0,
-        demosBooked: 0,
-        dealsWon: 0,
+        category: p.category || existing?.category || "",
+        leadsContacted: activity.leadsContacted,
+        demosBooked: activity.demosBooked,
+        dealsWon: activity.dealsWon,
         revenueCollected: collected,
-        mrr: mrr,
-        activeClients: p.activeClientsCount || 0,
+        mrr,
+        activeClients: activity.clients,
         churnedClients: 0,
-        averageDealSize: p.setupFee || 35000,
-        conversionRatePct: 0,
-        tractionStatus: "Strong Traction" as const,
-        day45Action: `${p.name} active pipeline expansion and direct client acquisition.`,
+        averageDealSize: activity.averageDealSize,
+        conversionRatePct: activity.conversionRatePct,
+        tractionStatus: activity.traction,
+        day45Action: existing?.day45Action || `${p.name} active pipeline expansion and direct client acquisition.`,
       };
     });
-  }, [catalogProducts, financeSummary]);
+  }, [catalogProducts, financeSummary, crm]);
 
   const filteredProducts = useMemo(() => {
     if (selectedProductFilter === "ALL") return products;
     return products.filter((p) => p.slug === selectedProductFilter);
   }, [products, selectedProductFilter]);
 
-  const followUpsDue: {
-    id: string;
-    business: string;
-    contact: string;
-    phone: string;
-    product: string;
-    daysWaiting: number;
-    context: string;
-  }[] = [];
-
-  const onboardingBlockers: {
-    id: string;
-    client: string;
-    product: string;
-    blocker: string;
-    assignedTo: string;
-    daysBlocked: number;
-  }[] = [];
-
-  const cashAlerts: {
-    id: string;
-    client: string;
-    amountKES: number;
-    type: string;
-    status: string;
-    urgency: string;
-  }[] = [];
-
+  const followUpsDue = useMemo(() => computeFollowUps(crm.deals, todayIsoDate()), [crm]);
+  const onboardingBlockers = delivery.blockers;
+  const cashAlerts = useMemo(() => computeCashAlerts(finInvoices, todayIsoDate()), [finInvoices]);
 
   // Open Log Modal
   const openLogModal = (item: OutreachItem) => {
@@ -410,6 +394,10 @@ export default function DashboardPage() {
       )
     );
 
+    setOutreachLog((prev) => [
+      { id: `log-${Date.now()}`, date: todayIsoDate(), business: loggingItem.business, channel: loggingItem.channel, outcome: logOutcome, optedOut: logOptOut },
+      ...prev,
+    ]);
     setToastMessage(`✓ Logged outcome for ${loggingItem.business}: "${logOutcome}" (Stage: ${logDealStage})`);
     setLoggingItem(null);
     setTimeout(() => setToastMessage(null), 3500);
@@ -1068,7 +1056,7 @@ export default function DashboardPage() {
                 </div>
                 {cashAlerts.length === 0 ? (
                   <div className="p-4 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
-                    No overdue receivables or pending cash alerts. All client invoices are in good standing.
+                    No invoices are overdue or due today.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1165,8 +1153,8 @@ export default function DashboardPage() {
 
               <div className="liquid-glass p-3.5 rounded-xl">
                 <div className="text-[11px] font-medium text-slate-400">Demos Done</div>
-                <div className="text-lg font-bold text-slate-400 mt-1">—</div>
-                <div className="text-[10px] text-slate-500 mt-1">Not tracked yet</div>
+                <div className="text-lg font-bold text-emerald-400 mt-1">{sales.demosCompleted}</div>
+                <div className="text-[10px] text-emerald-400 mt-1 font-medium">{sales.demoCompletionRatePct}% of booked demos</div>
               </div>
 
               <div className="liquid-glass p-3.5 rounded-xl">
@@ -1313,7 +1301,7 @@ export default function DashboardPage() {
                     {/* Demos Completed */}
                     <div className="p-2 rounded-lg bg-violet-950/30 border border-violet-500/30 flex items-center justify-between">
                       <span className="text-violet-200">3. Demos Completed</span>
-                      <span className="font-mono font-bold text-slate-500">—</span>
+                      <span className="font-mono font-bold text-violet-300">{sales.demosCompleted}</span>
                     </div>
 
                     {/* Proposals Sent */}
@@ -1400,9 +1388,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="liquid-glass p-4 rounded-xl">
-                <div className="text-[11px] font-medium text-slate-400">Deals Won</div>
-                <div className="text-xl font-bold text-emerald-400 mt-1">{pipeline.wonCount}</div>
-                <div className="text-[10px] text-emerald-400/90 mt-1">KES {(pipeline.wonValueKES / 1000).toFixed(0)}k volume</div>
+                <div className="text-[11px] font-medium text-slate-400">Deals Won This Month</div>
+                <div className="text-xl font-bold text-emerald-400 mt-1">{pipeline.wonThisMonthCount}</div>
+                <div className="text-[10px] text-emerald-400/90 mt-1">KES {(pipeline.wonThisMonthValueKES / 1000).toFixed(0)}k volume ({pipeline.wonCount} won overall)</div>
               </div>
 
               <div className="liquid-glass p-4 rounded-xl">
@@ -1420,9 +1408,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="liquid-glass p-4 rounded-xl">
-                <div className="text-[11px] font-medium text-slate-400">Open Deals</div>
-                <div className="text-xl font-bold text-amber-300 mt-1">{pipeline.openDealCount}</div>
-                <div className="text-[10px] text-slate-500 mt-1">{pipeline.lostCount} lost so far</div>
+                <div className="text-[11px] font-medium text-slate-400">Average Time to Close</div>
+                <div className="text-xl font-bold text-amber-300 mt-1">{pipeline.averageDaysToClose === null ? "—" : `${pipeline.averageDaysToClose} days`}</div>
+                <div className="text-[10px] text-slate-500 mt-1">{pipeline.averageDaysToClose === null ? "Shows once a deal is won" : "From deal created to won"}</div>
               </div>
             </div>
 
@@ -1482,7 +1470,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-amber-400" />
                     <h3 className="text-xs font-bold text-slate-100 uppercase tracking-wider">
-                      Follow-Ups Due Today ({followUpsDue.length})
+                      Follow-Ups Due ({followUpsDue.length})
                     </h3>
                   </div>
                   <span className="text-[10px] text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
@@ -1496,7 +1484,7 @@ export default function DashboardPage() {
                 <div className="space-y-2.5">
                   {followUpsDue.length === 0 ? (
                     <div className="p-6 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
-                      All follow-ups completed. Great job staying on top of outreach!
+                      Nothing is waiting: no deal in demo, proposal or negotiation has been quiet for 3 days or more.
                     </div>
                   ) : (
                     followUpsDue.map((item) => (
@@ -1588,21 +1576,21 @@ export default function DashboardPage() {
               <div className="liquid-glass p-3.5 rounded-xl border border-emerald-500/20">
                 <div className="text-[11px] font-medium text-emerald-400">Time to Go-Live</div>
                 <div className="text-xl font-bold text-white mt-1">
-                  {clientDelivery.averageDaysPaymentToGoLive} <span className="text-xs text-slate-400 font-normal">days</span>
+                  —
                 </div>
-                <div className="text-[10px] text-emerald-400 mt-1">Target is &lt; 7 days</div>
+                <div className="text-[10px] text-slate-500 mt-1">Not tracked yet (target &lt; 7 days)</div>
               </div>
 
               <div className="liquid-glass p-3.5 rounded-xl">
                 <div className="text-[11px] font-medium text-slate-400">Renewals (30 Days)</div>
                 <div className="text-xl font-bold text-slate-200 mt-1">{clientDelivery.renewalsDue30Days}</div>
-                <div className="text-[10px] text-slate-500 mt-1">Automated invoices queued</div>
+                <div className="text-[10px] text-slate-500 mt-1">Coming up for renewal</div>
               </div>
 
               <div className="liquid-glass p-3.5 rounded-xl">
                 <div className="text-[11px] font-medium text-slate-400">Churn Rate</div>
-                <div className="text-xl font-bold text-emerald-400 mt-1">{clientDelivery.churnRatePct}%</div>
-                <div className="text-[10px] text-slate-500 mt-1">{clientDelivery.churnedClients} churned overall</div>
+                <div className="text-xl font-bold text-slate-400 mt-1">—</div>
+                <div className="text-[10px] text-slate-500 mt-1">Not tracked yet</div>
               </div>
             </div>
 
@@ -1614,7 +1602,7 @@ export default function DashboardPage() {
                   Client Health Status Distribution
                 </h3>
                 <p className="text-[11px] text-slate-400 mb-4">
-                  Continuous retention monitoring across 34 active enterprise accounts
+                  {clientDelivery.totalClients} client{clientDelivery.totalClients === 1 ? "" : "s"}: past-due means at risk, a blocked project means needs attention
                 </p>
 
                 {/* Visual Progress Bar */}
@@ -1689,7 +1677,7 @@ export default function DashboardPage() {
                 <div className="space-y-2.5">
                   {onboardingBlockers.length === 0 ? (
                     <div className="p-6 text-center rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
-                      Zero onboarding blockers. All client deployments are moving forward smoothly.
+                      No blocked projects right now.
                     </div>
                   ) : (
                     onboardingBlockers.map((blk) => (
@@ -1770,10 +1758,9 @@ export default function DashboardPage() {
                   <tbody className="divide-y divide-slate-800/60">
                     {filteredProducts.map((p) => {
                       const tractionBadge = {
-                        "Strong Traction": "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-                        "High ACV": "bg-violet-500/10 text-violet-400 border-violet-500/20",
-                        "Steady Growth": "bg-sky-500/10 text-sky-400 border-sky-500/20",
-                        "Watchlist": "bg-amber-500/10 text-amber-400 border-amber-500/20",
+                        "Winning": "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                        "Building pipeline": "bg-sky-500/10 text-sky-400 border-sky-500/20",
+                        "No activity yet": "bg-slate-500/10 text-slate-400 border-slate-500/20",
                       }[p.tractionStatus];
 
                       return (

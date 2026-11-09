@@ -43,6 +43,11 @@ export interface ActiveDealItem {
   onboardingProjectCreated?: boolean;
   /** false = won by someone without finance access; an owner/admin's app creates the invoice and subscription. */
   billingProvisioned?: boolean;
+  /** Lifecycle days, "2026-11-09". Older deals don't have them. */
+  createdAt?: string;
+  stageChangedAt?: string;
+  wonAt?: string;
+  lostAt?: string;
 }
 
 export const INITIAL_RAW_LEADS: RawLeadItem[] = [];
